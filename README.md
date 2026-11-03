@@ -89,6 +89,8 @@ The pipeline is hardcoded, not agentic, as the tech doc prefers:
 | Research the website | `pipeline.research_org` | `OCI_FAST_MODEL_ID` (Claude Haiku) |
 | Consult the CVI library | `pipeline.gather_library`: one Knowledge Base retrieval per assessed area, queried with its top growth priorities | Titan Text Embeddings v2 |
 | Write the report | `pipeline.write_report`: Converse tool use with a JSON schema, then `validate_report` drops ungrounded actions and unknown links | `OCI_MODEL_ID` (Claude Sonnet) |
+| Check reading level | `pipeline.plain_language`: fixed Flesch-Kincaid grade; above 8.5, one rewrite step, rejected if any id or link changes | `OCI_FAST_MODEL_ID` (Claude Haiku) |
+| On demand: ask, listen, brief | `features/coach.py` (one validated call per question), `features/tts.py` (Amazon Polly generative voices), `features/staff_ai.py` (aggregated counts only) | Claude Haiku / Sonnet, Amazon Polly |
 | Render | `frontend/src/pages/results.astro` + `frontend/src/lib/results.ts`, `report.py` (fpdf2, Unicode TTF, bookmarks, PDF language tag) | none |
 
 Why Lambda instead of the Fargate stretch goal: CloudFront cannot reach a Fargate task without a load balancer, and App Runner is closed to new customers. One Lambda behind CloudFront scales to zero and needs no VPC or NAT, because it reaches Aurora through the HTTPS Data API.
@@ -201,6 +203,7 @@ priority_score    = stage_weight * domain_weight * gap_density_bonus
 - The API can only be reached through CloudFront: the Lambda Function URL uses `AWS_IAM` auth with origin access control, so direct calls get 403. The browser sends `x-amz-content-sha256` for request bodies, as Lambda OAC requires.
 - Spend guards: Lambda reserved concurrency of 5, at most `OCI_MAX_REPORTS_PER_HOUR` new reports per hour, and an optional monthly AWS Budget.
 - Model output is checked for truncation and refusal (`stopReason`) before parsing; website text and the website profile are passed to the model as untrusted data.
+- Amazon Bedrock Guardrails apply to every Claude call: content filters, prompt-attack blocking on input, and masking of emails, phone numbers, SSNs and card numbers. Staff training briefs receive only aggregated counts, never organization names.
 - The database has no network ingress: the app reaches it only through the IAM-authorized RDS Data API; the password is an RDS-managed secret.
 - The website fetch accepts only http(s) URLs whose host, and every redirect hop, resolves to a public IP.
 - The model's output is untrusted: `validate_report` keeps only actions citing real gap ids and resources from the catalog.
