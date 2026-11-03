@@ -340,7 +340,7 @@ Resources:
       # Pages are listed here instead of using distribution-wide CustomErrorResponses, which would also rewrite
       # the API's own 403/404 JSON on /api/*. Keep this list in sync with frontend/src/pages.
       FunctionCode: |
-        var PAGES = { '/': 1, '/login/': 1, '/questionnaire/': 1, '/resume/': 1, '/results/': 1, '/staff/': 1 };
+        var PAGES = { '/': 1, '/login/': 1, '/plan/': 1, '/questionnaire/': 1, '/resume/': 1, '/results/': 1, '/staff/': 1 };
         function handler(event) {
           var request = event.request;
           var uri = request.uri;

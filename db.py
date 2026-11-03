@@ -306,6 +306,15 @@ def seed():
             if rnd.random() < 0.6:  # most organizations ask for help in the areas of their top growth priorities
                 areas = list(dict.fromkeys(g["domain_id"] for g in sub["gaps"][:3]))
                 set_support(sub, areas)
+    # Feature modules may add their own synthetic data: features/<name>.py `seed(rnd)` (deterministic rnd).
+    import importlib
+    import pkgutil
+
+    import features
+    for mod in sorted(pkgutil.iter_modules(features.__path__), key=lambda m: m.name):
+        hook = getattr(importlib.import_module("features." + mod.name), "seed", None)
+        if callable(hook):
+            hook(random.Random("seed-" + mod.name))
     print("seeded", len(SEED_NAMES), "synthetic organizations")
 
 
