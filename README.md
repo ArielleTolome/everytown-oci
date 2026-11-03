@@ -7,7 +7,7 @@ The Organizational Capacity Index (OCI) for community violence intervention (CVI
 
 AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/vision.md), [`docs/tech.md`](docs/tech.md).
 
-**Current release:** v0.5.1. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+**Current release:** v0.6.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 ## Vision
 
@@ -173,7 +173,14 @@ priority_score    = stage_weight * domain_weight * gap_density_bonus
 - Atkinson Hyperlegible (designed for low-vision readers), Display menu for larger text and high contrast, `prefers-reduced-motion` respected, 44px targets.
 - AI-written text is marked with its language (`lang="es"`), so screen readers switch voice. Read-aloud buttons use the browser's speech synthesis.
 - The PDF uses real text, bookmarks per section, a document language and title.
-- Checked with axe-core (WCAG 2.0/2.1/2.2 A and AA rules): no violations on login, organization, questionnaire, processing and report pages.
+- The sticky questionnaire action bar reserves its height with `scroll-padding-bottom`, so it never hides the focused control (WCAG 2.4.11).
+- Checked with axe-core (WCAG 2.0/2.1/2.2 A and AA rules) at 1280 and 375 px: no violations on login, organization, questionnaire, processing, report and staff pages.
+
+## Design process
+
+- Tokens and rules: `design-system/everytown-oci/MASTER.md` plus per-page overrides (kept outside this repo in the workshop folder), built with the `ui-ux-pro-max` skill.
+- Reference research: Mobbin MCP searches for assessment results, multi-step questionnaires, onboarding pickers and admin analytics; the screens we adapted are linked in the v0.6.0 changelog.
+- Visual exploration: Google Stitch project "Everytown OCI Capacity Coach" with an Everytown design system (navy, royal blue, red, Atkinson Hyperlegible). Stitch's layouts were re-implemented in Astro; its placeholder copy was discarded.
 
 ## Security notes
 

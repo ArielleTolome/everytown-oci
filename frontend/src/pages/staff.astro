@@ -32,18 +32,29 @@ import Icon from "../components/Icon.astro";
       <span class="eyebrow">Everytown staff</span>
       <h1>Network capacity dashboard</h1>
       <p class="lead">See where grantees are across the network, which training and services are needed most, and which organizations share the same growth priorities so you can connect them.</p>
+      <ul class="kpi-grid" role="list">
+        <li class="card kpi"><span class="kpi__label">${icon("building")}Organizations</span><span class="kpi__num">${data.totals.organizations}</span><span class="kpi__context">with at least one assessment</span></li>
+        <li class="card kpi"><span class="kpi__label">${icon("clipboard")}Assessments</span><span class="kpi__num">${data.totals.assessments}</span><span class="kpi__context">including re-assessments</span></li>
+        <li class="card kpi"><span class="kpi__label">${icon("calendar")}Last 30 days</span><span class="kpi__num">${data.totals.last_30_days}</span><span class="kpi__context">assessments submitted recently</span></li>
+      </ul>
+      <section class="callout callout--info" aria-labelledby="how-numbers">
+        <span class="callout__icon" aria-hidden="true">${icon("info")}</span>
+        <div>
+          <h2 id="how-numbers" class="callout__title">How these numbers work</h2>
+          <ul>
+            <li><strong>Stage</strong> is the highest stage where every statement in that area is already in place.</li>
+            <li><strong>Network numbers</strong> use each organization's latest assessment, so re-assessments do not count twice.</li>
+            <li><strong>Peer percentile</strong> is a staff-only benchmarking preview. Grantees never see it.</li>
+          </ul>
+        </div>
+      </section>
       <div class="toolbar">
         <div class="field">
           <label for="domain-filter">Show capacity area</label>
           <select class="input" id="domain-filter"><option value="">All areas</option>${options}</select>
         </div>
-        <p class="hint toolbar__note">Uses each organization's latest assessment.</p>
+        <p class="hint toolbar__note">Filters every section below.</p>
       </div>
-      <ul class="stat-grid" role="list">
-        <li class="card stat">${icon("building")}<span><span class="stat__num">${data.totals.organizations}</span><span class="stat__label">organizations</span></span></li>
-        <li class="card stat">${icon("clipboard")}<span><span class="stat__num">${data.totals.assessments}</span><span class="stat__label">assessments</span></span></li>
-        <li class="card stat">${icon("calendar")}<span><span class="stat__num">${data.totals.last_30_days}</span><span class="stat__label">in the last 30 days</span></span></li>
-      </ul>
       <div id="dash"></div>`;
     $<HTMLSelectElement>("#domain-filter")!.addEventListener("change", (e) => {
       const v = (e.target as HTMLSelectElement).value;

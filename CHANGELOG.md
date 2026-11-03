@@ -2,6 +2,20 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v0.6.0 — UI/UX refresh from Mobbin references and Google Stitch designs
+
+Researched with the Mobbin MCP (real product screens) and designed with Google Stitch (project "Everytown OCI Capacity Coach", Everytown design system: navy #001C60, royal blue #0D3DD9, red #E3012B, Atkinson Hyperlegible). Stitch's layouts were rebuilt in our Astro components; none of its placeholder text is used.
+
+- **Questionnaire:** area stepper with "Completed / In progress / Upcoming" status cards and "Area 2 of 4 · Next: Financial Management" (after [Turo](https://mobbin.com/screens/d1f5a3aa-ffb1-4886-abb8-75ea4ce3130f) and [OKX](https://mobbin.com/screens/6672effd-4ebb-4c68-8cbd-bf88239ef93f)); statements grouped under stage headings with the stage description; large Yes/No cards with a visible "Selected" label; sticky Back / "Saved on this device" / "Next: <area>" bar that never hides the focused control (WCAG 2.4.11).
+- **Results reordered** to lead with what the Everytown rep asked for: "What's true about you", then "Start here: your top priorities", then stages and the plan.
+- **Start here cards** with a "What to do" checklist saved on the device and a "Not started · 4 steps" / "2 of 4 steps done" status (after [Monarch](https://mobbin.com/screens/53631102-dc15-414f-92b8-e6802620d214)).
+- **Compact stage tracks** (5 segments plus a "Current stage" label) replace the large circle ladders; the data table stays.
+- **30 / 60 / 90 plan** as one card per horizon with owner role chips (after [HubSpot](https://mobbin.com/screens/bc1ba2a3-126e-4a46-974f-bdde0ee48ec5)).
+- **Reassess in 90 days** callout with an "Add a 90-day reminder to my calendar" `.ics` download generated in the browser (after [Codecademy](https://mobbin.com/screens/fc2dd380-28af-4459-95ba-a21396c65286)).
+- **Start page:** "How it works" strip; area cards with a "Recommended" tag and time estimates (after [Airwallex](https://mobbin.com/screens/d6b9163b-e257-40f3-ae2c-4ea98a4ac3ca)).
+- **Staff dashboard:** KPI cards (after [Unity](https://mobbin.com/screens/5c30ec20-80bf-4246-9ac8-ea4a01a6b65d)) and a "How these numbers work" explainer (after [Google Workspace](https://mobbin.com/screens/69b435be-3b4f-4645-b69a-bc5ad3881435)).
+- axe-core: no WCAG 2.2 A/AA violations on any page at 1280 and 375 px.
+
 ## v0.5.1 — Pitch deck for v0.5
 
 - Pitch deck (`docs/pitch/index.html`) in Everytown colors, with new slides "What Everytown told us" (interview quotes mapped to features) and staff network analytics, the Aurora architecture, updated costs, and fresh screenshots. Fonts load from `frontend/public/fonts`.

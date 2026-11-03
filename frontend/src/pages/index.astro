@@ -7,6 +7,15 @@ import Icon from "../components/Icon.astro";
   <h1 id="page-title" tabindex="-1">Tell us about your organization</h1>
   <p class="lead">This takes about 15 minutes. You will answer Yes or No to short statements about how your organization works today. There are no wrong answers: the goal is to see where you are and what to grow next.</p>
 
+  <section class="how" aria-labelledby="how-title">
+    <h2 id="how-title" class="mini-label">How it works</h2>
+    <ol class="how__steps" role="list">
+      <li><span class="how__icon" aria-hidden="true"><Icon name="clipboard" /></span><span><strong>1. Answer</strong> Yes or No to short statements. There are no wrong answers.</span></li>
+      <li><span class="how__icon" aria-hidden="true"><Icon name="chart" /></span><span><strong>2. We score it</strong> with a fixed method, so the same answers always give the same stages.</span></li>
+      <li><span class="how__icon" aria-hidden="true"><Icon name="target" /></span><span><strong>3. You get a plan:</strong> your top 1 or 2 priorities, a 90-day plan, and a PDF to share.</span></li>
+    </ol>
+  </section>
+
   <div class="error-summary" id="error-summary" tabindex="-1" aria-labelledby="error-summary-title" hidden>
     <h2 id="error-summary-title"><Icon name="alert" />There is a problem</h2>
     <ul id="error-list"></ul>
@@ -45,7 +54,7 @@ import Icon from "../components/Icon.astro";
 
     <fieldset class="card stack" id="domains" data-field="domains" aria-describedby="domains-hint">
       <legend class="legend-heading">Which capacity areas do you want to look at?</legend>
-      <p class="hint" id="domains-hint">We selected four priority areas to start. Add or remove any. Each area takes a few minutes.</p>
+      <p class="hint" id="domains-hint">The four areas marked Recommended are a good place to start. Add or remove any.</p>
       <p class="field-error" id="domains-error" hidden></p>
       <div id="domain-groups"><p class="loading"><Icon name="loader" class="spin" />Loading capacity areas</p></div>
     </fieldset>
@@ -151,20 +160,23 @@ import Icon from "../components/Icon.astro";
     else setError("org_url", null);
   });
 
+  /** Checkbox cards with a "Recommended" tag (Airwallex "Primary interest"), statement count and time estimate (~15 s per statement). */
   function renderDomains(domains: Domain[], selected: string[]) {
-    const group = (title: string, items: Domain[]) => !items.length ? "" : `
-      <h2 class="eyebrow">${esc(title)}</h2>
-      <ul class="domain-list" role="list">${items.map((d) => `
-        <li class="domain-option">
-          <label class="choice">
-            <input type="checkbox" name="domains" value="${esc(d.id)}" id="domain-${esc(d.id)}" ${selected.includes(d.id) ? "checked" : ""}>
-            <span class="choice__text">${esc(d.name)} <span class="choice__meta">${d.questions.length} statements</span></span>${icon("check", "choice__check")}
-          </label>
-          <details class="about"><summary>About ${esc(d.name)}</summary><p>${esc(d.about)}</p></details>
-        </li>`).join("")}
-      </ul>`;
-    $("#domain-groups")!.innerHTML =
-      group("Priority areas", domains.filter((d) => d.priority)) + group("Other areas", domains.filter((d) => !d.priority));
+    const ordered = [...domains.filter((d) => d.priority), ...domains.filter((d) => !d.priority)];
+    $("#domain-groups")!.innerHTML = `<ul class="area-options" role="list">${ordered.map((d) => {
+      const minutes = Math.max(1, Math.ceil((d.questions.length * 15) / 60));
+      return `
+      <li class="area-option">
+        <label class="choice area-option__card">
+          <input type="checkbox" name="domains" value="${esc(d.id)}" id="domain-${esc(d.id)}" ${selected.includes(d.id) ? "checked" : ""}>
+          <span class="choice__text">
+            <span class="area-option__name">${esc(d.name)}${d.priority ? ' <span class="tag">Recommended</span>' : ""}</span>
+            <span class="choice__meta">${d.questions.length} statements · About ${minutes} minutes</span>
+          </span>${icon("check", "choice__check")}
+        </label>
+        <details class="about"><summary>About ${esc(d.name)}</summary><p>${esc(d.about)}</p></details>
+      </li>`;
+    }).join("")}</ul>`;
     $("#domains")!.addEventListener("change", () => { if (chosen().length) setError("domains", null); });
   }
 
