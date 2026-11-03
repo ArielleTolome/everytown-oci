@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS assessments (
 
 CREATE INDEX IF NOT EXISTS assessments_org_created ON assessments (org_id, created_at DESC);
 
+-- Browser sign-in session that submitted the assessment. Re-assessment progress compares only within it
+-- (login is mocked, so this stands in for an organization account).
+ALTER TABLE assessments ADD COLUMN IF NOT EXISTS owner text;
+
 CREATE TABLE IF NOT EXISTS answers (
   assessment_id uuid NOT NULL REFERENCES assessments (id) ON DELETE CASCADE,
   question_id text NOT NULL,

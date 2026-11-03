@@ -598,3 +598,4 @@ html { scroll-padding-bottom: calc(var(--qbar-h, 0px) + var(--space-md)); }
   .inset { padding: var(--space-sm) var(--space-md); }
   .reassess { padding: var(--space-md); }
 }
+.reassess .hint { margin-top: var(--space-sm); }

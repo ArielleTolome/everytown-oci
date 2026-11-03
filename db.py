@@ -99,10 +99,20 @@ def get(sid):
     return json.loads(rows[0]["doc"]) if rows else None
 
 
-def latest_for(org_name):
+def latest_for(org_name, owner):
+    """The previous assessment of this organization from the same sign-in session, if any."""
+    if not owner:
+        return None
     rows = query("SELECT a.doc::text AS doc FROM assessments a JOIN organizations o ON o.id = a.org_id "
-                 "WHERE o.name_key = :key ORDER BY a.created_at DESC LIMIT 1", key=name_key(org_name))
+                 "WHERE o.name_key = :key AND a.owner = :owner ORDER BY a.created_at DESC LIMIT 1",
+                 key=name_key(org_name), owner=owner)
     return json.loads(rows[0]["doc"]) if rows else None
+
+
+def recent_reports(hours=1):
+    """AI reports requested recently (seed rows excluded): the spend guard for the public demo."""
+    return query("SELECT count(*) AS n FROM assessments WHERE source <> 'seed' "
+                 "AND created_at > now() - make_interval(hours => CAST(:h AS int))", h=hours)[0]["n"]
 
 
 def update(sub):
@@ -110,7 +120,7 @@ def update(sub):
           doc=sub, status=sub["status"], id=sub["id"])
 
 
-def create(sub, source, created_at=None):
+def create(sub, source, created_at=None, owner=None):
     """Insert the organization (by name), the assessment document and its normalized scores, atomically."""
     tx = _call(_client().begin_transaction)["transactionId"]
     try:
@@ -119,10 +129,11 @@ def create(sub, source, created_at=None):
                     "CASE WHEN EXCLUDED.website = '' THEN organizations.website ELSE EXCLUDED.website END "
                     "RETURNING id::text AS id", tx=tx, id=str(uuid.uuid4()), name=sub["org_name"],
                     key=name_key(sub["org_name"]), website=sub["org_url"])[0]["id"]
-        query("INSERT INTO assessments (id, org_id, created_at, source, language, status, doc) "
-              "VALUES (:id, :org_id, COALESCE(CAST(:created_at AS timestamptz), now()), :source, :language, :status, :doc)",
+        query("INSERT INTO assessments (id, org_id, created_at, source, language, status, doc, owner) "
+              "VALUES (:id, :org_id, COALESCE(CAST(:created_at AS timestamptz), now()), :source, :language, :status, "
+              ":doc, :owner)",
               tx=tx, id=sub["id"], org_id=org, created_at=created_at, source=source, language=sub["language"],
-              status=sub["status"], doc=sub)
+              status=sub["status"], doc=sub, owner=owner)
         # Statement ids are the domain code plus a number (PL3, FR12).
         batch("INSERT INTO answers VALUES (CAST(:a AS uuid), :q, :d, :v)",
               [{"a": sub["id"], "q": q, "d": re.sub(r"\d+$", "", q), "v": v} for q, v in sub["answers"].items()], tx)

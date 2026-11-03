@@ -29,6 +29,7 @@ STEPS = [("read", "Reading your answers"), ("score", "Scoring capacity domains")
          ("library", "Consulting the CVI resource library"),
          ("write", "Writing personalized recommendations")]
 WORKER_FN = os.environ.get("OCI_WORKER_FN")
+MAX_REPORTS_PER_HOUR = int(os.environ.get("OCI_MAX_REPORTS_PER_HOUR", "30"))  # caps Bedrock spend on the public demo
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(ROOT, "data", "domain_info.json")) as _f:
@@ -95,7 +96,9 @@ def login():
     if not user or b.get("password") != user[0]:
         return error("That username and password did not match. Use demo / demo, or staff / staff for the "
                      "Everytown staff view.", 401)
+    # A fresh owner per sign-in: re-assessment progress only compares within it (stand-in for real accounts).
     session["user"] = {"name": b["username"], "role": user[1]}
+    session["owner"] = str(uuid.uuid4())
     return jsonify(user=session["user"])
 
 
@@ -134,8 +137,18 @@ def _domains(ids):
     return [d for d in get_domains() if d["id"] in ids]
 
 
+def report_quota(view):
+    @wraps(view)
+    def wrapped(*a, **kw):
+        if db.recent_reports() >= MAX_REPORTS_PER_HOUR:
+            return error("The demo has reached its limit of new reports for this hour. Please try again later.", 429)
+        return view(*a, **kw)
+    return wrapped
+
+
 @app.route("/api/assessments", methods=["POST"])
 @login_required()
+@report_quota
 def create_assessment():
     b = body()
     errors = {}
@@ -162,6 +175,7 @@ def create_assessment():
 
 @app.route("/api/demo", methods=["POST"])
 @login_required()
+@report_quota
 def demo():
     """Submit a synthetic sample organization from the builder package, for demos and staff training."""
     b = body()
@@ -221,9 +235,10 @@ def compare(prev, sub):
 
 def submit(org, answers, domains, source, profile=None):
     sub = build_assessment(org, answers, domains, profile)
-    prev = db.latest_for(sub["org_name"])
+    owner = session.get("owner")
+    prev = db.latest_for(sub["org_name"], owner)
     sub["progress"] = compare(prev, sub) if prev else None
-    db.create(sub, source)
+    db.create(sub, source, owner=owner)
     start_job(sub["id"])
     return sub["id"]
 
@@ -260,7 +275,10 @@ def run_job(sid):
         sub["status"] = "done"
     except Exception as exc:  # surface the failed step; scores stay valid
         app.logger.exception("pipeline failed for %s", sid)
-        sub["status"], sub["error"] = "error", "%s: %s" % (type(exc).__name__, exc)
+        sub["status"] = "error"
+        sub["error"] = str(exc) if isinstance(exc, pipeline.ReportError) else (
+            "Something went wrong while writing your recommendations (%s). Your scores are saved; please try again."
+            % type(exc).__name__)
         for s in sub["steps"]:
             if s["state"] == "running":
                 s["state"] = "error"

@@ -95,7 +95,7 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
   <p class="lead">Every community violence intervention leader gets a plain-language answer in under a minute: what is true about their organization, the one or two things to do first, and a 30 / 60 / 90 day plan. Everytown staff see the whole network.</p>
   <p class="url">d2mi2h3eu8y69s.cloudfront.net</p>
   <div class="footer"><span>Built for the Community Safety Fund (CSF) network · press N for speaker notes</span></div>
-  <aside class="notes">Open with the promise. CVI organizations are the people who stop shootings in their neighborhoods. Everytown's Community Safety Fund helps them get stronger as organizations. We built the tool that lets that help reach every grantee, not just the ones two staff members have time for, and gives Everytown's team a view of the whole network. It is live on AWS right now.</aside>
+  <aside class="notes">Open with the promise, then the guarantee. CVI organizations are the people who stop shootings in their neighborhoods. Everytown's Community Safety Fund helps them get stronger as organizations. Our guarantee: every action in a report traces to a statement the organization actually answered, and every link comes from a vetted catalog. The model's output is validated against the scoring engine's results, and anything ungrounded is dropped. Up front, so nobody is surprised: the login is mocked, and this public URL is temporary and will be torn down after judging. The API sits behind CloudFront with IAM-signed origin access, a cap of 5 concurrent requests and an hourly cap on reports.</aside>
 </section>
 
 <!-- 2. Problem -->
@@ -169,7 +169,7 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
       <figcaption style="margin-top:22px;display:flex;gap:18px;"><span class="step" aria-hidden="true">3</span><p><strong>Start here.</strong> One or two first priorities, the answers behind them, a vetted resource. Then the 30 / 60 / 90 plan and PDF.</p></figcaption>
     </figure>
   </div>
-  <aside class="notes">Switch to the browser now (see demo-script.md). If the network fails, open sample-report.pdf and walk through these screenshots instead. Point out "Based on your answers to" under each priority: that is the grounding made visible.</aside>
+  <aside class="notes">Switch to the browser now (see demo-script.md). Remind the room: the login is mocked and the URL is temporary. Lead with the guarantee: every action traces to a statement the organization answered, every link comes from the vetted catalog, and anything the model writes that is not grounded in the engine's results is dropped. Point out "Based on your answers to" under each priority: that is the guarantee made visible. If the network fails, open sample-report.pdf and walk through these screenshots instead.</aside>
 </section>
 
 <!-- 6. How it works -->
@@ -178,7 +178,7 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
   <h2>Deterministic scores first. AI second. Validated always.</h2>
   <svg role="img" aria-labelledby="arch-t arch-d" viewBox="0 0 1680 470" width="1680" height="470" style="font-family:var(--font);flex:none;">
     <title id="arch-t">Architecture</title>
-    <desc id="arch-d">Browser to CloudFront. CloudFront serves the Astro static site from a private S3 bucket and routes /api to one AWS Lambda running a Flask JSON API. The Lambda stores assessments in Aurora PostgreSQL Serverless v2 through the RDS Data API, which also powers staff analytics. The Lambda invokes itself asynchronously to run a hardcoded five-step pipeline: score with deterministic Python, research the website with Claude Haiku, retrieve field guides from a Bedrock Knowledge Base on S3 Vectors, write the report with Claude Sonnet using a JSON schema, then validate that every action cites real gap ids and every link comes from the vetted catalog.</desc>
+    <desc id="arch-d">Browser to CloudFront. CloudFront serves the Astro static site from a private S3 bucket and routes /api, with IAM-signed origin access, to one AWS Lambda running a Flask JSON API. The Lambda stores assessments in Aurora PostgreSQL Serverless v2 through the RDS Data API, which also powers staff analytics. The Lambda invokes itself asynchronously to run a hardcoded five-step pipeline: score with deterministic Python, research the website with Claude Haiku, retrieve field guides from a Bedrock Knowledge Base on S3 Vectors, write the report with Claude Sonnet using a JSON schema, then validate that every action cites real gap ids and every link comes from the vetted catalog.</desc>
     <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#001C60"/></marker></defs>
     <g font-size="26" fill="#001C60">
       <rect x="0" y="58" width="200" height="96" rx="14" fill="#F2F5FC" stroke="#455FA0" stroke-width="3"/><text x="100" y="116" text-anchor="middle" font-weight="700">Browser</text>
@@ -190,6 +190,7 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
       <polyline points="510,90 575,90 575,45 636,45" fill="none" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
       <polyline points="510,122 575,122 575,166 636,166" fill="none" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
       <text x="530" y="200" font-size="24" font-weight="700">/api/*</text>
+      <text x="500" y="232" font-size="24" font-weight="700">IAM-signed</text>
       <line x1="1060" y1="166" x2="1136" y2="166" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
       <line x1="850" y1="214" x2="850" y2="254" stroke="#001C60" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#ah)"/>
       <text x="870" y="244" font-size="24" fill="#455FA0">async self-invoke: hardcoded pipeline, not an agent</text>
@@ -217,10 +218,10 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
   </svg>
   <div class="grid3">
     <div class="card bar" style="padding:24px 32px;"><p><strong>The LLM never scores.</strong> Reference engine unchanged, passes all 3 answer keys.</p></div>
-    <div class="card bar" style="padding:24px 32px;"><p><strong>Grounded or dropped.</strong> Every priority and action cites real growth priorities.</p></div>
+    <div class="card bar" style="padding:24px 32px;"><p><strong>Grounded or dropped.</strong> Every action traces to a statement the organization answered.</p></div>
     <div class="card bar" style="padding:24px 32px;"><p><strong>No invented links.</strong> Resources only from a vetted 19-entry catalog.</p></div>
   </div>
-  <aside class="notes">One domain on CloudFront: the Astro site comes from a private S3 bucket, and /api goes to one Lambda running a Flask JSON API. Data lives in Aurora PostgreSQL Serverless v2, reached through the RDS Data API, so the Lambda still needs no VPC or NAT; the same database powers the staff analytics. Scoring is plain Python, the reference implementation, unchanged and verified against all three answer keys. Then a hardcoded pipeline, not an agent: Haiku profiles the website, the Knowledge Base on S3 Vectors retrieves field guides, and Sonnet writes the report through a JSON schema. The server treats the model's output as untrusted and drops anything that does not cite real gap ids or uses a link outside the catalog.</aside>
+  <aside class="notes">Start with the guarantee, because it is what makes AI safe to hand to a grantee. Scoring is plain Python, the reference implementation, unchanged and verified against all three answer keys; the model never scores. The model writes the narrative, and the server treats its output as untrusted: it is validated against the engine's results, every action must trace to a statement this organization answered, every link must come from the vetted 19-entry catalog, and anything ungrounded is dropped. The pipeline is hardcoded, not an agent: Haiku profiles the website, the Knowledge Base on S3 Vectors retrieves field guides, Sonnet writes through a JSON schema. Hosting: one CloudFront domain, the Astro site from a private S3 bucket, and /api to one Lambda through IAM-signed origin access, so the Lambda is not publicly callable on its own. It is capped at 5 concurrent requests and an hourly number of reports, which bounds Bedrock spend. Data lives in Aurora PostgreSQL Serverless v2 through the RDS Data API, so no VPC or NAT; the same database powers the staff analytics.</aside>
 </section>
 
 <!-- 7. Staff analytics -->
@@ -250,12 +251,12 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
       <div class="card"><h3>Plain language</h3><p>Written for an 8th grade reading level, in Everytown's colors at AA contrast.</p></div>
       <div class="card"><h3>Atkinson Hyperlegible</h3><p>A typeface designed for low-vision readers.</p></div>
       <div class="card"><h3>Read aloud, larger text</h3><p>Listen to any section. High contrast in one Display menu.</p></div>
-      <div class="card"><h3>Reports in Spanish</h3><p>AI text carries <code style="font-size:26px;">lang="es"</code>, so screen readers switch voice.</p></div>
+      <div class="card"><h3>Reports in Spanish</h3><p>From the English questionnaire. AI text carries <code style="font-size:26px;">lang="es"</code> for screen readers.</p></div>
       <div class="card"><h3>Mobile ready</h3><p>44 px targets, one area per screen, PDF with bookmarks.</p></div>
     </div>
     <img class="shot crop" src="img/mobile-report.png" style="height:640px;width:300px;" alt="The report on a phone: Everytown navy header, red Download PDF report button, Your report is ready notice, and the Where you are today heading.">
   </div>
-  <aside class="notes">Our users include leaders who told Everytown they read at an 8th grade level, and frontline staff who work from a phone between shifts. So the report is written in plain language, set in Atkinson Hyperlegible, with read-aloud on every section, a Display menu for larger text and high contrast, and language tags so screen readers switch to a Spanish voice. It now uses Everytown's own colors with every text pair at AA contrast. axe-core reports zero WCAG 2.2 A or AA violations on every page, including the staff dashboard.</aside>
+  <aside class="notes">Our users include leaders who told Everytown they read at an 8th grade level, and frontline staff who work from a phone between shifts. So the report is written in plain language, set in Atkinson Hyperlegible, with read-aloud on every section and a Display menu for larger text and high contrast. Be precise about Spanish: the questionnaire itself is English only today; an organization can choose to receive its report in Spanish, and that text is tagged so screen readers switch to a Spanish voice. A translated questionnaire is on the roadmap. Everytown's colors with every text pair at AA contrast; axe-core reports zero WCAG 2.2 A or AA violations on every page, including the staff dashboard.</aside>
 </section>
 
 <!-- 9. Impact and scalability -->
@@ -274,7 +275,7 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
     <div class="card bar"><h3>Progress over time</h3><p>All 8 areas ready. Re-assess and see closed growth priorities and stage moves.</p></div>
   </div>
   <p class="muted" style="font-size:24px;">140 organizations × 2 assessments × $0.10 ≈ $28 a year in tokens, plus $12 to $36 a year of hosting with auto-pause.</p>
-  <aside class="notes">A report costs five to ten cents in Bedrock tokens. With Aurora on auto-pause, hosting is one to three dollars a month; we keep it warm at 0.5 ACU for the demo, which is about forty-five dollars a month and one deploy flag to change. Two assessments a year for the whole network is under a hundred dollars all in. Everything is two CloudFormation stacks, app and database, so Everytown Labs can deploy it in their own account with one script. When an organization assesses again, the report shows exactly what changed and the summary opens by celebrating it.</aside>
+  <aside class="notes">Re-assessment is the moment this scales beyond one report: an organization assesses again and sees exactly what changed, growth priorities closed and stages moved, and the summary opens by celebrating it. In the demo, that history is tied to the browser sign-in session, a shortcut until real authentication ties it to the organization's account. Cost: a report is five to ten cents of Bedrock tokens, and the hourly report cap and 5-request concurrency cap bound that spend. With Aurora on auto-pause, hosting is one to three dollars a month; we keep it warm at 0.5 ACU for the demo, about forty-five dollars a month and one deploy flag to change. Two assessments a year for the whole network is under a hundred dollars all in. Two CloudFormation stacks, app and database, so Everytown Labs can deploy it in their own account with one script.</aside>
 </section>
 
 <!-- 10. Originality -->
@@ -301,7 +302,7 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
     <div class="card"><p class="chip">Next: with Everytown</p><ul class="clean" style="margin-top:20px;"><li>Everytown experts review the field guides</li><li>Real authentication replaces the demo logins</li><li>More languages for the network</li></ul></div>
     <div class="card"><p class="chip">Later: as data grows</p><ul class="clean" style="margin-top:20px;"><li>Peer benchmarking beyond the staff preview</li><li>Match new grantees with established peers</li></ul></div>
   </div>
-  <aside class="notes">The network view Everytown asked for is already live. Next, Everytown's subject experts should review the field-guide library the AI retrieves from, and real authentication replaces the demo logins. Their representative called benchmarking and peer matching future capabilities that need enough organizations to take the assessment first; the database is ready for both.</aside>
+  <aside class="notes">The network view Everytown asked for is already live. Next, Everytown's subject experts should review the field-guide library the AI retrieves from, and real authentication replaces the mocked logins; that also moves re-assessment history from the browser session to the organization's account. More languages starts with translating the questionnaire, which is English only today. Their representative called benchmarking and peer matching future capabilities that need enough organizations to take the assessment first; the database is ready for both.</aside>
 </section>
 
 <!-- 12. Ask -->
@@ -317,7 +318,7 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
     <span class="cta">Try it now</span>
     <p class="url">d2mi2h3eu8y69s.cloudfront.net · demo / demo · staff / staff</p>
   </div>
-  <aside class="notes">Close on the ask. The vision document's success metric is 3 to 4 CVI organizations finding the recommendations helpful. We are ready to run that this quarter, and the staff dashboard will show the results as they come in. Thank the Everytown team. Leave this slide up during questions.</aside>
+  <aside class="notes">Close on the ask. The vision document's success metric is 3 to 4 CVI organizations finding the recommendations helpful. We are ready to run that this quarter, and the staff dashboard will show the results as they come in. The URL on screen is temporary and will be torn down after judging; the pilot would run in Everytown's own AWS account with real authentication. Thank the Everytown team. Leave this slide up during questions.</aside>
 </section>
 
 </main>

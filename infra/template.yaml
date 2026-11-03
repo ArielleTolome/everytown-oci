@@ -29,6 +29,19 @@ Parameters:
   DbName:
     Type: String
     Default: oci
+  ReservedConcurrency:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    Description: Cap on concurrent Lambda runs (web requests and async AI worker runs share it); bounds Bedrock spend.
+  MonthlyBudgetUsd:
+    Type: Number
+    Default: 100
+    MinValue: 0
+    Description: Monthly AWS cost budget in USD (tracking only, no alerts until a subscriber is added). 0 skips it, for accounts that deny budgets:ModifyBudget.
+
+Conditions:
+  CreateBudget: !Not [!Equals [!Ref MonthlyBudgetUsd, 0]]
 
 Resources:
   SiteBucket:
@@ -208,6 +221,7 @@ Resources:
       Handler: lambda_handler.handler
       Timeout: 300
       MemorySize: 1024
+      ReservedConcurrentExecutions: !Ref ReservedConcurrency
       Role: !GetAtt FunctionRole.Arn
       Code:
         S3Bucket: !Ref CodeBucket
@@ -235,23 +249,37 @@ Resources:
     Type: AWS::Lambda::Url
     Properties:
       TargetFunctionArn: !GetAtt Function.Arn
-      AuthType: NONE
+      AuthType: AWS_IAM # only CloudFront (signed via the ApiOAC origin access control) can call it
 
-  UrlPermission:
+  # Permissions documented for CloudFront OAC with Lambda function URLs: both actions, for the CloudFront
+  # service principal, limited to this distribution. The ARN is built from the distribution Ref (no cycle:
+  # the distribution does not depend on these permissions).
+  CloudFrontUrlPermission:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref Function
       Action: lambda:InvokeFunctionUrl
-      Principal: "*"
-      FunctionUrlAuthType: NONE
+      Principal: cloudfront.amazonaws.com
+      SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+      FunctionUrlAuthType: AWS_IAM
 
-  UrlInvokePermission:
+  CloudFrontInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref Function
       Action: lambda:InvokeFunction
-      Principal: "*"
+      Principal: cloudfront.amazonaws.com
+      SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
       InvokedViaFunctionUrl: true
+
+  ApiOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AWS::StackName}-api
+        OriginAccessControlOriginType: lambda
+        SigningBehavior: always
+        SigningProtocol: sigv4
 
   SiteOAC:
     Type: AWS::CloudFront::OriginAccessControl
@@ -311,6 +339,9 @@ Resources:
               OriginAccessIdentity: ""
           - Id: api
             DomainName: !Select [2, !Split ["/", !GetAtt FunctionUrl.FunctionUrl]]
+            # POST/PUT bodies must arrive with x-amz-content-sha256 (hex SHA-256 of the body) from the viewer;
+            # AllViewerExceptHostHeader forwards it and CloudFront signs it. A missing or wrong hash is a 403.
+            OriginAccessControlId: !GetAtt ApiOAC.Id
             CustomOriginConfig:
               OriginProtocolPolicy: https-only
               OriginSSLProtocols: [TLSv1.2]
@@ -338,19 +369,36 @@ Resources:
         # Custom error responses apply to every behavior, /api/* included. The site bucket grants no
         # s3:ListBucket, so a missing page is a 403 from S3; only 403 is mapped, so API 404 JSON passes through.
         # The API should therefore avoid relying on 403 bodies (the frontend checks the role via /api/me first).
+        # A rejected OAC signature (for example a POST without a correct x-amz-content-sha256) also shows up as this 404.
         CustomErrorResponses:
           - ErrorCode: 403
             ResponseCode: 404
             ResponsePagePath: /404.html
             ErrorCachingMinTTL: 0
 
+  # Cost tracking only. To get email alerts, add under Properties:
+  #   NotificationsWithSubscribers:
+  #     - Notification: { NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 80, ThresholdType: PERCENTAGE }
+  #       Subscribers: [{ SubscriptionType: EMAIL, Address: you@example.org }]
+  #     - Notification: { NotificationType: FORECASTED, ComparisonOperator: GREATER_THAN, Threshold: 100, ThresholdType: PERCENTAGE }
+  #       Subscribers: [{ SubscriptionType: EMAIL, Address: you@example.org }]
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Condition: CreateBudget
+    Properties:
+      Budget:
+        BudgetName: !Sub ${AWS::StackName}-monthly
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetUsd
+          Unit: USD
+
 Outputs:
   AppUrl:
     Value: !Sub https://${Distribution.DomainName}
   DistributionId:
     Value: !Ref Distribution
-  FunctionUrl:
-    Value: !GetAtt FunctionUrl.FunctionUrl
   SiteBucket:
     Value: !Ref SiteBucket
   DocsBucket:

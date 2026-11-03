@@ -121,6 +121,7 @@ export function progressSection(sub: Assessment): string {
   return `<section class="section" aria-labelledby="progress-title">
     ${sectionHead("progress-title", `Progress since your last assessment (${p.previous_created})`, "Your progress")}
     ${body}
+    <p class="hint">Progress compares with earlier assessments from this sign-in session (demo shortcut).</p>
     ${p.previous_id ? `<p><a href="/results/?id=${encodeURIComponent(p.previous_id)}">View previous report</a></p>` : ""}
   </section>`;
 }
@@ -254,6 +255,7 @@ function reassessCallout(): string {
     <div>
       <h2 id="reassess-title">Take the assessment again in 90 days to see your progress</h2>
       <p>Work through your plan, then answer the same statements again. Your next report will show which growth priorities you closed and how your stages changed.</p>
+      <p class="hint">Progress compares with earlier assessments from this sign-in session (demo shortcut).</p>
     </div>
     <button type="button" class="btn btn-secondary" id="reminder-btn">${icon("calendar-plus")}<span>Add a 90-day reminder to my calendar</span></button>
   </section>`;
@@ -265,6 +267,9 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
   const gaps = new Map(sub.gaps.map((g) => [g.question_id, g]));
   const r = sub.report;
   const parts: string[] = [];
+  if (lang === "es") {
+    parts.push(`<p class="notice section-gap" lang="es">${icon("info")}<span>Las preguntas están en inglés; este informe se escribió en español.</span></p>`);
+  }
   if (r) {
     parts.push(`<p class="notice section-gap">${icon("info")}<span>Recommendations generated with AI from your answers and the CVI resource library. Scores are calculated by a fixed scoring method. Please review them with your team before acting.</span></p>`);
     parts.push(`<section class="section" aria-labelledby="truth-title">

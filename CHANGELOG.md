@@ -2,6 +2,18 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v0.7.0 — Hardening from the AWS review
+
+- **API locked behind CloudFront.** The Lambda Function URL now uses `AWS_IAM` auth with CloudFront Origin Access Control, so it can't be called directly; the `FunctionUrl` output is removed. The frontend signs request bodies with `x-amz-content-sha256`, as OAC requires for Lambda.
+- **Spend guards.** Reserved concurrency of 5 on the Lambda, and at most 30 new reports per hour across the demo (`OCI_MAX_REPORTS_PER_HOUR`, answers 429 beyond it). An optional monthly AWS Budget (`MONTHLY_BUDGET_USD`; this sandbox denies budget creation, so deploy here with `MONTHLY_BUDGET_USD=0`). New `scripts/teardown.sh` removes both stacks and empties the buckets after judging.
+- **Re-assessment progress is scoped to the sign-in session.** Each sign-in gets an owner id; progress only compares with earlier assessments from that session, so one user can no longer see or overwrite another's baseline. Staff analytics are unchanged.
+- **Truncated or refused model answers.** Both Bedrock calls check `stopReason` and show a clear message for `max_tokens` or refusals instead of a bare error. The report budget is now 16,000 tokens, and the website step has a 4,000-token budget.
+- **Website research never fails the report.** Any fetch or Bedrock error falls back to "no profile". The research prompt now treats website text as data, not instructions.
+- **Library:** the full field-guide library is always in the prompt. Knowledge Base passages are added for the organization's top growth priorities. Prompt caching (`cachePoint`) covers the system prompt, catalog and library: about 15k input tokens are read from the cache on later reports.
+- `validate_report` ignores non-string and malformed fields from the model instead of crashing. `deploy.sh` falls back to `shasum -a 256` on macOS.
+- The UI now says the questions are in English when a Spanish report is chosen, and that progress is per sign-in session.
+- The PDF size was already computed once by the worker (since v0.5), not on every results page load.
+
 ## v0.6.0 — UI/UX refresh from Mobbin references and Google Stitch designs
 
 Researched with the Mobbin MCP (real product screens) and designed with Google Stitch (project "Everytown OCI Capacity Coach", Everytown design system: navy #001C60, royal blue #0D3DD9, red #E3012B, Atkinson Hyperlegible). Stitch's layouts were rebuilt in our Astro components; none of its placeholder text is used.

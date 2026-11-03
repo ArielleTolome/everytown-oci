@@ -57,14 +57,21 @@ export class ApiError extends Error {
   }
 }
 
+/** Lowercase hex SHA-256 of the exact UTF-8 bytes sent. CloudFront OAC to a Lambda Function URL (AWS_IAM) requires it on requests with a body. */
+async function sha256Hex(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return Array.from(digest, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`/api${path}`, {
-    method,
-    credentials: "same-origin",
-    cache: "no-store",
-    headers: body === undefined ? { Accept: "application/json" } : { Accept: "application/json", "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  const headers: Record<string, string> = { Accept: "application/json" };
+  let payload: Uint8Array<ArrayBuffer> | undefined;
+  if (body !== undefined) {
+    payload = new TextEncoder().encode(JSON.stringify(body));
+    headers["Content-Type"] = "application/json";
+    headers["x-amz-content-sha256"] = await sha256Hex(payload);
+  }
+  const res = await fetch(`/api${path}`, { method, credentials: "same-origin", cache: "no-store", headers, body: payload });
   if (res.status === 204) return undefined as T;
   let data: unknown = null;
   try { data = await res.json(); } catch { /* non-JSON body */ }

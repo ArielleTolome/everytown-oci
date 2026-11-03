@@ -2,7 +2,9 @@
 # Deploy everything: database stack, Astro site, Lambda API, DB migrations + seed, Knowledge Base ingestion.
 # Expects AWS credentials in the environment.
 # Optional env: STACK (app stack, default everytown-oci), DB_STACK (default everytown-oci-db), AWS_REGION,
-#   DB_MIN_CAPACITY (Aurora ACUs; 0 = auto-pause after an idle hour), EXTRA_DOCS (dir of extra KB docs).
+#   DB_MIN_CAPACITY (Aurora ACUs; 0 = auto-pause after an idle hour), EXTRA_DOCS (dir of extra KB docs),
+#   RESERVED_CONCURRENCY (Lambda cap, template default 5), MONTHLY_BUDGET_USD (cost budget, template default 100;
+#   0 skips it, needed where budgets:ModifyBudget is denied). Unset values keep the stack's previous setting.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -12,6 +14,10 @@ export AWS_DEFAULT_REGION=${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-2}}
 REGION=$AWS_DEFAULT_REGION
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 ARTIFACTS=oci-artifacts-$ACCOUNT-$REGION
+
+sha256() {
+  if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d' ' -f1
+}
 
 # Prints a stack output, or nothing when the stack or output does not exist.
 out() {
@@ -46,7 +52,7 @@ if ! aws s3api head-bucket --bucket "$ARTIFACTS" 2>/dev/null; then
   aws s3api put-public-access-block --bucket "$ARTIFACTS" --public-access-block-configuration \
     BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 fi
-KEY=oci-$(sha256sum build/oci.zip | cut -c1-16).zip
+KEY=oci-$(sha256 build/oci.zip | cut -c1-16).zip
 aws s3api head-object --bucket "$ARTIFACTS" --key "$KEY" >/dev/null 2>&1 \
   || aws s3 cp --only-show-errors build/oci.zip "s3://$ARTIFACTS/$KEY"
 
@@ -59,10 +65,13 @@ fi
 OLD_STORE=$(out "$STACK" StoreBucket)
 [ -n "$OLD_STORE" ] && aws s3 rm --only-show-errors --recursive "s3://$OLD_STORE"
 
+APP_PARAMS=(CodeBucket="$ARTIFACTS" CodeKey="$KEY" SecretKey="$(cat infra/.secret)"
+  DbClusterArn="$DB_CLUSTER_ARN" DbSecretArn="$DB_SECRET_ARN" DbName="$DB_NAME")
+[ -n "${RESERVED_CONCURRENCY:-}" ] && APP_PARAMS+=(ReservedConcurrency="$RESERVED_CONCURRENCY")
+[ -n "${MONTHLY_BUDGET_USD:-}" ] && APP_PARAMS+=(MonthlyBudgetUsd="$MONTHLY_BUDGET_USD")
 aws cloudformation deploy --stack-name "$STACK" --template-file infra/template.yaml \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset \
-  --parameter-overrides CodeBucket="$ARTIFACTS" CodeKey="$KEY" SecretKey="$(cat infra/.secret)" \
-  DbClusterArn="$DB_CLUSTER_ARN" DbSecretArn="$DB_SECRET_ARN" DbName="$DB_NAME"
+  --parameter-overrides "${APP_PARAMS[@]}"
 
 SITE=$(out "$STACK" SiteBucket)
 DIST=$(out "$STACK" DistributionId)

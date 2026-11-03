@@ -7,7 +7,7 @@ The Organizational Capacity Index (OCI) for community violence intervention (CVI
 
 AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/vision.md), [`docs/tech.md`](docs/tech.md).
 
-**Current release:** v0.6.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+**Current release:** v0.7.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 ## Vision
 
@@ -58,7 +58,7 @@ cd frontend && npx astro check && npm run build
 3. Answer one area per screen. Each area must be fully answered before you move on, because an unanswered statement would count as favorable. Back keeps your answers.
 4. The results page shows the stage ladder and scores immediately, then live progress through: reading answers, scoring, researching the website, consulting the CVI resource library, and writing recommendations. If a step fails, "Try again" reruns only the AI steps.
 5. Read "What's true about you", then "Start here: your top priorities" (one or two, each showing the statements it is based on, what to do, and a vetted resource), then strengths, the 30 / 60 / 90 day plan, team conversation guide and all growth priorities. Listen to any section aloud, then download the PDF.
-6. Reassess later under the same organization name: the results page and PDF show "Progress since your last assessment", with growth priorities closed, new ones, and stage moves per area. The comparison is deterministic and covers only the areas both assessments included; the AI summary celebrates it first.
+6. Reassess later under the same organization name, in the same sign-in session: the results page and PDF show "Progress since your last assessment", with growth priorities closed, new ones, and stage moves per area. The comparison is deterministic and covers only the areas both assessments included; the AI summary celebrates it first. Progress is scoped to the sign-in session because login is mocked; real accounts would replace this.
 7. Everytown staff sign in as `staff` and open the network dashboard: totals, stage distribution per area (bars plus an equivalent table), the most common growth priorities (training and service needs), "Grantees to connect" cohorts sharing a High priority growth priority, and an organizations table with a staff-only peer percentile preview. Filter by area and download CSV.
 
 ## Architecture
@@ -106,16 +106,18 @@ Why Aurora PostgreSQL Serverless v2: the Everytown interview asked for network a
 
 Two CloudFormation stacks:
 - `everytown-oci-db` (`infra/database.yaml`): Aurora PostgreSQL Serverless v2 with the RDS Data API and an RDS-managed secret. Data lifecycle is independent of the app.
-- `everytown-oci` (`infra/template.yaml`): CloudFront serving the Astro static site from a private S3 bucket (origin access control) and routing `/api/*` to one Python 3.12 Lambda (Flask JSON API via apig-wsgi, plus an async self-invoke for the AI pipeline), Bedrock Knowledge Base on S3 Vectors over `resources/library/*.md`, IAM roles. No Cognito, load balancer, WAF, custom KMS keys or NAT.
+- `everytown-oci` (`infra/template.yaml`): CloudFront serving the Astro static site from a private S3 bucket (origin access control) and routing `/api/*` to one Python 3.12 Lambda (Flask JSON API via apig-wsgi, plus an async self-invoke for the AI pipeline) whose Function URL accepts only IAM-signed requests from this distribution (Lambda origin access control), Bedrock Knowledge Base on S3 Vectors over `resources/library/*.md`, IAM roles. No Cognito, load balancer, WAF, custom KMS keys or NAT.
 
 Requirements: AWS CLI v2, Python 3 with pip and boto3, Node 20+, `zip`, credentials in the environment, Bedrock model access for Anthropic Claude and Titan Text Embeddings v2.
 
 ```
 scripts/deploy.sh                      # db stack, site build, Lambda zip, app stack, site sync + invalidation, db migrate/seed, KB ingest
+MONTHLY_BUDGET_USD=0 scripts/deploy.sh # this hackathon sandbox denies budget creation; elsewhere leave the default ($100 budget)
 DB_MIN_CAPACITY=0 scripts/deploy.sh    # Aurora auto-pause after 1 idle hour (about 15 s resume on the next request)
+scripts/teardown.sh                    # after judging: empty the buckets, delete both stacks (asks you to type "delete")
 ```
 
-Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Knowledge Base documents). The script is idempotent: the Lambda zip is uploaded under a content-hash key to `oci-artifacts-<account>-<region>`, the Flask session secret is generated once into `infra/.secret` (git-ignored), and fingerprinted `_astro/*` assets get a one-year cache while HTML is always revalidated. Cost: about $45 a month at the 0.5 ACU Aurora minimum (kept warm for the hackathon), about $1 to $3 a month with auto-pause, plus roughly $0.05 to $0.10 of Bedrock tokens per report. Tear down: `aws cloudformation delete-stack --stack-name everytown-oci` (empty the site and docs buckets first), then `everytown-oci-db` (keeps a final snapshot).
+Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Knowledge Base documents), `RESERVED_CONCURRENCY` (default 5), `MONTHLY_BUDGET_USD` (default 100, 0 skips the budget). The script is idempotent: the Lambda zip is uploaded under a content-hash key to `oci-artifacts-<account>-<region>`, the Flask session secret is generated once into `infra/.secret` (git-ignored), and fingerprinted `_astro/*` assets get a one-year cache while HTML is always revalidated. Cost: about $45 a month at the 0.5 ACU Aurora minimum (kept warm for the hackathon), about $1 to $3 a month with auto-pause, plus roughly $0.05 to $0.10 of Bedrock tokens per report (the static prompt is cached). `scripts/teardown.sh` also deletes the artifact bucket and keeps a final Aurora snapshot.
 
 ## Configuration
 
@@ -129,6 +131,7 @@ Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Know
 | `OCI_DB_NAME` | `oci` | Database name. |
 | `OCI_WORKER_FN` | unset | Lambda function to invoke asynchronously for the AI steps. Unset means a background thread. |
 | `OCI_SECRET_KEY` | random per start | Flask session key. Set it to keep users signed in across restarts. |
+| `OCI_MAX_REPORTS_PER_HOUR` | `30` | New reports allowed per hour across the whole demo (429 beyond it). Caps Bedrock spend. |
 | `PORT` | `8000` | Local API port. |
 
 ## Layout
@@ -184,7 +187,10 @@ priority_score    = stage_weight * domain_weight * gap_density_bonus
 
 ## Security notes
 
-- Login is mocked (`demo` / `demo` for organizations, `staff` / `staff` for the Everytown dashboard), as the vision doc specifies. Anyone signed in can open a report by its id, and organizations are matched by name, so this build is for synthetic data only. Session cookies are signed, `HttpOnly`, `SameSite=Lax`, and `Secure` on AWS. POSTs must be JSON, which blocks cross-site form posts.
+- Login is mocked (`demo` / `demo` for organizations, `staff` / `staff` for the Everytown dashboard), as the vision doc specifies, and the public URL is temporary: it is torn down after judging. Anyone signed in can open a report by its id, so this build is for synthetic data only. Re-assessment progress compares only within one sign-in session. Session cookies are signed, `HttpOnly`, `SameSite=Lax`, and `Secure` on AWS. POSTs must be JSON, which blocks cross-site form posts.
+- The API can only be reached through CloudFront: the Lambda Function URL uses `AWS_IAM` auth with origin access control, so direct calls get 403. The browser sends `x-amz-content-sha256` for request bodies, as Lambda OAC requires.
+- Spend guards: Lambda reserved concurrency of 5, at most `OCI_MAX_REPORTS_PER_HOUR` new reports per hour, and an optional monthly AWS Budget.
+- Model output is checked for truncation and refusal (`stopReason`) before parsing; website text and the website profile are passed to the model as untrusted data.
 - The database has no network ingress: the app reaches it only through the IAM-authorized RDS Data API; the password is an RDS-managed secret.
 - The website fetch accepts only http(s) URLs whose host, and every redirect hop, resolves to a public IP.
 - The model's output is untrusted: `validate_report` keeps only actions citing real gap ids and resources from the catalog.
