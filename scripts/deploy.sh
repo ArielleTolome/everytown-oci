@@ -1,15 +1,40 @@
 #!/usr/bin/env bash
-# Build, deploy the CloudFormation stack, sync the resource library to the KB docs bucket and ingest it.
-# Expects AWS credentials in the environment. Optional: STACK, AWS_REGION, EXTRA_DOCS (dir of extra .md/.pdf docs).
+# Deploy everything: database stack, Astro site, Lambda API, DB migrations + seed, Knowledge Base ingestion.
+# Expects AWS credentials in the environment.
+# Optional env: STACK (app stack, default everytown-oci), DB_STACK (default everytown-oci-db), AWS_REGION,
+#   DB_MIN_CAPACITY (Aurora ACUs; 0 = auto-pause after an idle hour), EXTRA_DOCS (dir of extra KB docs).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 STACK=${STACK:-everytown-oci}
+DB_STACK=${DB_STACK:-everytown-oci-db}
 export AWS_DEFAULT_REGION=${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-2}}
 REGION=$AWS_DEFAULT_REGION
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 ARTIFACTS=oci-artifacts-$ACCOUNT-$REGION
 
+# Prints a stack output, or nothing when the stack or output does not exist.
+out() {
+  local value
+  value=$(aws cloudformation describe-stacks --stack-name "$1" \
+    --query "Stacks[0].Outputs[?OutputKey=='$2'].OutputValue" --output text 2>/dev/null) || return 0
+  [ "$value" = None ] || printf '%s' "$value"
+}
+
+# 1. Database (own stack, data lifecycle independent of the app). Parameters not passed keep their previous value.
+VPC=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --query 'Vpcs[0].VpcId' --output text)
+SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values="$VPC" Name=default-for-az,Values=true \
+  --query 'Subnets[].SubnetId' --output text | tr '\t' ',')
+DB_PARAMS=(VpcId="$VPC" SubnetIds="$SUBNETS")
+[ -n "${DB_MIN_CAPACITY:-}" ] && DB_PARAMS+=(MinCapacity="$DB_MIN_CAPACITY")
+aws cloudformation deploy --stack-name "$DB_STACK" --template-file infra/database.yaml \
+  --no-fail-on-empty-changeset --parameter-overrides "${DB_PARAMS[@]}"
+DB_CLUSTER_ARN=$(out "$DB_STACK" DbClusterArn)
+DB_SECRET_ARN=$(out "$DB_STACK" DbSecretArn)
+DB_NAME=$(out "$DB_STACK" DbName)
+
+# 2. Static site and Lambda package.
+(cd frontend && npm ci && npm run build)
 scripts/build.sh
 
 if ! aws s3api head-bucket --bucket "$ARTIFACTS" 2>/dev/null; then
@@ -30,15 +55,40 @@ if [ ! -s infra/.secret ]; then
   (umask 077; python3 -c 'import secrets; print(secrets.token_hex(32))' > infra/.secret)
 fi
 
+# 3. App stack. v0.4 stored submissions in an S3 bucket that this template removes: empty it so CloudFormation can delete it.
+OLD_STORE=$(out "$STACK" StoreBucket)
+[ -n "$OLD_STORE" ] && aws s3 rm --only-show-errors --recursive "s3://$OLD_STORE"
+
 aws cloudformation deploy --stack-name "$STACK" --template-file infra/template.yaml \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset \
-  --parameter-overrides CodeBucket="$ARTIFACTS" CodeKey="$KEY" SecretKey="$(cat infra/.secret)"
+  --parameter-overrides CodeBucket="$ARTIFACTS" CodeKey="$KEY" SecretKey="$(cat infra/.secret)" \
+  DbClusterArn="$DB_CLUSTER_ARN" DbSecretArn="$DB_SECRET_ARN" DbName="$DB_NAME"
 
-out() { aws cloudformation describe-stacks --stack-name "$STACK" --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
-DOCS=$(out DocsBucket); KB=$(out KnowledgeBaseId); DS=$(out DataSourceId)
+SITE=$(out "$STACK" SiteBucket)
+DIST=$(out "$STACK" DistributionId)
+DOCS=$(out "$STACK" DocsBucket)
+KB=$(out "$STACK" KnowledgeBaseId)
+DS=$(out "$STACK" DataSourceId)
 
-[ -d resources/library ] && aws s3 sync --only-show-errors --delete resources/library "s3://$DOCS/library/" --exclude '*' --include '*.md'
-[ -n "${EXTRA_DOCS:-}" ] && aws s3 sync --only-show-errors --delete "$EXTRA_DOCS" "s3://$DOCS/extra/"
+# 4. Site upload: fingerprinted assets cached for a year, HTML always revalidated, the rest for an hour.
+aws s3 sync --only-show-errors frontend/dist/_astro "s3://$SITE/_astro" --cache-control 'public,max-age=31536000,immutable'
+aws s3 sync --only-show-errors frontend/dist "s3://$SITE" --exclude '_astro/*' --exclude '*.html' --cache-control 'public,max-age=3600'
+aws s3 sync --only-show-errors frontend/dist "s3://$SITE" --exclude '*' --include '*.html' --cache-control 'no-cache'
+aws s3 sync --only-show-errors --delete frontend/dist "s3://$SITE"
+aws cloudfront create-invalidation --distribution-id "$DIST" --paths '/*' --query Invalidation.Id --output text
+
+# 5. Database schema and seed data (idempotent; the first call may wake a paused cluster).
+export OCI_DB_CLUSTER_ARN=$DB_CLUSTER_ARN OCI_DB_SECRET_ARN=$DB_SECRET_ARN OCI_DB_NAME=$DB_NAME
+python3 -m db migrate
+python3 -m db seed
+
+# 6. Knowledge Base: sync the resource library and ingest.
+if [ -d resources/library ]; then
+  aws s3 sync --only-show-errors --delete resources/library "s3://$DOCS/library/" --exclude '*' --include '*.md'
+fi
+if [ -n "${EXTRA_DOCS:-}" ]; then
+  aws s3 sync --only-show-errors --delete "$EXTRA_DOCS" "s3://$DOCS/extra/"
+fi
 
 JOB=$(aws bedrock-agent start-ingestion-job --knowledge-base-id "$KB" --data-source-id "$DS" --query ingestionJob.ingestionJobId --output text)
 while :; do
@@ -50,4 +100,4 @@ aws bedrock-agent get-ingestion-job --knowledge-base-id "$KB" --data-source-id "
   --query 'ingestionJob.[status,statistics,failureReasons]' --output json
 [ "$STATUS" = COMPLETE ]
 
-echo "AppUrl: $(out AppUrl)"
+echo "AppUrl: $(out "$STACK" AppUrl)"

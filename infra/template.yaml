@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Everytown OCI Capacity Coach. CloudFront, one Lambda (web + async AI worker), S3 store, Bedrock Knowledge Base on S3 Vectors.
+Description: Everytown OCI Capacity Coach app. CloudFront (S3 static site + /api/* to one Lambda), Aurora via RDS Data API, Bedrock Knowledge Base on S3 Vectors.
 
 Parameters:
   SecretKey:
@@ -20,9 +20,18 @@ Parameters:
     Type: String
   CodeKey:
     Type: String
+  DbClusterArn:
+    Type: String
+    Description: DbClusterArn output of the everytown-oci-db stack.
+  DbSecretArn:
+    Type: String
+    Description: DbSecretArn output of the everytown-oci-db stack (RDS-managed master secret).
+  DbName:
+    Type: String
+    Default: oci
 
 Resources:
-  StoreBucket:
+  SiteBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketEncryption:
@@ -33,6 +42,21 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub ${SiteBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
 
   DocsBucket:
     Type: AWS::S3::Bucket
@@ -152,14 +176,16 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: [s3:GetObject, s3:PutObject]
-                Resource: !Sub ${StoreBucket.Arn}/submissions/*
-              # ListBucket lets a missing submission surface as 404 instead of 403.
+                Action:
+                  - rds-data:ExecuteStatement
+                  - rds-data:BatchExecuteStatement
+                  - rds-data:BeginTransaction
+                  - rds-data:CommitTransaction
+                  - rds-data:RollbackTransaction
+                Resource: !Ref DbClusterArn
               - Effect: Allow
-                Action: s3:ListBucket
-                Resource: !GetAtt StoreBucket.Arn
-                Condition:
-                  StringLike: { s3:prefix: "submissions/*" }
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref DbSecretArn
               - Effect: Allow
                 Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
                 Resource:
@@ -188,7 +214,9 @@ Resources:
         S3Key: !Ref CodeKey
       Environment:
         Variables:
-          OCI_BUCKET: !Ref StoreBucket
+          OCI_DB_CLUSTER_ARN: !Ref DbClusterArn
+          OCI_DB_SECRET_ARN: !Ref DbSecretArn
+          OCI_DB_NAME: !Ref DbName
           OCI_SECRET_KEY: !Ref SecretKey
           OCI_WORKER_FN: !Sub ${AWS::StackName}-app
           OCI_KB_ID: !Ref KnowledgeBase
@@ -225,6 +253,47 @@ Resources:
       Principal: "*"
       InvokedViaFunctionUrl: true
 
+  SiteOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AWS::StackName}-site
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # Astro static build: /results/ -> /results/index.html; /results -> 301 /results/ (query string kept).
+  DirectoryIndexFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub ${AWS::StackName}-dir-index
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Directory index and trailing-slash redirect for the static site
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var uri = request.uri;
+          if (uri.endsWith('/')) {
+            request.uri = uri + 'index.html';
+            return request;
+          }
+          if (uri.substring(uri.lastIndexOf('/') + 1).indexOf('.') !== -1) {
+            return request;
+          }
+          var parts = [];
+          for (var key in request.querystring) {
+            var q = request.querystring[key];
+            var values = q.multiValue ? q.multiValue : [q];
+            for (var i = 0; i < values.length; i++) {
+              parts.push(values[i].value === '' ? key : key + '=' + values[i].value);
+            }
+          }
+          var location = uri + '/' + (parts.length ? '?' + parts.join('&') : '');
+          return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: location } } };
+        }
+
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -233,36 +302,57 @@ Resources:
         Comment: !Sub ${AWS::StackName} OCI Capacity Coach
         PriceClass: PriceClass_100
         HttpVersion: http2and3
+        DefaultRootObject: index.html
         Origins:
-          - Id: app
+          - Id: site
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt SiteOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+          - Id: api
             DomainName: !Select [2, !Split ["/", !GetAtt FunctionUrl.FunctionUrl]]
             CustomOriginConfig:
               OriginProtocolPolicy: https-only
               OriginSSLProtocols: [TLSv1.2]
         DefaultCacheBehavior:
-          TargetOriginId: app
+          TargetOriginId: site
           ViewerProtocolPolicy: redirect-to-https
-          AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+          AllowedMethods: [GET, HEAD]
           CachedMethods: [GET, HEAD]
           Compress: true
-          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
-          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
+          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # SecurityHeadersPolicy
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt DirectoryIndexFunction.FunctionMetadata.FunctionARN
         CacheBehaviors:
-          - PathPattern: /static/*
-            TargetOriginId: app
+          - PathPattern: /api/*
+            TargetOriginId: api
             ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods: [GET, HEAD]
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
             CachedMethods: [GET, HEAD]
             Compress: true
-            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # SecurityHeadersPolicy
+        # Custom error responses apply to every behavior, /api/* included. The site bucket grants no
+        # s3:ListBucket, so a missing page is a 403 from S3; only 403 is mapped, so API 404 JSON passes through.
+        # The API should therefore avoid relying on 403 bodies (the frontend checks the role via /api/me first).
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+            ErrorCachingMinTTL: 0
 
 Outputs:
   AppUrl:
     Value: !Sub https://${Distribution.DomainName}
+  DistributionId:
+    Value: !Ref Distribution
   FunctionUrl:
     Value: !GetAtt FunctionUrl.FunctionUrl
-  StoreBucket:
-    Value: !Ref StoreBucket
+  SiteBucket:
+    Value: !Ref SiteBucket
   DocsBucket:
     Value: !Ref DocsBucket
   KnowledgeBaseId:

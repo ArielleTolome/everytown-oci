@@ -25,6 +25,14 @@ class ValidateReport(unittest.TestCase):
         self.assertEqual(out["plan"][1]["owner"], "Leadership team")
         self.assertEqual(out["sources"], [{"title": pipeline.CATALOG[rid]["title"], "url": pipeline.CATALOG[rid]["url"]}])
         self.assertNotIn("\u2014", out["summary"])
+        self.assertEqual(out["focus"][0]["title"], "Soon")  # no focus from the model: the first plan item leads
+
+    def test_focus_is_grounded_and_capped_at_two(self):
+        plan = [{"horizon": 30, "title": "P", "gap_ids": ["PL3"]}]
+        focus = [{"title": t, "why": "w", "gap_ids": [g], "steps": []} for t, g in
+                 [("Made up", "ZZ9"), ("One", "PL3"), ("Two", "FR7"), ("Three", "PL3")]]
+        out = pipeline.validate_report({"plan": plan, "focus": focus}, {"PL3", "FR7"})
+        self.assertEqual([f["title"] for f in out["focus"]], ["One", "Two"])
 
     def test_rejects_report_with_no_grounded_action(self):
         with self.assertRaises(ValueError):

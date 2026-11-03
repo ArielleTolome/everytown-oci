@@ -2,6 +2,19 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v0.5.0 — Astro frontend in Everytown colors, Aurora PostgreSQL, staff network analytics
+
+Driven by an onsite interview with an Everytown representative.
+
+- **Aurora PostgreSQL Serverless v2** (new `everytown-oci-db` stack, `infra/database.yaml`) replaces the S3 JSON store. The Lambda reaches it through the RDS Data API, so it still needs no VPC or NAT. `schema.sql` holds organizations, assessments (full document as `jsonb`), and normalized answers, domain results and growth priorities for analytics. `python3 -m db migrate` and `python3 -m db seed` (20 synthetic organizations) run on every deploy.
+- **Everytown staff dashboard** (`/staff/`, sign in as `staff` / `staff`): network totals, stage distribution per area (bars plus an equivalent table), the most common growth priorities across the network (training and service needs), "Grantees to connect" cohorts that share a High priority growth priority, and an organizations table. Filter by area, download CSV.
+- **Benchmarking groundwork**: a `domain_benchmarks` SQL view ranks each organization within each domain. It appears only on the staff dashboard, labelled as a preview; grantees never see peer comparisons.
+- **"Start here: your top priorities"**: the report now leads with "What's true about you" and at most two grounded first priorities, each explained and tied to the statements behind it, before the 30 / 60 / 90 day plan. Prompt rewritten for leaders of small groups with lived experience, at an 8th grade reading level. Also in the PDF.
+- **Astro 5 frontend** (`frontend/`, static, TypeScript, no UI framework) in Everytown's palette (navy #001C60, royal blue #0D3DD9, red #E3012B), every text pair at WCAG AA contrast. Same accessibility features as before; axe-core reports no WCAG 2.2 A/AA violations on any page, including the staff dashboard.
+- **JSON API**: Flask now serves only `/api/*`. POSTs must be JSON (blocks cross-site form posts). Mocked roles: `demo` (organization) and `staff`.
+- **Hosting**: CloudFront serves the Astro site from a private S3 bucket (origin access control) and routes `/api/*` to the Lambda Function URL. The old `templates/`, `static/` and S3 submissions bucket are removed.
+- Cost: about $45 a month with Aurora kept warm at 0.5 ACU; `DB_MIN_CAPACITY=0 scripts/deploy.sh` switches to auto-pause (about $1 to $3 a month).
+
 ## v0.4.0 — Re-assessment progress, sample organizations, pitch deck
 
 - **Progress since your last assessment.** Submitting again under the same organization name compares the new answers with the previous assessment over the areas both covered: growth priorities closed, new ones, and stage moves per area. The comparison is deterministic (`app.compare`), shown on the results page and in the PDF, and passed to Claude so the summary celebrates progress first.

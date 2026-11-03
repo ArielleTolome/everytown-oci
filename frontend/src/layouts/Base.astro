@@ -1,0 +1,132 @@
+---
+import "../styles/global.css";
+import Icon from "../components/Icon.astro";
+
+interface Props {
+  title: string;
+  /** Layout width: default 760px, narrow (login), report (860px), wide (staff dashboard). */
+  width?: "default" | "narrow" | "report" | "wide";
+  /** Pages that work signed out (login, 404) skip the session check in the header. */
+  public?: boolean;
+}
+const { title, width = "default", public: isPublic = false } = Astro.props;
+const wrapClass = { default: "wrap", narrow: "wrap wrap--narrow", report: "wrap wrap--report", wide: "wrap wrap--wide" }[width];
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{title} · OCI Capacity Coach</title>
+  <meta name="description" content="A strength-based learning tool for the Organizational Capacity Index, Everytown Community Safety Fund.">
+  <meta name="theme-color" content="#001C60">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/AtkinsonHyperlegible-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/fonts/AtkinsonHyperlegible-Bold.ttf" as="font" type="font/ttf" crossorigin>
+  <script is:inline>
+    // Apply saved display preferences before first paint (no flash).
+    try {
+      var p = JSON.parse(localStorage.getItem("oci-display") || "{}");
+      if (p.text) document.documentElement.dataset.text = "large";
+      if (p.contrast) document.documentElement.dataset.contrast = "high";
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="/">
+        <span class="brand__mark"><Icon name="sprout" /></span>
+        <span class="brand__text">
+          <span class="brand__name">OCI Capacity Coach</span>
+          <span class="brand__sub">Organizational Capacity Index · Community Safety Fund</span>
+        </span>
+      </a>
+      <div class="site-header__tools">
+        <details class="display-menu">
+          <summary class="btn btn-ghost btn-sm"><Icon name="contrast" /><span>Display</span></summary>
+          <div class="display-menu__panel">
+            <p class="display-menu__title" id="display-title">Display settings</p>
+            <div role="group" aria-labelledby="display-title">
+              <label class="switch">
+                <input type="checkbox" data-display="text">
+                <span class="switch__label"><Icon name="type" /> Larger text</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" data-display="contrast">
+                <span class="switch__label"><Icon name="contrast" /> High contrast</span>
+              </label>
+            </div>
+            <p class="hint">Saved on this device.</p>
+          </div>
+        </details>
+        {!isPublic && (
+          <span class="user-chip" data-user-chip hidden></span>
+        )}
+        {!isPublic && (
+          <button type="button" class="btn btn-ghost btn-sm" data-logout hidden><Icon name="log-out" /><span>Sign out</span></button>
+        )}
+      </div>
+    </div>
+  </header>
+  <main id="main" tabindex="-1" class={wrapClass}>
+    <slot />
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p><strong>A learning tool, not an evaluation.</strong> Stages describe maturity, not performance.</p>
+      <p>Everytown Community Safety Fund · Organizational Capacity Index prototype.</p>
+    </div>
+  </footer>
+  <div id="live-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+  <script>
+    import { api } from "../lib/api";
+    import { $, $$ } from "../lib/dom";
+
+    const root = document.documentElement;
+    let prefs: { text?: boolean; contrast?: boolean } = {};
+    try { prefs = JSON.parse(localStorage.getItem("oci-display") || "{}"); } catch { /* private mode */ }
+    const attrs = { text: ["text", "large"], contrast: ["contrast", "high"] } as const;
+    $$<HTMLInputElement>("[data-display]").forEach((box) => {
+      const key = box.dataset.display as keyof typeof attrs;
+      box.checked = !!prefs[key];
+      box.addEventListener("change", () => {
+        prefs[key] = box.checked;
+        const [attr, value] = attrs[key];
+        if (box.checked) root.dataset[attr] = value; else delete root.dataset[attr];
+        try { localStorage.setItem("oci-display", JSON.stringify(prefs)); } catch { /* private mode */ }
+      });
+    });
+
+    const menu = $<HTMLDetailsElement>(".display-menu");
+    if (menu) {
+      menu.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && menu.open) { menu.open = false; $<HTMLElement>("summary", menu)?.focus(); }
+      });
+      document.addEventListener("click", (e) => { if (menu.open && !menu.contains(e.target as Node)) menu.open = false; });
+    }
+
+    const logout = $<HTMLButtonElement>("[data-logout]");
+    logout?.addEventListener("click", async () => {
+      try { await api.post("/logout"); } finally { location.assign("/login/"); }
+    });
+
+    // Pages announce the signed-in user via this event once /api/me resolves.
+    document.addEventListener("oci:user", (e) => {
+      const user = (e as CustomEvent<{ name: string; role: string }>).detail;
+      const chip = $("[data-user-chip]");
+      if (chip) { chip.textContent = user.role === "staff" ? `Everytown staff: ${user.name}` : `Signed in as ${user.name}`; chip.hidden = false; }
+      if (logout) logout.hidden = false;
+    });
+
+    window.addEventListener("pagehide", () => { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); });
+    window.addEventListener("beforeprint", () => {
+      $$<HTMLDetailsElement>("main details:not([open])").forEach((d) => { d.open = true; d.dataset.printOpened = ""; });
+    });
+    window.addEventListener("afterprint", () => {
+      $$<HTMLDetailsElement>("details[data-print-opened]").forEach((d) => { d.open = false; delete d.dataset.printOpened; });
+    });
+  </script>
+</body>
+</html>

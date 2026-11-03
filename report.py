@@ -6,13 +6,13 @@ from fpdf.fonts import FontFace
 
 from utils.data_loader import get_domains
 
-FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "fonts")
+FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend", "public", "fonts")
 FONT = "Atkinson"
 HEADER = "Organizational Capacity Index · Community Safety Fund | Everytown for Gun Safety"
 INK = (20, 20, 20)
 MUTED = (70, 70, 70)
-ACCENT = (0, 61, 122)  # dark blue, contrast > 10:1 on white
-LINK = (0, 70, 160)
+ACCENT = (0, 28, 96)  # Everytown navy #001C60, contrast > 15:1 on white
+LINK = (13, 61, 217)  # Everytown royal blue #0D3DD9, contrast > 6:1 on white
 HEAD_FILL = (225, 232, 242)
 CALLOUT_FILL = (242, 245, 250)
 STAGE_NAMES = ["Seeding", "Emerging", "Developing", "Strengthening", "Transformational"]
@@ -71,8 +71,9 @@ class _PDF(FPDF):
         self.set_font(FONT, "", size)
         x = self.l_margin + indent
         self.set_x(x)
-        self.cell(5, 6.5, "•")
-        self.multi_cell(self.w - self.r_margin - x - 5, 6.5, text, align="L", new_x="LMARGIN", new_y="NEXT")
+        h = max(6.5, size * 0.56)
+        self.cell(5, h, "•")
+        self.multi_cell(self.w - self.r_margin - x - 5, h, text, align="L", new_x="LMARGIN", new_y="NEXT")
 
     def link_line(self, label, title, url, size=11.5):
         self.set_font(FONT, "B", size)
@@ -175,8 +176,8 @@ def build_pdf(sub, stage_descriptions):
                 "Recommendations generated with AI (Claude on Amazon Bedrock) from your answers and the CVI "
                 "resource library. Scores are calculated by a fixed scoring method.")
 
-    # 2. Executive summary
-    pdf.h1("Executive summary")
+    # 2. Executive summary ("What's true about you" when the AI wrote it)
+    pdf.h1("What's true about you" if report and report.get("summary") else "Executive summary")
     if report and report.get("summary"):
         for p in [p.strip() for p in report["summary"].split("\n\n") if p.strip()]:
             pdf.para(p)
@@ -191,6 +192,46 @@ def build_pdf(sub, stage_descriptions):
                 for line in part[1]:
                     pdf.bullet(line)
             pdf.ln(2)
+    focus = (report or {}).get("focus") or []
+    if focus:
+        gap_text = {g["question_id"]: g["question_text"] for g in gaps}
+        if pdf.will_page_break(60):
+            pdf.add_page()
+        pdf.start_section("Start here: your top priorities", level=1)
+        pdf.ln(4)
+        pdf.set_font(FONT, "B", 18)
+        pdf.set_text_color(*ACCENT)
+        pdf.multi_cell(0, 9, "Start here: your top priorities", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(*INK)
+        pdf.para("If you only do one or two things first, do these.", size=12.5, h=7)
+        pdf.ln(2)
+        for i, f in enumerate(focus, 1):
+            if pdf.will_page_break(50):
+                pdf.add_page()
+            pdf.set_draw_color(*ACCENT)
+            pdf.set_line_width(0.8)
+            pdf.line(pdf.l_margin, pdf.get_y(), pdf.w - pdf.r_margin, pdf.get_y())
+            pdf.set_line_width(0.2)
+            pdf.ln(3)
+            pdf.para("%d. %s" % (i, f["title"]), style="B", size=15, h=8)
+            if f.get("why"):
+                pdf.para(f["why"], size=12.5, h=7)
+            stmts = [(gid, gap_text[gid]) for gid in f.get("gap_ids") or [] if gid in gap_text]
+            if stmts:
+                pdf.ln(1)
+                pdf.para("Based on your answers:", style="B", size=12.5, h=7)
+                for gid, text in stmts:
+                    pdf.bullet("%s: %s" % (gid, text), size=12.5)
+            if f.get("steps"):
+                pdf.ln(1)
+                pdf.para("What to do", style="B", size=12.5, h=7)
+                for s in f["steps"]:
+                    pdf.bullet(s, size=12.5)
+            res = f.get("resource")
+            if res:
+                pdf.ln(1)
+                pdf.link_line("Resource: ", res.get("title", ""), res.get("url"), size=12.5)
+            pdf.ln(4)
     if report and report.get("strengths"):
         pdf.h2("What you already do well")
         for s in report["strengths"]:

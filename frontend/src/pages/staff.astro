@@ -1,0 +1,208 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+---
+<Base title="Staff dashboard" width="wide">
+  <div id="staff-root" aria-busy="true">
+    <p class="loading"><Icon name="loader" class="spin" />Loading network analytics</p>
+  </div>
+</Base>
+
+<script>
+  import { api, getMeta, requireUser, type Analytics } from "../lib/api";
+  import { $, announce, esc, plural } from "../lib/dom";
+  import { icon } from "../lib/icons";
+
+  type Org = Analytics["organizations"][number];
+  const root = $("#staff-root")!;
+  let data: Analytics;
+  let stageNames: string[] = [];
+  let domainNames = new Map<string, string>();
+
+  const pct = (n: number) => `${Math.round(n)}%`;
+  const ordinal = (n: number) => {
+    const s = ["th", "st", "nd", "rd"], v = n % 100;
+    return `${n}${s[(v - 20) % 10] || s[v] || s[0]}`;
+  };
+  const SOURCE: Record<Org["source"], string> = { web: "Web", demo: "Demo sample", seed: "Synthetic seed" };
+
+  function shell() {
+    const options = data.domains.map((d) => `<option value="${esc(d.domain_id)}">${esc(d.domain_name)}</option>`).join("");
+    root.innerHTML = `
+      <span class="eyebrow">Everytown staff</span>
+      <h1>Network capacity dashboard</h1>
+      <p class="lead">See where grantees are across the network, which training and services are needed most, and which organizations share the same growth priorities so you can connect them.</p>
+      <div class="toolbar">
+        <div class="field">
+          <label for="domain-filter">Show capacity area</label>
+          <select class="input" id="domain-filter"><option value="">All areas</option>${options}</select>
+        </div>
+        <p class="hint toolbar__note">Uses each organization's latest assessment.</p>
+      </div>
+      <ul class="stat-grid" role="list">
+        <li class="card stat">${icon("building")}<span><span class="stat__num">${data.totals.organizations}</span><span class="stat__label">organizations</span></span></li>
+        <li class="card stat">${icon("clipboard")}<span><span class="stat__num">${data.totals.assessments}</span><span class="stat__label">assessments</span></span></li>
+        <li class="card stat">${icon("calendar")}<span><span class="stat__num">${data.totals.last_30_days}</span><span class="stat__label">in the last 30 days</span></span></li>
+      </ul>
+      <div id="dash"></div>`;
+    $<HTMLSelectElement>("#domain-filter")!.addEventListener("change", (e) => {
+      const v = (e.target as HTMLSelectElement).value;
+      renderDash(v);
+      announce(`Showing ${v ? domainNames.get(v) : "all areas"}.`);
+    });
+    renderDash("");
+  }
+
+  function head(id: string, eyebrow: string, title: string, extra = "") {
+    return `<div class="section-head"><div><span class="eyebrow">${esc(eyebrow)}</span><h2 id="${id}">${esc(title)}</h2></div>${extra}</div>`;
+  }
+
+  function stagesSection(domains: Analytics["domains"]) {
+    const legend = `<ul class="legend" aria-label="Stage colors">${stageNames.map((s, i) => `<li><span class="swatch s${i + 1}" aria-hidden="true"></span>${i + 1}. ${esc(s)}</li>`).join("")}</ul>`;
+    const bars = domains.map((d) => {
+      const total = stageNames.reduce((n, s) => n + (d.stages[s] || 0), 0);
+      const label = `${d.domain_name}: ${stageNames.map((s) => `${d.stages[s] || 0} ${s}`).join(", ")}`;
+      return `<li>
+        <div class="bar__label"><span>${esc(d.domain_name)}</span><span class="meta">${plural(d.assessed, "organization", "organizations")} · average capacity ${pct(d.avg_capacity)}</span></div>
+        <div class="bar" role="img" aria-label="${esc(label)}">${total ? stageNames.map((s, i) => {
+          const n = d.stages[s] || 0;
+          return n ? `<span class="bar__seg s${i + 1}" style="flex-grow:${n}" title="${esc(`${s}: ${n}`)}">${n}</span>` : "";
+        }).join("") : ""}</div>
+      </li>`;
+    }).join("");
+    const table = `<div class="table-wrap" role="region" aria-labelledby="dist-caption" tabindex="0"><table>
+      <caption id="dist-caption">Organizations at each estimated stage, by capacity area (same data as the bars above)</caption>
+      <thead><tr><th scope="col">Area</th>${stageNames.map((s) => `<th scope="col" class="num">${esc(s)}</th>`).join("")}<th scope="col" class="num">Assessed</th><th scope="col" class="num">Average capacity</th></tr></thead>
+      <tbody>${domains.map((d) => `<tr><th scope="row">${esc(d.domain_name)}</th>${stageNames.map((s) => `<td class="num">${d.stages[s] || 0}</td>`).join("")}<td class="num">${d.assessed}</td><td class="num">${pct(d.avg_capacity)}</td></tr>`).join("")}</tbody>
+    </table></div>`;
+    return `<section class="section" aria-labelledby="dist-title">
+      ${head("dist-title", "Where the network is", "Stage distribution by capacity area")}
+      ${legend}<ul class="bars" role="list">${bars}</ul>${table}
+    </section>`;
+  }
+
+  function gapsSection(gaps: Analytics["top_gaps"]) {
+    const rows = gaps.map((g, i) => `<tr>
+      <td class="num">${i + 1}</td>
+      <td><span class="chip">${esc(g.question_id)}</span> ${esc(g.question_text)}</td>
+      <td>${esc(g.domain_name)}</td><td>${esc(g.stage_name)}</td>
+      <td><span class="share"><span class="share__track" aria-hidden="true"><span class="share__fill" style="width:${Math.min(100, g.share_pct)}%"></span></span><span>${g.orgs} (${pct(g.share_pct)})</span></span></td>
+    </tr>`).join("");
+    return `<section class="section" aria-labelledby="gaps-title">
+      ${head("gaps-title", "Training and service needs", "Most common growth priorities across the network (training and service needs)")}
+      ${gaps.length ? `<div class="table-wrap" role="region" aria-labelledby="gaps-caption" tabindex="0"><table>
+        <caption id="gaps-caption">Statements most often marked as a growth priority, with the number and share of organizations</caption>
+        <thead><tr><th scope="col" class="num">Rank</th><th scope="col">Statement</th><th scope="col">Area</th><th scope="col">Stage</th><th scope="col">Organizations</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>` : `<p class="notice">${icon("info")}<span>No growth priorities in this area yet.</span></p>`}
+    </section>`;
+  }
+
+  const orgList = (orgs: Analytics["cohorts"][number]["organizations"]) =>
+    `<ul>${orgs.map((o) => `<li><a href="/results/?id=${encodeURIComponent(o.assessment_id)}">${esc(o.name)}<span class="visually-hidden"> report</span></a></li>`).join("")}</ul>`;
+
+  function cohortsSection(cohorts: Analytics["cohorts"]) {
+    return `<section class="section" aria-labelledby="cohorts-title">
+      ${head("cohorts-title", "Peer learning", "Grantees to connect")}
+      <p>Each group shares the same High priority growth priority. They may learn well together in a cohort, call, or convening.</p>
+      ${cohorts.length ? `<ul class="cohorts" role="list">${cohorts.map((c) => `
+        <li class="card cohort">
+          <span class="eyebrow">${esc(c.domain_name)} · ${plural(c.priority_orgs, "organization", "organizations")}</span>
+          <h3>${esc(c.question_text)}</h3>
+          ${orgList(c.organizations.slice(0, 6))}
+          ${c.organizations.length > 6 ? `<details class="about"><summary>Show ${c.organizations.length - 6} more</summary>${orgList(c.organizations.slice(6))}</details>` : ""}
+        </li>`).join("")}</ul>` : `<p class="notice">${icon("info")}<span>No shared High priority growth priorities in this area yet.</span></p>`}
+    </section>`;
+  }
+
+  function orgColumns(domain: string) {
+    const ids = domain ? [domain] : data.domains.map((d) => d.domain_id);
+    return ids;
+  }
+
+  function orgsSection(orgs: Org[], domain: string) {
+    const ids = orgColumns(domain);
+    const pctHead = `Peer percentile <span class="meta">(staff-only benchmarking preview)</span>`;
+    const header = domain
+      ? `<th scope="col">Estimated stage</th><th scope="col" class="num">Capacity</th><th scope="col" class="num preview-col">${pctHead}</th>`
+      : `${ids.map((id) => `<th scope="col">${esc(domainNames.get(id) || id)}</th>`).join("")}<th scope="col" class="preview-col">${pctHead}</th>`;
+    const rows = orgs.map((o) => {
+      const by = new Map(o.domains.map((d) => [d.domain_id, d]));
+      const cells = domain
+        ? (() => { const d = by.get(domain)!; return `<td>${esc(d.estimated_stage)}</td><td class="num">${pct(d.score_pct)}</td><td class="num preview-col">${d.percentile == null ? "Not enough peers" : ordinal(Math.round(d.percentile))}</td>`; })()
+        : `${ids.map((id) => { const d = by.get(id); return `<td>${d ? esc(d.estimated_stage) : '<span class="meta">Not assessed</span>'}</td>`; }).join("")}
+           <td class="preview-col">${o.domains.filter((d) => d.percentile != null).map((d) => `${esc(domainNames.get(d.domain_id) || d.domain_id)}: ${ordinal(Math.round(d.percentile!))}`).join("<br>") || '<span class="meta">Not enough peers</span>'}</td>`;
+      return `<tr>
+        <th scope="row"><a href="/results/?id=${encodeURIComponent(o.assessment_id)}">${esc(o.name)}</a></th>
+        <td class="nowrap">${esc(o.assessed)}</td><td>${esc(SOURCE[o.source] || o.source)}</td>
+        <td class="num">${o.gap_count}</td><td class="num">${o.high_count}</td>${cells}
+      </tr>`;
+    }).join("");
+    return `<section class="section" aria-labelledby="orgs-title">
+      ${head("orgs-title", "Every grantee", "Organizations", `<button type="button" class="btn btn-secondary btn-sm" id="csv-btn">${icon("download")}<span>Download table (CSV)</span></button>`)}
+      <p class="notice preview-note">${icon("shield")}<span><strong>Staff only.</strong> Peer percentile is a benchmarking preview: an organization's rank among peers in each area. Organizations never see peer comparisons.</span></p>
+      <div class="table-wrap" role="region" aria-labelledby="orgs-caption" tabindex="0"><table class="org-table">
+        <caption id="orgs-caption">${plural(orgs.length, "organization", "organizations")}${domain ? ` assessed in ${esc(domainNames.get(domain) || domain)}` : ""}, latest assessment each. Select a name to open its report.</caption>
+        <thead><tr><th scope="col">Organization</th><th scope="col">Assessed</th><th scope="col">Source</th><th scope="col" class="num">Growth priorities</th><th scope="col" class="num">High priority</th>${header}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </section>`;
+  }
+
+  function csv(orgs: Org[], domain: string) {
+    const ids = orgColumns(domain);
+    const cell = (v: unknown) => {
+      const s = String(v ?? "");
+      // Quote everything; neutralize spreadsheet formulas.
+      return `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"`;
+    };
+    const header = ["Organization", "Assessment id", "Assessed", "Source", "Growth priorities", "High priority",
+      ...ids.flatMap((id) => { const n = domainNames.get(id) || id; return [`${n} stage`, `${n} capacity %`, `${n} peer percentile (staff-only preview)`]; })];
+    const lines = orgs.map((o) => {
+      const by = new Map(o.domains.map((d) => [d.domain_id, d]));
+      return [o.name, o.assessment_id, o.assessed, SOURCE[o.source] || o.source, o.gap_count, o.high_count,
+        ...ids.flatMap((id) => { const d = by.get(id); return d ? [d.estimated_stage, Math.round(d.score_pct), d.percentile == null ? "" : Math.round(d.percentile)] : ["", "", ""]; })];
+    });
+    const text = [header, ...lines].map((r) => r.map(cell).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `oci-organizations${domain ? `-${domain}` : ""}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    announce("Table downloaded as CSV.");
+  }
+
+  function renderDash(domain: string) {
+    const name = domain ? domainNames.get(domain) : "";
+    const domains = domain ? data.domains.filter((d) => d.domain_id === domain) : data.domains;
+    const gaps = domain ? data.top_gaps.filter((g) => g.domain_id === domain) : data.top_gaps;
+    const cohorts = domain ? data.cohorts.filter((c) => c.domain_name === name) : data.cohorts;
+    const orgs = domain ? data.organizations.filter((o) => o.domains.some((d) => d.domain_id === domain)) : data.organizations;
+    $("#dash")!.innerHTML = stagesSection(domains) + gapsSection(gaps) + cohortsSection(cohorts) + orgsSection(orgs, domain);
+    $("#csv-btn")!.addEventListener("click", () => csv(orgs, domain));
+  }
+
+  async function init() {
+    const user = await requireUser();
+    if (user.role !== "staff") {
+      root.removeAttribute("aria-busy");
+      root.innerHTML = `<h1>This page is for Everytown staff</h1>
+        <p class="notice">${icon("lock")}<span>You are signed in as an organization. Your own reports are always available to you.</span></p>
+        <p><a href="/">Go to your assessment</a></p>`;
+      return;
+    }
+    const [analytics, meta] = await Promise.all([api.get<Analytics>("/staff/analytics"), getMeta()]);
+    data = analytics;
+    stageNames = [...meta.stages].sort((a, b) => a.n - b.n).map((s) => s.name);
+    domainNames = new Map([...meta.domains.map((d) => [d.id, d.name] as const), ...data.domains.map((d) => [d.domain_id, d.domain_name] as const)]);
+    root.removeAttribute("aria-busy");
+    shell();
+  }
+
+  init().catch(() => {
+    root.removeAttribute("aria-busy");
+    root.innerHTML = `<h1>Network capacity dashboard</h1><p class="field-error" role="alert">${icon("alert")}<span>We could not load the analytics. Please reload the page.</span></p>`;
+  });
+</script>

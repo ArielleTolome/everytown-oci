@@ -1,0 +1,122 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+---
+<Base title="Your report" width="report">
+  <div id="results-root" aria-busy="true">
+    <p class="loading"><Icon name="loader" class="spin" />Loading your report</p>
+  </div>
+</Base>
+
+<script>
+  import { api, ApiError, getMeta, requireUser, type Assessment, type Meta, type StatusResponse, type User } from "../lib/api";
+  import { $, announce, esc, focusEl, wireListen } from "../lib/dom";
+  import { icon } from "../lib/icons";
+  import { pdfButton, reportBody, statusPanel, STATE_TEXT, stepItems } from "../lib/results";
+
+  const root = $("#results-root")!;
+  const id = new URLSearchParams(location.search).get("id") || "";
+  let meta: Meta;
+  let user: User;
+  let pollTimer = 0;
+
+  function render(sub: Assessment, focus: "ready" | "error" | null) {
+    const staff = user.role === "staff";
+    document.title = `${sub.status === "done" ? "Your report is ready" : sub.status === "error" ? "Report paused" : "Building your recommendations"}: ${sub.org_name} · OCI Capacity Coach`;
+    root.innerHTML = `
+      ${staff ? `<p><a href="/staff/">${icon("arrow-left")} Back to staff dashboard</a></p>` : ""}
+      <span class="eyebrow">${staff ? "Organization report (staff view)" : "Step 3 of 3: Your report"}</span>
+      <div class="report-head">
+        <div>
+          <h1>${esc(sub.org_name)}: capacity report</h1>
+          <p class="meta">Created ${esc(sub.created)} · ${sub.domains.length} capacity area${sub.domains.length === 1 ? "" : "s"}${sub.org_url ? ` · ${esc(sub.org_url)}` : ""}</p>
+        </div>
+        ${sub.status === "done" ? `<div class="actions">${pdfButton(sub)}</div>` : ""}
+      </div>
+      ${statusPanel(sub)}
+      ${reportBody(sub, meta)}
+      ${staff ? "" : `<p class="section"><a href="/">${icon("refresh")} Start a new assessment</a></p>`}`;
+    root.removeAttribute("aria-busy");
+    wireListen(root);
+
+    $<HTMLButtonElement>("#retry-btn")?.addEventListener("click", retry);
+    if (focus === "ready") focusEl($("#ready"));
+    if (focus === "error") focusEl($("#processing-title"));
+    if (sub.status === "running") schedulePoll();
+  }
+
+  function schedulePoll() {
+    window.clearTimeout(pollTimer);
+    pollTimer = window.setTimeout(poll, 2000);
+  }
+
+  async function poll() {
+    let data: StatusResponse;
+    try {
+      data = await api.get<StatusResponse>(`/assessments/${encodeURIComponent(id)}/status`);
+    } catch {
+      pollTimer = window.setTimeout(poll, 4000);
+      return;
+    }
+    if (data.status === "done" || data.status === "error") {
+      const sub = await api.get<Assessment>(`/assessments/${encodeURIComponent(id)}`);
+      announce(sub.status === "done" ? "Your report is ready." : "We could not finish your recommendations.");
+      render(sub, sub.status === "done" ? "ready" : "error");
+      return;
+    }
+    // Update only changed steps; announce transitions, not every poll.
+    const changes: string[] = [];
+    const list = $("#step-list");
+    for (const s of data.steps) {
+      const li = list?.querySelector<HTMLElement>(`[data-step="${CSS.escape(s.key)}"]`);
+      if (!li || li.dataset.state === s.state) continue;
+      li.outerHTML = stepItems([s]);
+      changes.push(`${s.label}: ${STATE_TEXT[s.state].toLowerCase()}.`);
+    }
+    if (changes.length) announce(changes.join(" "));
+    schedulePoll();
+  }
+
+  async function retry(e: Event) {
+    const btn = e.currentTarget as HTMLButtonElement;
+    btn.setAttribute("aria-disabled", "true");
+    try {
+      await api.post(`/assessments/${encodeURIComponent(id)}/retry`);
+      const sub = await api.get<Assessment>(`/assessments/${encodeURIComponent(id)}`);
+      announce("Trying again. Building your recommendations.");
+      render(sub, null);
+      focusEl($("#processing-title"));
+    } catch (ex) {
+      btn.removeAttribute("aria-disabled");
+      const err = $("#retry-error");
+      if (err) {
+        err.innerHTML = `${icon("alert")}<span>${esc(ex instanceof ApiError ? ex.message : "We could not restart. Please try again.")}</span>`;
+        err.hidden = false;
+      }
+    }
+  }
+
+  function fail(title: string, text: string) {
+    root.removeAttribute("aria-busy");
+    root.innerHTML = `<h1>${esc(title)}</h1><p class="notice">${icon("alert")}<span>${esc(text)}</span></p><p><a href="/">Go to the start page</a></p>`;
+  }
+
+  async function init() {
+    user = await requireUser();
+    if (!id) { fail("Report not found", "This link is missing the report id."); return; }
+    meta = await getMeta();
+    let sub: Assessment;
+    try {
+      sub = await api.get<Assessment>(`/assessments/${encodeURIComponent(id)}`);
+    } catch (ex) {
+      if (ex instanceof ApiError && (ex.status === 404 || ex.status === 403)) {
+        fail("Report not found", "We could not find this report. It may belong to another account, or the link may be incomplete.");
+        return;
+      }
+      throw ex;
+    }
+    render(sub, null);
+  }
+
+  init().catch(() => fail("Something went wrong", "We could not load this report. Please reload the page."));
+</script>

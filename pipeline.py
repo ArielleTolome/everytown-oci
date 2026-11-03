@@ -142,9 +142,21 @@ REPORT_TOOL = {"toolSpec": {
     "description": "Submit the capacity coaching report for this organization.",
     "inputSchema": {"json": {
         "type": "object",
-        "required": ["summary", "strengths", "plan", "conversation"],
+        "required": ["summary", "focus", "strengths", "plan", "conversation"],
         "properties": {
-            "summary": {"type": "string", "description": "2-3 short paragraphs separated by a blank line."},
+            "summary": {"type": "string", "description": "What's true about you: 2-3 short paragraphs separated "
+                                                         "by a blank line, in plain words."},
+            "focus": {"type": "array", "description": "Exactly 1 or 2 'start here' priorities: the growth "
+                                                      "priorities to work on first, explained simply.", "items": {
+                "type": "object", "required": ["title", "why", "gap_ids", "steps"],
+                "properties": {
+                    "title": {"type": "string"},
+                    "why": {"type": "string", "description": "2-3 sentences: why this comes first for this "
+                                                             "organization, tied to its answers."},
+                    "gap_ids": {"type": "array", "items": {"type": "string"}},
+                    "steps": {"type": "array", "items": {"type": "string"}, "description": "2-4 things to do."},
+                    "resource_id": {"type": "string", "description": "A catalog id: a best practice, a "
+                                                                     "training or a tool. Or empty."}}}},
             "strengths": {"type": "array", "items": {"type": "string"}, "description": "3-5 strengths."},
             "plan": {"type": "array", "description": "6-9 actions spread across 30, 60 and 90 days.", "items": {
                 "type": "object", "required": ["horizon", "title", "why", "gap_ids", "owner", "steps"],
@@ -161,9 +173,15 @@ REPORT_TOOL = {"toolSpec": {
 
 SYSTEM = (
     "You are a capacity-building coach for community violence intervention (CVI) nonprofits in Everytown's "
-    "Community Safety Fund network. The Organizational Capacity Index is a learning tool, not an evaluation: "
-    "use strength-based, plain language (about 8th grade reading level), people-first and trauma-informed. "
-    "Call gaps 'growth priorities'. Describe maturity by stage name, not percentages. Never use em dashes.\n"
+    "Community Safety Fund network. Readers are leaders of small, community-rooted groups (often 5 to 20 staff), "
+    "many with lived experience of violence or incarceration. Write so someone at an 8th grade reading level "
+    "understands every sentence: short sentences, everyday words, no jargon, explain any term you must use. "
+    "The Organizational Capacity Index is a learning tool, not an evaluation: strength-based, people-first and "
+    "trauma-informed. Call gaps 'growth priorities'. Describe maturity by stage name, not percentages. "
+    "Never use em dashes.\n"
+    "Structure: the summary says what is true about the organization today. 'focus' names the one or two "
+    "growth priorities to do first, so the reader is not overwhelmed, and explains why they come first "
+    "(foundations that unlock funding and sustainability). The plan then spreads the rest over 90 days.\n"
     "Rules:\n"
     "1. Scores, stages and priorities were computed by fixed code and are final. Never change, recompute, "
     "rank or invent any score, percentage or stage.\n"
@@ -225,27 +243,39 @@ def _horizon(value):
         return HORIZONS[0]
 
 
-def validate_report(raw, gap_ids):
-    """Keep only what is grounded: known gap ids, catalog resources, allowed horizons."""
-    plan, used = [], []
-    for item in raw.get("plan") or []:
+def _grounded(items, gap_ids, used):
+    """Keep items that cite real growth priorities; map resource ids to catalog entries only."""
+    out = []
+    for item in items or []:
         ids = [i for i in item.get("gap_ids") or [] if i in gap_ids]
         if not ids or not item.get("title"):
             continue  # an action that cites no real growth priority is not grounded
         resource = CATALOG.get((item.get("resource_id") or "").strip())
         if resource and resource["id"] not in used:
             used.append(resource["id"])
-        plan.append({
-            "horizon": _horizon(item.get("horizon")),
-            "title": clean(item["title"]), "why": clean(item.get("why")), "gap_ids": ids,
-            "owner": clean(item.get("owner")) or "Leadership team",
-            "steps": [clean(s) for s in item.get("steps") or [] if s.strip()],
-            "resource": {"title": resource["title"], "url": resource["url"]} if resource else None})
+        out.append(dict(item, title=clean(item["title"]), why=clean(item.get("why")), gap_ids=ids,
+                        steps=[clean(s) for s in item.get("steps") or [] if s.strip()],
+                        resource={"title": resource["title"], "url": resource["url"]} if resource else None))
+        out[-1].pop("resource_id", None)
+    return out
+
+
+def validate_report(raw, gap_ids):
+    """Keep only what is grounded: known gap ids, catalog resources, allowed horizons."""
+    used = []
+    focus = _grounded(raw.get("focus"), gap_ids, used)[:2]
+    plan = _grounded(raw.get("plan"), gap_ids, used)
     if not plan:
         raise ValueError("the model returned no action grounded in this organization's answers")
+    for p in plan:
+        p["horizon"] = _horizon(p.get("horizon"))
+        p["owner"] = clean(p.get("owner")) or "Leadership team"
     plan.sort(key=lambda p: p["horizon"])
+    if not focus:  # the reader always gets a clear "start here"
+        focus = [{k: plan[0][k] for k in ("title", "why", "gap_ids", "steps", "resource")}]
     return {
         "summary": clean(raw.get("summary")),
+        "focus": focus,
         "strengths": [clean(s) for s in raw.get("strengths") or [] if s.strip()],
         "plan": plan,
         "conversation": [clean(q) for q in raw.get("conversation") or [] if q.strip()],

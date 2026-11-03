@@ -1,13 +1,13 @@
 # OCI Capacity Coach (Everytown OCI Platform)
 
-The Organizational Capacity Index (OCI) for community violence intervention (CVI) nonprofits in Everytown's Community Safety Fund network. An organization signs in, answers a Yes/No self-assessment, and gets a personalized 30 / 60 / 90 day action plan on screen and as a PDF.
+The Organizational Capacity Index (OCI) for community violence intervention (CVI) nonprofits in Everytown's Community Safety Fund network. An organization's leader signs in, answers a Yes/No self-assessment, and gets a plain-language report: what is true about the organization today, the one or two priorities to start with, and a 30 / 60 / 90 day plan, on screen and as a PDF. Everytown staff get a network dashboard that shows which training and services grantees need and which grantees share the same problems, so they can be connected.
 
 - Deterministic Python code computes every score. The engine is the reference implementation, unchanged, and `verify_benchmark.py` proves it against the answer key.
 - Claude on Amazon Bedrock writes the coaching narrative around those fixed scores. The server then validates the output: every action must cite real growth priorities from this submission, and every link must come from the curated resource catalog.
 
 AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/vision.md), [`docs/tech.md`](docs/tech.md).
 
-**Current release:** v0.4.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+**Current release:** v0.5.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 ## Vision
 
@@ -23,24 +23,32 @@ Design principles, taken from the builder package:
 | Team reflection | Handoff deck speaker notes | A "Team conversation guide" for the next leadership meeting. |
 | Grounded, never invented | Tech doc: the LLM never scores | Server-side grounding validation; resource links only from `resources/catalog.json`. |
 | Accessible to everyone | Community Empowerment track | WCAG 2.2 AA, Atkinson Hyperlegible font, larger-text and high-contrast modes, read-aloud, Spanish reports. |
+| Readable at an 8th grade level | Everytown interview: "I can read this even though I'm at an 8th grade reading level and I've been to prison" | The prompt writes for leaders of 5 to 20 person groups with lived experience: short sentences, everyday words. |
+| One or two things first | Everytown interview: "out of the 10 things you could fix, here's one or two priorities that you should do first" | A validated "Start here" section with at most two grounded priorities, before the full plan. |
+| Learn across the network | Everytown interview: "if 50 or 75 or 100 of them take this assessment... I know what training they need"; "identify groups of grantees with similar problems that we could connect" | Aurora PostgreSQL stores every assessment; the staff dashboard shows stage distributions, the most common growth priorities, and "Grantees to connect" cohorts. |
+| Benchmarking later, never for grantees | Everytown interview (future capability) and handoff deck ("no external benchmarking") | A `domain_benchmarks` SQL view ranks organizations per domain; only the staff dashboard shows it, labelled as a preview. |
 
 ## Quick start (local)
 
-Requires Python 3.9+ and AWS credentials for an account with Bedrock access to Anthropic Claude (us-west-2 sandbox).
+Requires Python 3.9+, Node 20+, AWS credentials with Bedrock access to Anthropic Claude, and the database stack (`everytown-oci-db`, created by `scripts/deploy.sh`). Local and cloud share the same Aurora database through the RDS Data API, so there is no local database to install.
 
 ```
 pip install -r requirements.txt
 export AWS_DEFAULT_REGION=us-west-2 AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_SESSION_TOKEN=...
-python3 app.py
+export OCI_DB_CLUSTER_ARN=... OCI_DB_SECRET_ARN=...     # outputs of the everytown-oci-db stack
+python3 -m db migrate && python3 -m db seed              # schema + 20 synthetic organizations
+python3 app.py                                            # JSON API on :8000
+cd frontend && npm ci && npm run dev                      # Astro on :4321, proxies /api to :8000
 ```
 
-Open http://127.0.0.1:8000 and sign in with `demo` / `demo`. Locally, submissions are JSON files in `instance/submissions/` and the AI steps run in a background thread. Without `OCI_KB_ID`, the whole field-guide library is injected into the prompt.
+Open http://127.0.0.1:4321 and sign in with `demo` / `demo` (organization leader) or `staff` / `staff` (Everytown staff dashboard). Locally the AI steps run in a background thread. Without `OCI_KB_ID`, the whole field-guide library is injected into the prompt.
 
-Checks (standard library only):
+Checks:
 
 ```
 python3 verify_benchmark.py                 # expect three PASS lines
-python3 -m unittest discover -s tests       # grounding validation of the model's output
+python3 -m unittest discover -s tests       # grounding validation and re-assessment comparison
+cd frontend && npx astro check && npm run build
 ```
 
 ## User journey
@@ -49,23 +57,25 @@ python3 -m unittest discover -s tests       # grounding validation of the model'
 2. Enter the organization name and, optionally, its website. Choose the report language (English or Español) and the areas to assess. The four priority areas (Planning, Fundraising, Financial Management, ML&E) are pre-selected. Or open "Try a synthetic sample organization" to submit one of the three fictional organizations from the builder package in one click (for demos and staff training).
 3. Answer one area per screen. Each area must be fully answered before you move on, because an unanswered statement would count as favorable. Back keeps your answers.
 4. The results page shows the stage ladder and scores immediately, then live progress through: reading answers, scoring, researching the website, consulting the CVI resource library, and writing recommendations. If a step fails, "Try again" reruns only the AI steps.
-5. Read the summary, strengths, 30 / 60 / 90 day plan (each action shows the statements it is based on and a vetted resource), team conversation guide and all growth priorities. Listen to any section aloud, then download the PDF.
+5. Read "What's true about you", then "Start here: your top priorities" (one or two, each showing the statements it is based on, what to do, and a vetted resource), then strengths, the 30 / 60 / 90 day plan, team conversation guide and all growth priorities. Listen to any section aloud, then download the PDF.
 6. Reassess later under the same organization name: the results page and PDF show "Progress since your last assessment", with growth priorities closed, new ones, and stage moves per area. The comparison is deterministic and covers only the areas both assessments included; the AI summary celebrates it first.
+7. Everytown staff sign in as `staff` and open the network dashboard: totals, stage distribution per area (bars plus an equivalent table), the most common growth priorities (training and service needs), "Grantees to connect" cohorts sharing a High priority growth priority, and an organizations table with a staff-only peer percentile preview. Filter by area and download CSV.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
   U[Browser] --> CF[CloudFront]
-  CF --> FU[Lambda Function URL]
-  FU --> L["Lambda (Flask via apig-wsgi)"]
-  L -->|submissions/uuid.json| S3[(S3 store)]
+  CF -->|default| S3S[(S3: Astro static site)]
+  CF -->|/api/*| FU[Lambda Function URL]
+  FU --> L["Lambda (Flask JSON API via apig-wsgi)"]
+  L -->|RDS Data API| DB[(Aurora PostgreSQL<br/>Serverless v2)]
   L -.->|async self-invoke| W["Same Lambda: AI pipeline"]
   W --> R[Fetch org website<br/>SSRF-guarded]
   W --> H["Claude Haiku: org profile"]
   W --> KB["Bedrock Knowledge Base<br/>S3 Vectors + Titan v2"]
   W --> S["Claude Sonnet: structured report<br/>(tool use, validated)"]
-  W --> S3
+  W --> DB
 ```
 
 The pipeline is hardcoded, not agentic, as the tech doc prefers:
@@ -76,22 +86,36 @@ The pipeline is hardcoded, not agentic, as the tech doc prefers:
 | Research the website | `pipeline.research_org` | `OCI_FAST_MODEL_ID` (Claude Haiku) |
 | Consult the CVI library | `pipeline.gather_library`: one Knowledge Base retrieval per assessed area, queried with its top growth priorities | Titan Text Embeddings v2 |
 | Write the report | `pipeline.write_report`: Converse tool use with a JSON schema, then `validate_report` drops ungrounded actions and unknown links | `OCI_MODEL_ID` (Claude Sonnet) |
-| Render | `templates/results.html`, `report.py` (fpdf2, Unicode TTF, bookmarks, PDF language tag) | none |
+| Render | `frontend/src/pages/results.astro` + `frontend/src/lib/results.ts`, `report.py` (fpdf2, Unicode TTF, bookmarks, PDF language tag) | none |
 
-Why Lambda instead of the Fargate stretch goal: CloudFront cannot reach a Fargate task without a load balancer (out of scope), and App Runner is closed to new customers. One Lambda behind CloudFront scales to zero, needs no VPC or NAT, and costs about $0 to $1 a month at demo traffic, plus roughly $0.05 to $0.10 of Bedrock tokens per report.
+Why Lambda instead of the Fargate stretch goal: CloudFront cannot reach a Fargate task without a load balancer, and App Runner is closed to new customers. One Lambda behind CloudFront scales to zero and needs no VPC or NAT, because it reaches Aurora through the HTTPS Data API.
+
+Why Aurora PostgreSQL Serverless v2: the Everytown interview asked for network analytics over time, which is relational work (joins across organizations, assessments, growth priorities). Managed RDS gives backups, patching and encryption that a self-hosted database on EC2 would need by hand, and Oracle would add licensing cost for no benefit. The vision doc originally listed a relational database as out of scope; the interview changed that.
+
+### Data model (`schema.sql`)
+
+| Table / view | Purpose |
+|---|---|
+| `organizations` | One row per organization, matched by normalized name (login is mocked). |
+| `assessments` | One row per submission: `source` (web, demo, seed), status, and the full rendered document as `jsonb`. |
+| `answers`, `domain_results`, `gaps` | Normalized deterministic results for analytics. Written once at submit, never by the model. |
+| `latest_assessments` (view) | Each organization's most recent assessment: the unit for network analytics. |
+| `domain_benchmarks` (view) | Peer percentile per organization and domain. Staff only; future benchmarking. |
 
 ## Deploying to AWS
 
-Everything is plain CloudFormation in `infra/template.yaml`: S3 store, Lambda + Function URL, CloudFront, Bedrock Knowledge Base on S3 Vectors with a docs bucket, and IAM roles. No Cognito, database, load balancer, WAF, KMS, Secrets Manager or NAT.
+Two CloudFormation stacks:
+- `everytown-oci-db` (`infra/database.yaml`): Aurora PostgreSQL Serverless v2 with the RDS Data API and an RDS-managed secret. Data lifecycle is independent of the app.
+- `everytown-oci` (`infra/template.yaml`): CloudFront serving the Astro static site from a private S3 bucket (origin access control) and routing `/api/*` to one Python 3.12 Lambda (Flask JSON API via apig-wsgi, plus an async self-invoke for the AI pipeline), Bedrock Knowledge Base on S3 Vectors over `resources/library/*.md`, IAM roles. No Cognito, load balancer, WAF, custom KMS keys or NAT.
 
-Requirements: AWS CLI v2, Python 3 with pip, `zip`, credentials in the environment, and Bedrock model access for Anthropic Claude and Titan Text Embeddings v2.
+Requirements: AWS CLI v2, Python 3 with pip and boto3, Node 20+, `zip`, credentials in the environment, Bedrock model access for Anthropic Claude and Titan Text Embeddings v2.
 
 ```
-scripts/deploy.sh            # build, upload, deploy stack, sync + ingest library, print AppUrl
-STACK=oci-demo AWS_REGION=us-west-2 EXTRA_DOCS=/path/to/public/docs scripts/deploy.sh
+scripts/deploy.sh                      # db stack, site build, Lambda zip, app stack, site sync + invalidation, db migrate/seed, KB ingest
+DB_MIN_CAPACITY=0 scripts/deploy.sh    # Aurora auto-pause after 1 idle hour (about 15 s resume on the next request)
 ```
 
-`scripts/build.sh` builds `build/oci.zip` with manylinux wheels for python3.12/x86_64. `deploy.sh` is idempotent: it creates `oci-artifacts-<account>-<region>` if needed, uploads the zip under a content-hash key, generates a session secret once into `infra/.secret` (git-ignored), runs `aws cloudformation deploy`, syncs `resources/library/*.md` (and `$EXTRA_DOCS`) to the docs bucket, and waits for the Knowledge Base ingestion job. Only put public documents in `EXTRA_DOCS`. Tear down with `aws cloudformation delete-stack --stack-name everytown-oci` after emptying the store and docs buckets.
+Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Knowledge Base documents). The script is idempotent: the Lambda zip is uploaded under a content-hash key to `oci-artifacts-<account>-<region>`, the Flask session secret is generated once into `infra/.secret` (git-ignored), and fingerprinted `_astro/*` assets get a one-year cache while HTML is always revalidated. Cost: about $45 a month at the 0.5 ACU Aurora minimum (kept warm for the hackathon), about $1 to $3 a month with auto-pause, plus roughly $0.05 to $0.10 of Bedrock tokens per report. Tear down: `aws cloudformation delete-stack --stack-name everytown-oci` (empty the site and docs buckets first), then `everytown-oci-db` (keeps a final snapshot).
 
 ## Configuration
 
@@ -101,27 +125,29 @@ STACK=oci-demo AWS_REGION=us-west-2 EXTRA_DOCS=/path/to/public/docs scripts/depl
 | `OCI_MODEL_ID` | `us.anthropic.claude-sonnet-5-5` | Bedrock model or inference profile for the report. |
 | `OCI_FAST_MODEL_ID` | `us.anthropic.claude-haiku-5-5` | Model for the website profile. |
 | `OCI_KB_ID` | unset | Bedrock Knowledge Base ID. Unset means the library is injected into the prompt. |
-| `OCI_BUCKET` | unset | S3 bucket for submissions. Unset means local JSON files. |
+| `OCI_DB_CLUSTER_ARN`, `OCI_DB_SECRET_ARN` | required | Aurora cluster and its RDS-managed secret (Data API). |
+| `OCI_DB_NAME` | `oci` | Database name. |
 | `OCI_WORKER_FN` | unset | Lambda function to invoke asynchronously for the AI steps. Unset means a background thread. |
 | `OCI_SECRET_KEY` | random per start | Flask session key. Set it to keep users signed in across restarts. |
-| `PORT` | `8000` | Local HTTP port. |
+| `PORT` | `8000` | Local API port. |
 
 ## Layout
 
 | Path | Purpose |
 |---|---|
-| `app.py` | Flask routes, validation, S3 or local JSON store, job dispatch (thread or async Lambda). |
+| `app.py` | Flask JSON API: auth (mocked roles), validation, scoring, progress comparison, job dispatch (thread or async Lambda), staff analytics. |
+| `db.py`, `schema.sql` | Aurora Data API layer, analytics queries, `migrate` and `seed` CLI. |
 | `pipeline.py` | Website research, Knowledge Base retrieval, structured report generation and its validation. |
 | `lambda_handler.py` | Lambda entry point: web requests to Flask, `{"oci_sid": ...}` events to the pipeline. |
 | `report.py` | PDF report, mirroring the sample reports' layout plus the AI sections. |
-| `templates/`, `static/` | Accessible server-rendered UI (no build step). Fonts: Atkinson Hyperlegible and Noto Sans Math, both OFL. |
+| `frontend/` | Astro 5 static site (TypeScript, no UI framework) in Everytown colors. Fonts in `frontend/public/fonts/` (Atkinson Hyperlegible and Noto Sans Math, both OFL) are also used by the PDF. |
 | `resources/catalog.json` | The only links the model may recommend (19 vetted resources). |
 | `resources/library/*.md` | Field guides per OCI domain, ingested into the Knowledge Base. |
 | `data/questions.json` | 143 statements across 8 domains, plus stage and domain weights. |
 | `data/domain_info.json` | Domain descriptions and stage definitions from the questionnaires. |
 | `data/samples.json` | Metadata for the three synthetic sample organizations (answers come from `benchmark/`). |
 | `engine/`, `utils/`, `benchmark/`, `verify_benchmark.py` | Reference scoring engine, loader, synthetic answer key and checker. |
-| `infra/template.yaml`, `scripts/` | CloudFormation and build/deploy scripts. |
+| `infra/template.yaml`, `infra/database.yaml`, `scripts/` | CloudFormation (app and database stacks) and build/deploy scripts. |
 | `tests/` | Unit tests for the model-output grounding rules and the re-assessment comparison. |
 | `docs/pitch/` | Hackathon pitch deck (open `index.html`, arrow keys, `n` for notes) and demo script. |
 
@@ -151,7 +177,8 @@ priority_score    = stage_weight * domain_weight * gap_density_bonus
 
 ## Security notes
 
-- Login is mocked (`demo` / `demo`), as the vision doc specifies. Session cookies are signed, `SameSite=Lax`, and `Secure` on AWS.
+- Login is mocked (`demo` / `demo` for organizations, `staff` / `staff` for the Everytown dashboard), as the vision doc specifies. Anyone signed in can open a report by its id, and organizations are matched by name, so this build is for synthetic data only. Session cookies are signed, `HttpOnly`, `SameSite=Lax`, and `Secure` on AWS. POSTs must be JSON, which blocks cross-site form posts.
+- The database has no network ingress: the app reaches it only through the IAM-authorized RDS Data API; the password is an RDS-managed secret.
 - The website fetch accepts only http(s) URLs whose host, and every redirect hop, resolves to a public IP.
 - The model's output is untrusted: `validate_report` keeps only actions citing real gap ids and resources from the catalog.
 - All responses in this repository are synthetic. Never commit real organization data or credentials. `api.md`, `.env` and `infra/.secret` are git-ignored.

@@ -1,0 +1,96 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+---
+<Base title="Sign in" width="narrow" public>
+  <div class="card card--auth">
+    <span class="eyebrow">Welcome</span>
+    <h1>Sign in to OCI Capacity Coach</h1>
+    <div class="notice">
+      <Icon name="info" />
+      <div>
+        <p>Demo environment: use the provided test credentials.</p>
+        <ul class="demo-creds">
+          <li>Organization leader: <code>demo</code> / <code>demo</code></li>
+          <li>Everytown staff: <code>staff</code> / <code>staff</code></li>
+        </ul>
+      </div>
+    </div>
+    <form class="stack" id="login-form" novalidate>
+      <div class="field">
+        <label for="username">Username</label>
+        <input class="input" type="text" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="input-group">
+          <input class="input" type="password" id="password" name="password" autocomplete="current-password" required>
+          <button type="button" class="btn btn-secondary btn-icon" id="toggle-password" aria-label="Show password" aria-pressed="false"><Icon name="eye" /></button>
+        </div>
+      </div>
+      <p class="field-error" id="login-error" role="alert" hidden></p>
+      <div class="actions">
+        <button type="submit" class="btn btn-primary"><Icon name="lock" /><span>Sign in</span></button>
+      </div>
+    </form>
+  </div>
+</Base>
+
+<script>
+  import { api, ApiError, type User } from "../lib/api";
+  import { $ } from "../lib/dom";
+  import { icon } from "../lib/icons";
+
+  const form = $<HTMLFormElement>("#login-form")!;
+  const user = $<HTMLInputElement>("#username")!;
+  const pass = $<HTMLInputElement>("#password")!;
+  const err = $("#login-error")!;
+  const toggle = $<HTMLButtonElement>("#toggle-password")!;
+
+  const params = new URLSearchParams(location.search);
+  const nextUrl = (role: User["role"]) => {
+    const next = params.get("next");
+    // Only same-site paths; never an absolute URL from the query string.
+    if (next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login/")) return next;
+    return role === "staff" ? "/staff/" : "/";
+  };
+
+  // Already signed in? Go straight on.
+  api.get<{ user: User }>("/me").then(({ user }) => location.replace(nextUrl(user.role))).catch(() => { /* not signed in */ });
+
+  toggle.addEventListener("click", () => {
+    const show = pass.type === "password";
+    pass.type = show ? "text" : "password";
+    toggle.setAttribute("aria-pressed", String(show));
+    toggle.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  });
+
+  const showError = (msg: string) => {
+    err.innerHTML = `${icon("alert")}<span></span>`;
+    err.querySelector("span")!.textContent = msg;
+    err.hidden = false;
+    for (const el of [user, pass]) { el.setAttribute("aria-invalid", "true"); el.setAttribute("aria-describedby", "login-error"); }
+  };
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!user.value.trim() || !pass.value) {
+      showError("Enter your username and password.");
+      (user.value.trim() ? pass : user).focus();
+      return;
+    }
+    const btn = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+    btn.setAttribute("aria-disabled", "true");
+    try {
+      const { user: u } = await api.post<{ user: User }>("/login", { username: user.value.trim(), password: pass.value });
+      location.assign(nextUrl(u.role));
+    } catch (ex) {
+      showError(ex instanceof ApiError && ex.status === 401
+        ? "That username or password did not match. Check the demo credentials above and try again."
+        : "We could not reach the server. Please try again in a moment.");
+      pass.focus();
+    } finally {
+      btn.removeAttribute("aria-disabled");
+    }
+  });
+</script>

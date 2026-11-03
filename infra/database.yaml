@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Everytown OCI database. Aurora PostgreSQL Serverless v2 with the RDS Data API (no VPC access needed by the app).
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: At least two subnets in different AZs (the deploy script uses the default VPC subnets).
+  EngineVersion:
+    Type: String
+    Default: "17.9"
+  MinCapacity:
+    Type: Number
+    Default: 0.5
+    MinValue: 0
+    MaxValue: 2
+    Description: Aurora capacity units. 0 enables auto-pause after SecondsUntilAutoPause idle seconds.
+  MaxCapacity:
+    Type: Number
+    Default: 2
+    MinValue: 1
+    MaxValue: 16
+  SecondsUntilAutoPause:
+    Type: Number
+    Default: 3600
+    MinValue: 300
+    MaxValue: 86400
+
+Conditions:
+  AutoPause: !Equals [!Ref MinCapacity, 0]
+
+Resources:
+  SubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub ${AWS::StackName} subnets
+      SubnetIds: !Ref SubnetIds
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub ${AWS::StackName} Aurora (no inbound; access is through the RDS Data API)
+      VpcId: !Ref VpcId
+
+  Cluster:
+    Type: AWS::RDS::DBCluster
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: aurora-postgresql
+      EngineVersion: !Ref EngineVersion
+      DatabaseName: oci
+      MasterUsername: oci_admin
+      ManageMasterUserPassword: true
+      EnableHttpEndpoint: true
+      StorageEncrypted: true
+      DeletionProtection: false
+      BackupRetentionPeriod: 1
+      DBSubnetGroupName: !Ref SubnetGroup
+      VpcSecurityGroupIds: [!Ref SecurityGroup]
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: !Ref MinCapacity
+        MaxCapacity: !Ref MaxCapacity
+        SecondsUntilAutoPause: !If [AutoPause, !Ref SecondsUntilAutoPause, !Ref AWS::NoValue]
+
+  Instance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora-postgresql
+      DBClusterIdentifier: !Ref Cluster
+      DBInstanceClass: db.serverless
+      PubliclyAccessible: false
+
+Outputs:
+  DbClusterArn:
+    Value: !GetAtt Cluster.DBClusterArn
+    Export: { Name: !Sub "${AWS::StackName}-DbClusterArn" }
+  DbSecretArn:
+    Value: !GetAtt Cluster.MasterUserSecret.SecretArn
+    Export: { Name: !Sub "${AWS::StackName}-DbSecretArn" }
+  DbName:
+    Value: oci
+    Export: { Name: !Sub "${AWS::StackName}-DbName" }

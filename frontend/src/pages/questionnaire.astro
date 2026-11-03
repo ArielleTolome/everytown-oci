@@ -1,0 +1,186 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+---
+<Base title="Questionnaire">
+  <div id="q-root" aria-busy="true">
+    <p class="loading"><Icon name="loader" class="spin" />Loading your questionnaire</p>
+  </div>
+</Base>
+
+<script>
+  import { api, ApiError, getMeta, requireUser, type Domain } from "../lib/api";
+  import { $, $$, announce, esc, focusEl, plural } from "../lib/dom";
+  import { icon } from "../lib/icons";
+  import { clearDraft, loadDraft, saveDraft, type Draft } from "../lib/draft";
+
+  const root = $("#q-root")!;
+  let draft: Draft;
+  let domains: Domain[] = [];
+  let missing = new Set<string>();
+  let submitting = false;
+
+  const stepFromHash = () => {
+    const n = parseInt(location.hash.slice(1), 10);
+    return Number.isFinite(n) && n >= 1 && n <= domains.length ? n : 1;
+  };
+  const totalQuestions = () => domains.reduce((s, d) => s + d.questions.length, 0);
+  const answeredTotal = () => domains.reduce((s, d) => s + d.questions.filter((q) => draft.answers[q.id]).length, 0);
+
+  function render(n: number, moveFocus: boolean) {
+    const d = domains[n - 1];
+    const last = n === domains.length;
+    const here = d.questions.filter((q) => missing.has(q.id));
+    document.title = `${here.length ? "Check your answers: " : ""}${d.name} (${n} of ${domains.length}) · OCI Capacity Coach`;
+
+    root.innerHTML = `
+      <span class="eyebrow">Step 2 of 3: Questionnaire, area ${n} of ${domains.length}</span>
+      <nav aria-label="Capacity areas" class="area-steps">
+        <ol role="list">${domains.map((x, i) => {
+          const done = i < n - 1, cur = i === n - 1;
+          return `<li class="area-steps__item${done ? " is-done" : ""}${cur ? " is-current" : ""}"${cur ? ' aria-current="step"' : ""}>${done ? `${icon("check")}<span class="visually-hidden">Completed: </span>` : ""}${esc(x.name)}</li>`;
+        }).join("")}</ol>
+      </nav>
+      <h1 id="area-title" tabindex="-1">${esc(d.name)}</h1>
+      <p class="lead">There are no wrong answers. Choose Yes if the statement describes how your organization works today, and No if it does not yet. Every No is simply a place to grow.</p>
+      <details class="about"><summary>About ${esc(d.name)}</summary><p>${esc(d.about)}</p>${d.connects ? `<p>${esc(d.connects)}</p>` : ""}</details>
+      <div class="progress-block">
+        <label for="overall-progress" class="progress-block__label">Overall progress: <span id="progress-text"></span></label>
+        <progress id="overall-progress" max="${totalQuestions()}" value="0"></progress>
+      </div>
+      ${here.length ? `
+      <div class="error-summary" id="error-summary" role="alert" tabindex="-1" aria-labelledby="error-summary-title">
+        <h2 id="error-summary-title">${icon("alert")}Please answer ${plural(here.length, "more statement", "more statements")}</h2>
+        <ul>${here.map((q) => `<li><a href="#${esc(q.id)}-yes" data-jump>${esc(q.text)}</a></li>`).join("")}</ul>
+      </div>` : ""}
+      <p class="hint">All ${d.questions.length} statements are required. Your answers are saved on this device as you go.</p>
+      <form id="area-form" novalidate>
+        <div class="questions">${d.questions.map((q, i) => {
+          const miss = missing.has(q.id);
+          return `
+          <fieldset class="question${miss ? " field--error" : ""}" id="q-${esc(q.id)}"${miss ? ` aria-describedby="${esc(q.id)}-error"` : ""}>
+            <legend><span class="question__num">Statement ${i + 1} of ${d.questions.length}</span>${esc(q.text)}</legend>
+            ${miss ? `<p class="field-error" id="${esc(q.id)}-error">${icon("alert")}<span>Please choose Yes or No.</span></p>` : ""}
+            <div class="choice-row">${(["yes", "no"] as const).map((v) => `
+              <label class="choice choice--lg">
+                <input type="radio" name="${esc(q.id)}" value="${v}" id="${esc(q.id)}-${v}" required ${draft.answers[q.id] === v ? "checked" : ""}>
+                <span class="choice__text">${v === "yes" ? "Yes" : "No"}</span>${icon("check", "choice__check")}
+              </label>`).join("")}
+            </div>
+          </fieldset>`;
+        }).join("")}</div>
+        <p class="field-error" id="submit-error" role="alert" hidden></p>
+        <div class="actions actions--split">
+          <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span>${n === 1 ? "Back to your organization" : "Back"}</span></button>
+          <button type="submit" class="btn btn-primary" id="next-btn"><span>${last ? "Submit assessment" : `Next area: ${esc(domains[n].name)}`}</span>${icon("arrow-right")}</button>
+        </div>
+      </form>`;
+    root.removeAttribute("aria-busy");
+    updateProgress();
+
+    const form = $<HTMLFormElement>("#area-form")!;
+    form.addEventListener("change", (e) => {
+      const input = e.target as HTMLInputElement;
+      if (input.type !== "radio") return;
+      draft.answers[input.name] = input.value as "yes" | "no";
+      saveDraft(draft);
+      missing.delete(input.name);
+      const fs = input.closest<HTMLElement>(".question");
+      if (fs?.classList.contains("field--error")) {
+        fs.classList.remove("field--error");
+        fs.removeAttribute("aria-describedby");
+        fs.querySelector(".field-error")?.remove();
+      }
+      updateProgress();
+      const done = d.questions.filter((q) => draft.answers[q.id]).length;
+      announce(`${done} of ${d.questions.length} statements answered in ${d.name}. Saved.`);
+    });
+    form.addEventListener("submit", (e) => { e.preventDefault(); next(n); });
+    $("#back-btn")!.addEventListener("click", () => {
+      if (n === 1) location.assign("/"); else location.hash = String(n - 1);
+    });
+    $$<HTMLAnchorElement>("[data-jump]").forEach((a) => a.addEventListener("click", (e) => {
+      e.preventDefault();
+      const el = document.getElementById(a.getAttribute("href")!.slice(1));
+      el?.closest(".question")?.scrollIntoView({ block: "center" });
+      el?.focus();
+    }));
+
+    if (here.length) focusEl($("#error-summary"));
+    else if (moveFocus) { window.scrollTo(0, 0); focusEl($("#area-title")); }
+  }
+
+  function updateProgress() {
+    const a = answeredTotal(), t = totalQuestions();
+    const bar = $<HTMLProgressElement>("#overall-progress");
+    if (bar) { bar.value = a; bar.textContent = `${a} of ${t}`; }
+    const txt = $("#progress-text");
+    if (txt) txt.textContent = `${a} of ${t} statements answered`;
+  }
+
+  async function next(n: number) {
+    const d = domains[n - 1];
+    const unanswered = d.questions.filter((q) => !draft.answers[q.id]).map((q) => q.id);
+    if (unanswered.length) {
+      unanswered.forEach((id) => missing.add(id));
+      render(n, false);
+      return;
+    }
+    if (n < domains.length) { location.hash = String(n + 1); return; }
+    if (submitting) return;
+    submitting = true;
+    const btn = $<HTMLButtonElement>("#next-btn")!;
+    btn.setAttribute("aria-disabled", "true");
+    btn.querySelector("span")!.textContent = "Submitting";
+    try {
+      const { id } = await api.post<{ id: string }>("/assessments", {
+        org_name: draft.org_name, org_url: draft.org_url, language: draft.language,
+        domain_ids: draft.domain_ids, answers: draft.answers,
+      });
+      // Keep the organization details for next time; answers start fresh.
+      clearDraft();
+      saveDraft({ ...draft, answers: {} });
+      location.assign(`/results/?id=${encodeURIComponent(id)}`);
+    } catch (ex) {
+      submitting = false;
+      if (ex instanceof ApiError && ex.status === 400 && ex.body.missing?.length) {
+        missing = new Set(ex.body.missing);
+        ex.body.missing.forEach((id) => { delete draft.answers[id]; });
+        saveDraft(draft);
+        const first = domains.findIndex((x) => x.questions.some((q) => missing.has(q.id))) + 1;
+        if (first >= 1 && String(first) !== location.hash.slice(1)) location.hash = String(first);
+        else render(first || n, false);
+        return;
+      }
+      if (ex instanceof ApiError && ex.status === 400 && ex.body.errors) {
+        // Organization details were rejected: send the person back to fix them.
+        location.assign("/");
+        return;
+      }
+      btn.removeAttribute("aria-disabled");
+      btn.querySelector("span")!.textContent = "Submit assessment";
+      const err = $("#submit-error")!;
+      err.innerHTML = `${icon("alert")}<span>We could not submit your answers. They are saved on this device. Please try again.</span>`;
+      err.hidden = false;
+    }
+  }
+
+  async function init() {
+    await requireUser();
+    const meta = await getMeta();
+    const d = loadDraft();
+    if (!d || !d.org_name || !d.domain_ids.length) { location.replace("/"); return; }
+    draft = d;
+    domains = d.domain_ids.map((id) => meta.domains.find((x) => x.id === id)).filter((x): x is Domain => !!x);
+    if (!domains.length) { location.replace("/"); return; }
+    if (!location.hash) history.replaceState(null, "", "#1");
+    render(stepFromHash(), false);
+    // Only numeric hashes are steps; the skip link (#main) must not re-render the page.
+    window.addEventListener("hashchange", () => { if (/^#\d+$/.test(location.hash)) render(stepFromHash(), true); });
+  }
+
+  init().catch(() => {
+    root.removeAttribute("aria-busy");
+    root.innerHTML = `<h1>Questionnaire</h1><p class="field-error" role="alert">${icon("alert")}<span>We could not load the questions. Please reload the page.</span></p>`;
+  });
+</script>

@@ -1,0 +1,227 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+---
+<Base title="Your organization">
+  <span class="eyebrow">Step 1 of 3: Your organization</span>
+  <h1 id="page-title" tabindex="-1">Tell us about your organization</h1>
+  <p class="lead">This takes about 15 minutes. You will answer Yes or No to short statements about how your organization works today. There are no wrong answers: the goal is to see where you are and what to grow next.</p>
+
+  <div class="error-summary" id="error-summary" tabindex="-1" aria-labelledby="error-summary-title" hidden>
+    <h2 id="error-summary-title"><Icon name="alert" />There is a problem</h2>
+    <ul id="error-list"></ul>
+  </div>
+
+  <form class="stack" id="org-form" novalidate>
+    <div class="card stack">
+      <div class="field" data-field="org_name">
+        <label for="org_name">Organization name</label>
+        <p class="field-error" id="org_name-error" hidden></p>
+        <input class="input" type="text" id="org_name" name="org_name" autocomplete="organization" maxlength="200" required>
+      </div>
+
+      <div class="field" data-field="org_url">
+        <label for="org_url">Website <span class="optional">(optional)</span></label>
+        <p class="hint" id="org_url-hint">We read your public site to tailor recommendations. For example: https://example.org</p>
+        <p class="field-error" id="org_url-error" hidden></p>
+        <input class="input" type="url" id="org_url" name="org_url" inputmode="url" autocomplete="url" spellcheck="false" maxlength="500" aria-describedby="org_url-hint">
+      </div>
+
+      <fieldset class="field">
+        <legend>Report language</legend>
+        <p class="hint" id="language-hint">Your recommendations and PDF will be written in this language.</p>
+        <div class="choice-row">
+          <label class="choice">
+            <input type="radio" name="language" value="en" aria-describedby="language-hint" checked>
+            <span class="choice__text">English</span><Icon name="check" class="choice__check" />
+          </label>
+          <label class="choice">
+            <input type="radio" name="language" value="es" aria-describedby="language-hint">
+            <span class="choice__text" lang="es">Español</span><Icon name="check" class="choice__check" />
+          </label>
+        </div>
+      </fieldset>
+    </div>
+
+    <fieldset class="card stack" id="domains" data-field="domains" aria-describedby="domains-hint">
+      <legend class="legend-heading">Which capacity areas do you want to look at?</legend>
+      <p class="hint" id="domains-hint">We selected four priority areas to start. Add or remove any. Each area takes a few minutes.</p>
+      <p class="field-error" id="domains-error" hidden></p>
+      <div id="domain-groups"><p class="loading"><Icon name="loader" class="spin" />Loading capacity areas</p></div>
+    </fieldset>
+
+    <p class="notice"><Icon name="shield" /><span>Do not enter personal information about staff or participants. Your answers are used only to build this report.</span></p>
+
+    <div class="actions">
+      <button type="submit" class="btn btn-primary"><span>Start questionnaire</span><Icon name="arrow-right" /></button>
+    </div>
+
+    <details class="card samples" id="samples" hidden>
+      <summary class="samples__summary"><Icon name="sprout" /><span>Try a synthetic sample organization</span></summary>
+      <p class="hint" id="samples-hint">For demos and staff training. Fictional organizations from the OCI builder package; answers are filled in for you. Your report language and chosen areas above are used.</p>
+      <ul class="samples__list" id="sample-list" role="list"></ul>
+      <p class="field-error" id="samples-error" role="alert" hidden></p>
+    </details>
+  </form>
+</Base>
+
+<script>
+  import { api, ApiError, getMeta, requireUser, type Domain } from "../lib/api";
+  import { $, $$, esc, focusEl } from "../lib/dom";
+  import { icon } from "../lib/icons";
+  import { loadDraft, saveDraft } from "../lib/draft";
+
+  const form = $<HTMLFormElement>("#org-form")!;
+  const nameEl = $<HTMLInputElement>("#org_name")!;
+  const urlEl = $<HTMLInputElement>("#org_url")!;
+  const summary = $("#error-summary")!;
+  const list = $("#error-list")!;
+
+  type Field = "org_name" | "org_url" | "domains";
+  const describedBase: Record<Field, string> = { org_name: "", org_url: "org_url-hint", domains: "domains-hint" };
+  const targets: Record<Field, () => HTMLElement | null> = {
+    org_name: () => nameEl,
+    org_url: () => urlEl,
+    domains: () => $<HTMLInputElement>("input[name=domains]"),
+  };
+
+  function setError(field: Field, msg: string | null) {
+    const err = $(`#${field}-error`)!;
+    const wrap = $(`[data-field=${field}]`)!;
+    const control = field === "domains" ? $("#domains")! : targets[field]()!;
+    wrap.classList.toggle("field--error", !!msg);
+    if (msg) {
+      err.innerHTML = `${icon("alert")}<span>${esc(msg)}</span>`;
+      err.hidden = false;
+      if (field !== "domains") control.setAttribute("aria-invalid", "true");
+      control.setAttribute("aria-describedby", `${describedBase[field]} ${field}-error`.trim());
+    } else {
+      err.hidden = true;
+      control.removeAttribute("aria-invalid");
+      if (describedBase[field]) control.setAttribute("aria-describedby", describedBase[field]); else control.removeAttribute("aria-describedby");
+    }
+  }
+
+  function normalizeUrl(raw: string): string | null {
+    const v = raw.trim();
+    if (!v) return "";
+    const withScheme = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+    try {
+      const u = new URL(withScheme);
+      return u.hostname.includes(".") ? u.href : null;
+    } catch { return null; }
+  }
+
+  const chosen = () => $$<HTMLInputElement>("input[name=domains]:checked").map((b) => b.value);
+  const language = () => ($<HTMLInputElement>("input[name=language]:checked")?.value === "es" ? "es" : "en") as "en" | "es";
+
+  function validate(): Partial<Record<Field, string>> {
+    const errors: Partial<Record<Field, string>> = {};
+    if (!nameEl.value.trim()) errors.org_name = "Enter your organization's name";
+    if (normalizeUrl(urlEl.value) === null) errors.org_url = "Enter a full web address, like https://example.org, or leave it blank";
+    if (!chosen().length) errors.domains = "Choose at least one capacity area";
+    return errors;
+  }
+
+  function showErrors(errors: Partial<Record<Field, string>>) {
+    (["org_name", "org_url", "domains"] as Field[]).forEach((f) => setError(f, errors[f] ?? null));
+    const entries = Object.entries(errors) as [Field, string][];
+    if (!entries.length) { summary.hidden = true; return; }
+    list.innerHTML = entries.map(([f, msg]) => `<li><a href="#${f === "domains" ? (targets.domains()?.id ?? "domains") : f}">${esc(msg)}</a></li>`).join("");
+    summary.hidden = false;
+    summary.setAttribute("role", "alert");
+    document.title = `Check your answers: Your organization · OCI Capacity Coach`;
+    focusEl(summary);
+  }
+
+  list.addEventListener("click", (e) => {
+    const a = (e.target as HTMLElement).closest("a");
+    if (!a) return;
+    e.preventDefault();
+    const el = document.getElementById(a.getAttribute("href")!.slice(1));
+    el?.scrollIntoView({ block: "center" });
+    el?.focus();
+  });
+
+  // Clear a field's error as soon as it is fixed (validation on blur, not on every keystroke).
+  nameEl.addEventListener("blur", () => { if (nameEl.value.trim()) setError("org_name", null); });
+  urlEl.addEventListener("blur", () => {
+    const n = normalizeUrl(urlEl.value);
+    if (n === null) setError("org_url", "Enter a full web address, like https://example.org, or leave it blank");
+    else setError("org_url", null);
+  });
+
+  function renderDomains(domains: Domain[], selected: string[]) {
+    const group = (title: string, items: Domain[]) => !items.length ? "" : `
+      <h2 class="eyebrow">${esc(title)}</h2>
+      <ul class="domain-list" role="list">${items.map((d) => `
+        <li class="domain-option">
+          <label class="choice">
+            <input type="checkbox" name="domains" value="${esc(d.id)}" id="domain-${esc(d.id)}" ${selected.includes(d.id) ? "checked" : ""}>
+            <span class="choice__text">${esc(d.name)} <span class="choice__meta">${d.questions.length} statements</span></span>${icon("check", "choice__check")}
+          </label>
+          <details class="about"><summary>About ${esc(d.name)}</summary><p>${esc(d.about)}</p></details>
+        </li>`).join("")}
+      </ul>`;
+    $("#domain-groups")!.innerHTML =
+      group("Priority areas", domains.filter((d) => d.priority)) + group("Other areas", domains.filter((d) => !d.priority));
+    $("#domains")!.addEventListener("change", () => { if (chosen().length) setError("domains", null); });
+  }
+
+  async function init() {
+    await requireUser();
+    const meta = await getMeta();
+    const draft = loadDraft();
+    nameEl.value = draft?.org_name ?? "";
+    urlEl.value = draft?.org_url ?? "";
+    if (draft?.language === "es") $<HTMLInputElement>("input[name=language][value=es]")!.checked = true;
+    const known = new Set(meta.domains.map((d) => d.id));
+    const selected = draft?.domain_ids.filter((id) => known.has(id)).length ? draft.domain_ids : meta.default_domains;
+    renderDomains(meta.domains, selected);
+
+    if (meta.samples.length) {
+      $("#sample-list")!.innerHTML = meta.samples.map((s) => `
+        <li><button type="button" class="btn btn-secondary sample-btn" data-sample="${esc(s.id)}" aria-describedby="samples-hint">
+          <span class="sample-btn__name">${esc(s.name)}</span><span class="sample-btn__summary">${esc(s.summary)}</span>
+        </button></li>`).join("");
+      $("#samples")!.hidden = false;
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const errors = validate();
+      showErrors(errors);
+      if (Object.keys(errors).length) return;
+      const prev = loadDraft();
+      saveDraft({
+        org_name: nameEl.value.trim(),
+        org_url: normalizeUrl(urlEl.value) || "",
+        language: language(),
+        domain_ids: meta.domains.map((d) => d.id).filter((id) => chosen().includes(id)),
+        answers: prev?.answers ?? {},
+      });
+      location.assign("/questionnaire/#1");
+    });
+
+    $("#sample-list")!.addEventListener("click", async (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-sample]");
+      if (!btn) return;
+      const errEl = $("#samples-error")!;
+      if (!chosen().length) { showErrors({ domains: "Choose at least one capacity area" }); return; }
+      btn.setAttribute("aria-disabled", "true");
+      errEl.hidden = true;
+      try {
+        const { id } = await api.post<{ id: string }>("/demo", { sample: btn.dataset.sample, language: language(), domain_ids: chosen() });
+        location.assign(`/results/?id=${encodeURIComponent(id)}`);
+      } catch (ex) {
+        errEl.innerHTML = `${icon("alert")}<span>${esc(ex instanceof ApiError ? ex.message : "We could not start the sample. Please try again.")}</span>`;
+        errEl.hidden = false;
+        btn.removeAttribute("aria-disabled");
+      }
+    });
+  }
+
+  init().catch(() => {
+    $("#domain-groups")!.innerHTML = `<p class="field-error" role="alert">${icon("alert")}<span>We could not load the capacity areas. Please reload the page.</span></p>`;
+  });
+</script>
