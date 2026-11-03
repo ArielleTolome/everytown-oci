@@ -2,6 +2,11 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v0.5.1 — Pitch deck for v0.5
+
+- Pitch deck (`docs/pitch/index.html`) in Everytown colors, with new slides "What Everytown told us" (interview quotes mapped to features) and staff network analytics, the Aurora architecture, updated costs, and fresh screenshots. Fonts load from `frontend/public/fonts`.
+- Demo script adds a 25-second staff dashboard beat (still 3:00). Backup PDF regenerated from v0.5.
+
 ## v0.5.0 — Astro frontend in Everytown colors, Aurora PostgreSQL, staff network analytics
 
 Driven by an onsite interview with an Everytown representative.

@@ -5,71 +5,84 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OCI Capacity Coach: pitch</title>
 <style>
-@font-face { font-family: "Atkinson Hyperlegible"; src: url("../../static/fonts/AtkinsonHyperlegible-Regular.ttf") format("truetype"); font-weight: 400; }
-@font-face { font-family: "Atkinson Hyperlegible"; src: url("../../static/fonts/AtkinsonHyperlegible-Bold.ttf") format("truetype"); font-weight: 700; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("../../frontend/public/fonts/AtkinsonHyperlegible-Regular.ttf") format("truetype"); font-weight: 400; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("../../frontend/public/fonts/AtkinsonHyperlegible-Bold.ttf") format("truetype"); font-weight: 700; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("../../frontend/public/fonts/AtkinsonHyperlegible-Italic.ttf") format("truetype"); font-weight: 400; font-style: italic; }
+/* Everytown palette, same as the app (frontend/src/styles/global.css). Contrast:
+   navy on white 15.7, navy on pale 14.4, royal on white 7.8, white on red 4.88 (red text only on white),
+   light blue on navy 9.7. */
 :root {
-  --teal-50: #F0FDFA; --teal-100: #CCFBF1; --teal-300: #5EEAD4; --teal-600: #0D9488; --teal-700: #0F766E; --teal-900: #134E4A;
-  --amber-600: #D97706; --slate-600: #475569; --white: #FFFFFF;
+  --navy: #001C60; --royal: #0D3DD9; --red: #E3012B; --deep: #000E2F; --mid: #455FA0; --light: #BCCBEF; --pale: #F2F5FC; --white: #FFFFFF;
   --font: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: var(--teal-900); overflow: hidden; }
-body { font-family: var(--font); color: var(--teal-900); }
+html, body { height: 100%; background: var(--deep); overflow: hidden; }
+body { font-family: var(--font); color: var(--navy); }
 /* Fixed 1920x1080 stage, scaled to fit the window, so px sizes below are true sizes on a 1080p projector. */
 .stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center; transform: translate(-50%, -50%) scale(var(--s, 1)); }
-.slide { position: absolute; inset: 0; padding: 88px 120px 120px; background: var(--teal-50); display: flex; flex-direction: column; gap: 40px; overflow: hidden; visibility: hidden; opacity: 0; transition: opacity .3s ease; }
+.slide { position: absolute; inset: 0; padding: 88px 120px 120px; background: var(--white); border-top: 12px solid var(--red); display: flex; flex-direction: column; gap: 40px; overflow: hidden; visibility: hidden; opacity: 0; transition: opacity .3s ease; }
 .slide.active { visibility: visible; opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .slide { transition: none; } }
-.slide.dark { background: var(--teal-900); color: var(--white); }
+.slide.dark { background: var(--navy); color: var(--white); }
 .notes { display: none; }
 
-.kicker { font-size: 26px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--teal-700); }
-.dark .kicker { color: var(--teal-300); }
+.kicker { font-size: 26px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--red); }
+.dark .kicker { color: var(--light); }
 h1 { font-size: 112px; line-height: 1.02; letter-spacing: -.01em; }
-h2 { font-size: 60px; line-height: 1.1; max-width: 1600px; }
+h2 { font-size: 60px; line-height: 1.1; max-width: 1640px; padding-bottom: 20px; border-bottom: 4px solid var(--navy); }
+.dark h2 { border-color: var(--light); }
 h3 { font-size: 34px; line-height: 1.2; }
 p, li { font-size: 30px; line-height: 1.4; }
-.muted { color: var(--slate-600); }
+.muted { color: var(--mid); }
 .lead { font-size: 40px; line-height: 1.3; max-width: 1500px; }
 strong { font-weight: 700; }
 ul.clean { list-style: none; display: grid; gap: 18px; }
 
-.card { background: var(--white); border: 2px solid var(--teal-300); border-radius: 20px; padding: 32px 36px; }
+.card { background: var(--pale); border-radius: 16px; padding: 32px 36px; }
 .card h3 { margin-bottom: 12px; }
-.bar { border-left: 10px solid var(--teal-600); }
+.bar { border-left: 10px solid var(--royal); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
 .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
 .fill { flex: 1; min-height: 0; }
 
-.shot { display: block; width: 100%; height: auto; border-radius: 14px; border: 2px solid var(--teal-300); box-shadow: 0 12px 32px rgba(19, 78, 74, .16); background: var(--white); }
-.num { font-size: 132px; font-weight: 700; line-height: 1; color: var(--teal-700); }
-.metric { font-size: 72px; font-weight: 700; line-height: 1.05; color: var(--teal-700); }
-.metric small { font-size: 34px; }
-.step { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: var(--teal-900); color: var(--white); font-size: 30px; font-weight: 700; flex: none; }
-.chip { display: inline-block; font-size: 24px; font-weight: 700; padding: 6px 16px; border-radius: 999px; background: var(--teal-100); color: var(--teal-900); }
-.cta { display: inline-block; background: var(--amber-600); color: #000; font-weight: 700; font-size: 40px; padding: 22px 44px; border-radius: 16px; }
-.url { font-size: 34px; font-weight: 700; color: var(--teal-300); }
+.shot { display: block; width: 100%; height: auto; border-radius: 12px; border: 2px solid var(--light); box-shadow: 0 12px 32px rgba(0, 28, 96, .16); background: var(--white); }
+.crop { object-fit: cover; object-position: left top; }
+.fit { object-fit: contain; object-position: top; }
+.num { font-size: 132px; font-weight: 700; line-height: 1; color: var(--royal); }
+.metric { font-size: 68px; font-weight: 700; line-height: 1.05; color: var(--royal); }
+.metric small { font-size: 32px; }
+.step { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: var(--navy); color: var(--white); font-size: 30px; font-weight: 700; flex: none; }
+.chip { display: inline-block; font-size: 24px; font-weight: 700; padding: 6px 16px; border-radius: 999px; background: var(--navy); color: var(--white); }
+.cta { display: inline-block; background: var(--red); color: var(--white); font-weight: 700; font-size: 40px; padding: 22px 44px; border-radius: 999px; }
+.url { font-size: 34px; font-weight: 700; color: var(--light); }
 /* Sparse slides: center vertically and use larger text instead of leaving the bottom empty. */
 .roomy { justify-content: center; padding-bottom: 88px; }
 .roomy .card > p:not([class]), .roomy li { font-size: 34px; }
 .roomy h3 { font-size: 38px; }
-.footer { position: absolute; left: 120px; right: 120px; bottom: 40px; display: flex; justify-content: space-between; font-size: 24px; color: var(--slate-600); }
-.dark .footer { color: var(--teal-100); }
+.footer { position: absolute; left: 120px; right: 120px; bottom: 40px; display: flex; justify-content: space-between; font-size: 24px; color: var(--mid); }
+.dark .footer { color: var(--light); }
+
+/* "What Everytown told us": quote on the left, what we built on the right */
+.said { display: grid; grid-template-columns: 1fr 1fr; gap: 0 48px; }
+.said > div { padding: 18px 0; border-bottom: 2px solid var(--light); }
+.said blockquote p { font-size: 28px; font-style: italic; }
+.said blockquote p::before { content: "\201C"; color: var(--red); font-weight: 700; font-style: normal; margin-right: 4px; }
+.said blockquote p::after { content: "\201D"; color: var(--red); font-weight: 700; font-style: normal; margin-left: 2px; }
+.said .built p { font-size: 28px; }
+.said .head { font-size: 24px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mid); padding-top: 0; }
 
 /* Controls (outside the stage so they stay usable at any window size) */
 .controls { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 8px; align-items: center; z-index: 10; opacity: 0; transition: opacity .2s; }
 /* Hidden while presenting; appears on pointer hover or keyboard focus. */
 .controls:hover, .controls:focus-within { opacity: 1; }
-.controls button { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 48px; padding: 0 14px; border-radius: 10px; border: 2px solid var(--teal-300); background: var(--teal-900); color: var(--white); font: 700 20px var(--font); cursor: pointer; }
-.controls button:focus-visible { outline: 3px solid var(--amber-600); outline-offset: 2px; }
-.counter { color: var(--white); background: var(--teal-900); padding: 10px 14px; border-radius: 10px; font-size: 20px; }
-.progress { position: fixed; left: 0; top: 0; height: 6px; background: var(--amber-600); z-index: 10; transition: width .3s; }
-.panel { position: fixed; left: 0; right: 0; bottom: 0; max-height: 40vh; overflow: auto; background: #0B2F2C; color: var(--white); border-top: 4px solid var(--amber-600); padding: 20px 28px 80px; font-size: 22px; line-height: 1.5; z-index: 9; }
+.controls button { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 48px; padding: 0 14px; border-radius: 10px; border: 2px solid var(--light); background: var(--navy); color: var(--white); font: 700 20px var(--font); cursor: pointer; }
+.controls button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+.counter { color: var(--white); background: var(--navy); padding: 10px 14px; border-radius: 10px; font-size: 20px; }
+.progress { position: fixed; left: 0; bottom: 0; height: 6px; background: var(--royal); z-index: 10; transition: width .3s; }
+.panel { position: fixed; left: 0; right: 0; bottom: 0; max-height: 40vh; overflow: auto; background: var(--deep); color: var(--white); border-top: 4px solid var(--red); padding: 20px 28px 80px; font-size: 22px; line-height: 1.5; z-index: 9; }
 .panel[hidden] { display: none; }
-.panel h2 { font-size: 22px; color: var(--teal-300); margin-bottom: 8px; }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.chrome-hidden .controls, .chrome-hidden .progress { display: none; }
+.panel h2 { font-size: 22px; color: var(--light); margin-bottom: 8px; border: 0; padding: 0; }
 </style>
 </head>
 <body>
@@ -79,14 +92,14 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
 <section class="slide dark" aria-label="Slide 1: Title" style="justify-content:center;">
   <p class="kicker">AWS Breaking Barriers 2026 · Community Empowerment · Everytown for Gun Safety</p>
   <h1>OCI Capacity Coach</h1>
-  <p class="lead" style="color:var(--teal-100);">Every community violence intervention organization gets a personal, grounded 30 / 60 / 90 day capacity plan in under a minute, instead of waiting for two staff members to write it by hand.</p>
+  <p class="lead">Every community violence intervention leader gets a plain-language answer in under a minute: what is true about their organization, the one or two things to do first, and a 30 / 60 / 90 day plan. Everytown staff see the whole network.</p>
   <p class="url">d2mi2h3eu8y69s.cloudfront.net</p>
   <div class="footer"><span>Built for the Community Safety Fund (CSF) network · press N for speaker notes</span></div>
-  <aside class="notes">Open with the promise. CVI organizations are the people who stop shootings in their neighborhoods. Everytown's Community Safety Fund helps them get stronger as organizations. We built the tool that lets that help reach every grantee, not just the ones two staff members have time for. The app is live on AWS right now.</aside>
+  <aside class="notes">Open with the promise. CVI organizations are the people who stop shootings in their neighborhoods. Everytown's Community Safety Fund helps them get stronger as organizations. We built the tool that lets that help reach every grantee, not just the ones two staff members have time for, and gives Everytown's team a view of the whole network. It is live on AWS right now.</aside>
 </section>
 
 <!-- 2. Problem -->
-<section class="slide" aria-label="Slide 2: Problem">
+<section class="slide roomy" aria-label="Slide 2: Problem">
   <p class="kicker">The problem</p>
   <h2>The manual pilot worked. Two people cannot hand-write reports for a whole network.</h2>
   <div class="grid3">
@@ -94,187 +107,217 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
     <div class="card"><p class="num">2</p><p>CSF staff wrote every individualized report by hand</p></div>
     <div class="card bar"><p class="num">140+</p><p>grantee and alumni organizations still waiting for the same support</p></div>
   </div>
-  <div class="card" style="background:var(--teal-100);border-color:var(--teal-600);">
+  <div class="card bar">
     <p><strong>What the pilot taught us:</strong> Planning was the weakest domain across the cohort, and Planning, Fundraising and Financial Management move with overall capacity (r ≥ .88). So the Coach starts with those areas.</p>
   </div>
   <aside class="notes">The OCI is Everytown's capacity self-assessment for CVI nonprofits. The 2025 pilot was valuable, but every report took two staff members real time per organization. That cannot reach 140 plus organizations. The pilot data also tells us where to focus: planning was weakest everywhere, and three domains correlate at .88 or higher with overall capacity. Those are pre-selected in the product.</aside>
 </section>
 
-<!-- 3. Who we serve -->
-<section class="slide" aria-label="Slide 3: Who we serve">
+<!-- 3. What Everytown told us -->
+<section class="slide" aria-label="Slide 3: What Everytown told us" style="gap:28px;">
+  <p class="kicker">Onsite interview with Everytown</p>
+  <h2>What Everytown told us, and what we built</h2>
+  <div class="said">
+    <div class="head">They said</div><div class="head">We built</div>
+    <div><blockquote><p>I can read this even though I'm at an 8th grade reading level and I've been to prison.</p></blockquote></div>
+    <div class="built"><p><strong>Plain language.</strong> Reports written for an 8th grade reading level, warm and explained. Read aloud, Spanish.</p></div>
+    <div><blockquote><p>Out of the 10 things you could fix, here's one or two priorities that you should do first.</p></blockquote></div>
+    <div class="built"><p><strong>"Start here".</strong> At most two first priorities, each tied to the answers behind it, before the full plan.</p></div>
+    <div><blockquote><p>I know what training they need. I know what services they need.</p></blockquote></div>
+    <div class="built"><p><strong>Staff dashboard.</strong> The most common growth priorities across the network.</p></div>
+    <div><blockquote><p>Identify groups of grantees with similar problems that we could connect with each other.</p></blockquote></div>
+    <div class="built"><p><strong>Grantees to connect.</strong> Groups that share the same high priority growth priority.</p></div>
+    <div><blockquote><p>Maybe I could start benchmarking.</p></blockquote></div>
+    <div class="built"><p><strong>Ready for it.</strong> A staff-only benchmarking preview from a SQL view. Grantees never see peer comparisons.</p></div>
+  </div>
+  <aside class="notes">We interviewed an Everytown representative onsite and rebuilt around what we heard. Their users are leaders of small groups, five to twenty people, some formerly incarcerated. They asked for something a leader at an 8th grade reading level can understand, one or two priorities first, and a back end that tells staff which training and services the network needs and which grantees to connect. Benchmarking was framed as future, so we built the database view for it and show it to staff only, as a preview.</aside>
+</section>
+
+<!-- 4. Who we serve -->
+<section class="slide" aria-label="Slide 4: Who we serve">
   <p class="kicker">Who we serve</p>
   <h2>A learning tool, not an evaluation</h2>
   <div class="grid2 fill" style="grid-template-columns: 760px 1fr; align-items:start;">
     <ul class="clean">
-      <li class="card bar"><h3>CVI organization leaders</h3><p>Small, community-rooted nonprofits with strong frontline work and thin back offices.</p></li>
-      <li class="card bar"><h3>CSF program staff</h3><p>Time back for coaching, instead of writing reports.</p></li>
+      <li class="card bar"><h3>CVI organization leaders</h3><p>Executive directors of small nonprofits, 5 to 20 staff. Many lead with lived experience.</p></li>
+      <li class="card bar"><h3>CSF program staff</h3><p>Which training and services to offer, and which grantees to connect.</p></li>
       <li class="card bar"><h3>Everytown Labs</h3><p>A forkable build to iterate toward production, not rebuild.</p></li>
     </ul>
     <figure>
-      <img class="shot" src="img/stages.png" alt="Report section titled Where you are today. Planning shows estimated stage 3, Developing, and Fundraising shows stage 2, Emerging, each on a five-step ladder from Seeding to Transformational.">
+      <img class="shot" src="img/stages.png" alt="Report section titled Where you are today. Planning and Fundraising each show estimated stage 1, Seeding, on a five-step ladder from Seeding to Transformational.">
       <figcaption style="margin-top:20px;"><p>Results lead with a stage ladder. Gaps are called <strong>growth priorities</strong>. Every stage is a normal place to be.</p></figcaption>
     </figure>
   </div>
   <aside class="notes">The OCI handoff deck says it plainly: this is a learning experience, not an evaluative one. So the report never opens with a grade. It opens with where you are growing from, in the organization's own stage language. Every No is framed as a growth priority. That framing matters to small organizations who are used to being judged by funders.</aside>
 </section>
 
-<!-- 4. Demo flow -->
-<section class="slide" aria-label="Slide 4: Live demo flow">
+<!-- 5. Demo flow -->
+<section class="slide" aria-label="Slide 5: Live demo flow">
   <p class="kicker">Live demo</p>
-  <h2>From answers to an action plan in under a minute</h2>
+  <h2>From answers to "Start here" in under a minute</h2>
   <div class="grid3 fill" style="align-items:start;">
     <figure>
-      <img class="shot" src="img/questionnaire.png" alt="Questionnaire page for Planning, area 1 of 4. Overall progress shows 15 of 72 statements answered. Each statement has large Yes and No choices.">
+      <img class="shot crop" style="height:470px;" src="img/questionnaire.png" alt="Questionnaire page for Planning, area 1 of 4. Overall progress shows 5 of 72 statements answered. Each statement has large Yes and No choices.">
       <figcaption style="margin-top:22px;display:flex;gap:18px;"><span class="step" aria-hidden="true">1</span><p><strong>Answer.</strong> One area per screen, Yes or No. Choose which areas to assess today.</p></figcaption>
     </figure>
     <figure>
-      <img class="shot" src="img/processing.png" alt="Results page while the report is being built. Reading your answers and Scoring capacity domains are Done; researching the website, consulting the CVI resource library and writing recommendations are Waiting.">
-      <figcaption style="margin-top:22px;display:flex;gap:18px;"><span class="step" aria-hidden="true">2</span><p><strong>Watch it work.</strong> Scores appear instantly. The full AI report is ready in 38 to 47 seconds.</p></figcaption>
+      <img class="shot fit" style="height:470px;" src="img/stages.png" alt="Where you are today: Planning and Fundraising both at stage 1, Seeding, on the five-stage ladder.">
+      <figcaption style="margin-top:22px;display:flex;gap:18px;"><span class="step" aria-hidden="true">2</span><p><strong>See where you are.</strong> Stages appear instantly. The full AI report is ready in 38 to 47 seconds.</p></figcaption>
     </figure>
     <figure>
-      <img class="shot" src="img/plan.png" alt="30 / 60 / 90 day action plan. First action: Map your next 12 months of funding, owner Executive director with bookkeeper, three numbered steps, based on answer FR7, with a resource link to ARCvi Finding and Sustaining Funding.">
-      <figcaption style="margin-top:22px;display:flex;gap:18px;"><span class="step" aria-hidden="true">3</span><p><strong>Act.</strong> Each action has an owner, cites the answers behind it and links a vetted resource. PDF in one click.</p></figcaption>
+      <img class="shot crop" style="height:470px;" src="img/focus.png" alt="Start here: your top priorities. Priority 1, Start a simple monthly money routine, with why it matters, the three answers it is based on (FM4, FM6, FM8), four steps and a resource link.">
+      <figcaption style="margin-top:22px;display:flex;gap:18px;"><span class="step" aria-hidden="true">3</span><p><strong>Start here.</strong> One or two first priorities, the answers behind them, a vetted resource. Then the 30 / 60 / 90 plan and PDF.</p></figcaption>
     </figure>
   </div>
-  <aside class="notes">Switch to the browser now (see demo-script.md). If the network fails, open sample-report.pdf and walk through these three screenshots instead. Point out the "Based on your answers to" chip on every action: that is the grounding made visible.</aside>
+  <aside class="notes">Switch to the browser now (see demo-script.md). If the network fails, open sample-report.pdf and walk through these screenshots instead. Point out "Based on your answers to" under each priority: that is the grounding made visible.</aside>
 </section>
 
-<!-- 5. How it works -->
-<section class="slide" aria-label="Slide 5: How it works" style="gap:32px;">
+<!-- 6. How it works -->
+<section class="slide" aria-label="Slide 6: How it works" style="gap:28px;padding-top:72px;padding-bottom:72px;">
   <p class="kicker">How it works</p>
   <h2>Deterministic scores first. AI second. Validated always.</h2>
-  <svg role="img" aria-labelledby="arch-t arch-d" viewBox="0 0 1680 430" width="1680" height="430" style="font-family:var(--font);">
+  <svg role="img" aria-labelledby="arch-t arch-d" viewBox="0 0 1680 470" width="1680" height="470" style="font-family:var(--font);flex:none;">
     <title id="arch-t">Architecture</title>
-    <desc id="arch-d">Browser to CloudFront to one AWS Lambda running Flask, which stores submissions in Amazon S3. The Lambda invokes itself asynchronously to run a hardcoded five-step pipeline: score with deterministic Python, research the website with Claude Haiku, retrieve field guides from a Bedrock Knowledge Base on S3 Vectors, write the plan with Claude Sonnet using a JSON schema, then validate that every action cites real gap ids and every link comes from the vetted catalog.</desc>
-    <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#134E4A"/></marker></defs>
-    <g font-size="26" fill="#134E4A">
-      <!-- request path -->
-      <rect x="0" y="10" width="250" height="96" rx="14" fill="#fff" stroke="#5EEAD4" stroke-width="3"/><text x="125" y="68" text-anchor="middle" font-weight="700">Browser</text>
-      <rect x="330" y="10" width="270" height="96" rx="14" fill="#fff" stroke="#5EEAD4" stroke-width="3"/><text x="465" y="68" text-anchor="middle" font-weight="700">CloudFront</text>
-      <rect x="680" y="10" width="420" height="96" rx="14" fill="#CCFBF1" stroke="#0D9488" stroke-width="3"/><text x="890" y="52" text-anchor="middle" font-weight="700">One Lambda (Flask)</text><text x="890" y="88" text-anchor="middle">Function URL, scales to zero</text>
-      <rect x="1180" y="10" width="500" height="96" rx="14" fill="#fff" stroke="#5EEAD4" stroke-width="3"/><text x="1430" y="52" text-anchor="middle" font-weight="700">Amazon S3</text><text x="1430" y="88" text-anchor="middle">submissions and reports</text>
-      <line x1="250" y1="58" x2="326" y2="58" stroke="#134E4A" stroke-width="3" marker-end="url(#ah)"/>
-      <line x1="600" y1="58" x2="676" y2="58" stroke="#134E4A" stroke-width="3" marker-end="url(#ah)"/>
-      <line x1="1100" y1="58" x2="1176" y2="58" stroke="#134E4A" stroke-width="3" marker-end="url(#ah)"/>
-      <line x1="890" y1="106" x2="890" y2="168" stroke="#134E4A" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#ah)"/>
-      <text x="910" y="146" font-size="24" fill="#475569">async self-invoke: hardcoded pipeline, not an agent</text>
-      <!-- pipeline -->
-      <g>
-        <rect x="0" y="176" width="300" height="168" rx="14" fill="#134E4A"/>
-        <text x="150" y="222" text-anchor="middle" fill="#fff" font-weight="700">1 Score</text>
-        <text x="150" y="264" text-anchor="middle" fill="#fff">Deterministic</text><text x="150" y="298" text-anchor="middle" fill="#fff">Python, no AI</text>
-      </g>
-      <g>
-        <rect x="345" y="176" width="300" height="168" rx="14" fill="#fff" stroke="#0D9488" stroke-width="3"/>
-        <text x="495" y="222" text-anchor="middle" font-weight="700">2 Research</text>
-        <text x="495" y="264" text-anchor="middle">Org website,</text><text x="495" y="298" text-anchor="middle">Claude Haiku</text>
-      </g>
-      <g>
-        <rect x="690" y="176" width="300" height="168" rx="14" fill="#fff" stroke="#0D9488" stroke-width="3"/>
-        <text x="840" y="222" text-anchor="middle" font-weight="700">3 Retrieve</text>
-        <text x="840" y="264" text-anchor="middle">Bedrock KB on</text><text x="840" y="298" text-anchor="middle">S3 Vectors</text>
-      </g>
-      <g>
-        <rect x="1035" y="176" width="300" height="168" rx="14" fill="#fff" stroke="#0D9488" stroke-width="3"/>
-        <text x="1185" y="222" text-anchor="middle" font-weight="700">4 Write</text>
-        <text x="1185" y="264" text-anchor="middle">Claude Sonnet,</text><text x="1185" y="298" text-anchor="middle">JSON schema</text>
-      </g>
-      <g>
-        <rect x="1380" y="176" width="300" height="168" rx="14" fill="#D97706"/>
-        <text x="1530" y="222" text-anchor="middle" fill="#000" font-weight="700">5 Validate</text>
-        <text x="1530" y="264" text-anchor="middle" fill="#000">Real gap ids,</text><text x="1530" y="298" text-anchor="middle" fill="#000">vetted links only</text>
-      </g>
-      <line x1="300" y1="260" x2="341" y2="260" stroke="#134E4A" stroke-width="3" marker-end="url(#ah)"/>
-      <line x1="645" y1="260" x2="686" y2="260" stroke="#134E4A" stroke-width="3" marker-end="url(#ah)"/>
-      <line x1="990" y1="260" x2="1031" y2="260" stroke="#134E4A" stroke-width="3" marker-end="url(#ah)"/>
-      <line x1="1335" y1="260" x2="1376" y2="260" stroke="#134E4A" stroke-width="3" marker-end="url(#ah)"/>
-      <text x="0" y="404" font-size="24" fill="#475569">9 CVI field guides distilled from the BJA checklist, HVIP brief and expert decks, embedded with Titan Text Embeddings v2</text>
+    <desc id="arch-d">Browser to CloudFront. CloudFront serves the Astro static site from a private S3 bucket and routes /api to one AWS Lambda running a Flask JSON API. The Lambda stores assessments in Aurora PostgreSQL Serverless v2 through the RDS Data API, which also powers staff analytics. The Lambda invokes itself asynchronously to run a hardcoded five-step pipeline: score with deterministic Python, research the website with Claude Haiku, retrieve field guides from a Bedrock Knowledge Base on S3 Vectors, write the report with Claude Sonnet using a JSON schema, then validate that every action cites real gap ids and every link comes from the vetted catalog.</desc>
+    <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#001C60"/></marker></defs>
+    <g font-size="26" fill="#001C60">
+      <rect x="0" y="58" width="200" height="96" rx="14" fill="#F2F5FC" stroke="#455FA0" stroke-width="3"/><text x="100" y="116" text-anchor="middle" font-weight="700">Browser</text>
+      <rect x="270" y="58" width="240" height="96" rx="14" fill="#F2F5FC" stroke="#455FA0" stroke-width="3"/><text x="390" y="116" text-anchor="middle" font-weight="700">CloudFront</text>
+      <rect x="640" y="0" width="420" height="90" rx="14" fill="#F2F5FC" stroke="#455FA0" stroke-width="3"/><text x="850" y="38" text-anchor="middle" font-weight="700">Astro site on S3</text><text x="850" y="72" text-anchor="middle">static, private bucket</text>
+      <rect x="640" y="118" width="420" height="96" rx="14" fill="#001C60"/><text x="850" y="158" text-anchor="middle" font-weight="700" fill="#fff">One Lambda (Flask API)</text><text x="850" y="194" text-anchor="middle" fill="#fff">scales to zero</text>
+      <rect x="1140" y="118" width="540" height="96" rx="14" fill="#F2F5FC" stroke="#455FA0" stroke-width="3"/><text x="1410" y="158" text-anchor="middle" font-weight="700">Aurora PostgreSQL Serverless v2</text><text x="1410" y="194" text-anchor="middle">RDS Data API, staff analytics</text>
+      <line x1="200" y1="106" x2="266" y2="106" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
+      <polyline points="510,90 575,90 575,45 636,45" fill="none" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
+      <polyline points="510,122 575,122 575,166 636,166" fill="none" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
+      <text x="530" y="200" font-size="24" font-weight="700">/api/*</text>
+      <line x1="1060" y1="166" x2="1136" y2="166" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
+      <line x1="850" y1="214" x2="850" y2="254" stroke="#001C60" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#ah)"/>
+      <text x="870" y="244" font-size="24" fill="#455FA0">async self-invoke: hardcoded pipeline, not an agent</text>
+      <rect x="0" y="262" width="300" height="160" rx="14" fill="#001C60"/>
+      <text x="150" y="306" text-anchor="middle" fill="#fff" font-weight="700">1 Score</text>
+      <text x="150" y="346" text-anchor="middle" fill="#fff">Deterministic</text><text x="150" y="380" text-anchor="middle" fill="#fff">Python, no AI</text>
+      <rect x="345" y="262" width="300" height="160" rx="14" fill="#F2F5FC" stroke="#0D3DD9" stroke-width="3"/>
+      <text x="495" y="306" text-anchor="middle" font-weight="700">2 Research</text>
+      <text x="495" y="346" text-anchor="middle">Org website,</text><text x="495" y="380" text-anchor="middle">Claude Haiku</text>
+      <rect x="690" y="262" width="300" height="160" rx="14" fill="#F2F5FC" stroke="#0D3DD9" stroke-width="3"/>
+      <text x="840" y="306" text-anchor="middle" font-weight="700">3 Retrieve</text>
+      <text x="840" y="346" text-anchor="middle">Bedrock KB on</text><text x="840" y="380" text-anchor="middle">S3 Vectors</text>
+      <rect x="1035" y="262" width="300" height="160" rx="14" fill="#F2F5FC" stroke="#0D3DD9" stroke-width="3"/>
+      <text x="1185" y="306" text-anchor="middle" font-weight="700">4 Write</text>
+      <text x="1185" y="346" text-anchor="middle">Claude Sonnet,</text><text x="1185" y="380" text-anchor="middle">JSON schema</text>
+      <rect x="1380" y="262" width="300" height="160" rx="14" fill="#E3012B"/>
+      <text x="1530" y="306" text-anchor="middle" fill="#fff" font-weight="700">5 Validate</text>
+      <text x="1530" y="346" text-anchor="middle" fill="#fff">Real gap ids,</text><text x="1530" y="380" text-anchor="middle" fill="#fff">vetted links only</text>
+      <line x1="300" y1="342" x2="341" y2="342" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
+      <line x1="645" y1="342" x2="686" y2="342" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
+      <line x1="990" y1="342" x2="1031" y2="342" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
+      <line x1="1335" y1="342" x2="1376" y2="342" stroke="#001C60" stroke-width="3" marker-end="url(#ah)"/>
+      <text x="0" y="462" font-size="24" fill="#455FA0">9 CVI field guides distilled from the BJA checklist, HVIP brief and expert decks, embedded with Titan Text Embeddings v2</text>
     </g>
   </svg>
   <div class="grid3">
-    <div class="card bar"><p><strong>The LLM never scores.</strong> The reference engine is unchanged and passes all 3 benchmark answer keys.</p></div>
-    <div class="card bar"><p><strong>Grounded or dropped.</strong> Every action must cite real growth priorities from this submission.</p></div>
-    <div class="card bar"><p><strong>No invented links.</strong> Resources come only from a vetted 19-entry catalog.</p></div>
+    <div class="card bar" style="padding:24px 32px;"><p><strong>The LLM never scores.</strong> Reference engine unchanged, passes all 3 answer keys.</p></div>
+    <div class="card bar" style="padding:24px 32px;"><p><strong>Grounded or dropped.</strong> Every priority and action cites real growth priorities.</p></div>
+    <div class="card bar" style="padding:24px 32px;"><p><strong>No invented links.</strong> Resources only from a vetted 19-entry catalog.</p></div>
   </div>
-  <aside class="notes">Scoring is plain Python, the reference implementation, unchanged and verified against all three answer keys. Then a hardcoded pipeline, not an agent: Haiku profiles the website behind an SSRF guard, the Knowledge Base on S3 Vectors retrieves the relevant field guides once per area, and Sonnet writes the plan through tool use with a JSON schema. The server treats the model's output as untrusted: validate_report drops any action that does not cite real gap ids and any link outside the catalog.</aside>
+  <aside class="notes">One domain on CloudFront: the Astro site comes from a private S3 bucket, and /api goes to one Lambda running a Flask JSON API. Data lives in Aurora PostgreSQL Serverless v2, reached through the RDS Data API, so the Lambda still needs no VPC or NAT; the same database powers the staff analytics. Scoring is plain Python, the reference implementation, unchanged and verified against all three answer keys. Then a hardcoded pipeline, not an agent: Haiku profiles the website, the Knowledge Base on S3 Vectors retrieves field guides, and Sonnet writes the report through a JSON schema. The server treats the model's output as untrusted and drops anything that does not cite real gap ids or uses a link outside the catalog.</aside>
 </section>
 
-<!-- 6. Accessibility -->
-<section class="slide" aria-label="Slide 6: Accessibility">
+<!-- 7. Staff analytics -->
+<section class="slide" aria-label="Slide 7: Staff analytics">
+  <p class="kicker">For Everytown staff</p>
+  <h2>See the whole network, not one report at a time</h2>
+  <div class="fill" style="display:grid;grid-template-columns:540px 600px 1fr;gap:40px;align-items:start;">
+    <img class="shot" src="img/staff.png" alt="Network capacity dashboard: 22 organizations, 26 assessments, 13 in the last 30 days, and stage distribution bars for all eight capacity areas. Planning has 19 organizations at Seeding.">
+    <img class="shot" src="img/cohorts.png" alt="Grantees to connect: cards for groups that share a high priority growth priority, such as 17 Planning organizations that do not yet maintain written work plans, each listing the organization names.">
+    <ul class="clean" style="gap:22px;">
+      <li><h3>Stage distribution</h3><p style="font-size:26px;">Where every grantee is, per area.</p></li>
+      <li><h3>Top network needs</h3><p style="font-size:26px;">The most common growth priorities: what training and services to offer.</p></li>
+      <li><h3>Grantees to connect</h3><p style="font-size:26px;">Groups that share a high priority growth priority.</p></li>
+      <li><h3>Benchmarking preview</h3><p style="font-size:26px;">Peer percentile per area, staff only. Grantees never see it.</p></li>
+    </ul>
+  </div>
+  <aside class="notes">Sign in as staff and the same data becomes a network view. Stage distribution per area, with an equivalent table for screen readers. The most common growth priorities across the network, which is exactly the "what training do they need" question. Grantees to connect: cohorts that share the same high priority growth priority, ready for a call or a convening. And a benchmarking preview from a SQL view, labelled as a preview and visible to staff only. All 22 organizations on screen are synthetic.</aside>
+</section>
+
+<!-- 8. Accessibility -->
+<section class="slide" aria-label="Slide 8: Accessibility">
   <p class="kicker">User interface and design</p>
   <h2>Accessibility is the feature, not a checkbox</h2>
   <div class="fill" style="display:grid;grid-template-columns:1fr 300px;gap:56px;align-items:start;">
     <div class="grid2" style="gap:24px;">
-      <div class="card"><h3>WCAG 2.2 AA</h3><p>axe-core finds no A or AA violations on any page.</p></div>
+      <div class="card"><h3>WCAG 2.2 AA</h3><p>axe-core finds no A or AA violations on any page, staff dashboard included.</p></div>
+      <div class="card"><h3>Plain language</h3><p>Written for an 8th grade reading level, in Everytown's colors at AA contrast.</p></div>
       <div class="card"><h3>Atkinson Hyperlegible</h3><p>A typeface designed for low-vision readers.</p></div>
-      <div class="card"><h3>Larger text, high contrast</h3><p>One Display menu, remembered on the device.</p></div>
-      <div class="card"><h3>Read aloud</h3><p>Listen to any section of the report.</p></div>
+      <div class="card"><h3>Read aloud, larger text</h3><p>Listen to any section. High contrast in one Display menu.</p></div>
       <div class="card"><h3>Reports in Spanish</h3><p>AI text carries <code style="font-size:26px;">lang="es"</code>, so screen readers switch voice.</p></div>
       <div class="card"><h3>Mobile ready</h3><p>44 px targets, one area per screen, PDF with bookmarks.</p></div>
     </div>
-    <img class="shot" src="img/mobile-report.png" style="max-height:680px;width:auto;max-width:300px;" alt="The report on a phone: large Download PDF report button, Your report is ready notice, and the Planning stage ladder stacked vertically.">
+    <img class="shot crop" src="img/mobile-report.png" style="height:640px;width:300px;" alt="The report on a phone: Everytown navy header, red Download PDF report button, Your report is ready notice, and the Where you are today heading.">
   </div>
-  <aside class="notes">Our users include frontline staff who often work from a phone between shifts, and some read better in Spanish. So accessibility is built in from the start: Atkinson Hyperlegible, a Display menu for larger text and high contrast, read-aloud on every section, and language tags so screen readers switch to a Spanish voice. axe-core reports zero WCAG 2.2 A or AA violations on every page.</aside>
+  <aside class="notes">Our users include leaders who told Everytown they read at an 8th grade level, and frontline staff who work from a phone between shifts. So the report is written in plain language, set in Atkinson Hyperlegible, with read-aloud on every section, a Display menu for larger text and high contrast, and language tags so screen readers switch to a Spanish voice. It now uses Everytown's own colors with every text pair at AA contrast. axe-core reports zero WCAG 2.2 A or AA violations on every page, including the staff dashboard.</aside>
 </section>
 
-<!-- 7. Impact and scalability -->
-<section class="slide roomy" aria-label="Slide 7: Impact and scalability">
+<!-- 9. Impact and scalability -->
+<section class="slide" aria-label="Slide 9: Impact and scalability" style="justify-content:center;padding-bottom:88px;">
   <p class="kicker">Impact and scalability</p>
-  <h2>Every grantee, twice a year, for about the cost of lunch</h2>
+  <h2>The whole network, twice a year, for under $100</h2>
   <div class="grid4">
     <div class="card"><p class="metric">$0.05<small> to 0.10</small></p><p>Bedrock tokens per report</p></div>
-    <div class="card"><p class="metric">$0<small> to 1</small></p><p>infrastructure per month at demo traffic</p></div>
+    <div class="card"><p class="metric">$1<small> to 3 / mo</small></p><p>hosting with Aurora auto-pause</p></div>
+    <div class="card"><p class="metric">$45<small> / mo</small></p><p>with Aurora kept warm at 0.5 ACU</p></div>
     <div class="card"><p class="metric">38<small> to 47 s</small></p><p>end to end, answers to AI report</p></div>
-    <div class="card"><p class="metric">8<small> domains</small></p><p>143 statements, all ready to assess</p></div>
   </div>
   <div class="grid3">
-    <div class="card bar"><h3>Scales to zero</h3><p>CloudFront, one Lambda and S3. No servers, VPC, NAT or database to run.</p></div>
-    <div class="card bar"><h3>Forkable by Everytown Labs</h3><p>One CloudFormation template and one deploy script.</p></div>
-    <div class="card bar"><h3>Progress over time</h3><p>Re-assess later and see closed growth priorities and stage moves.</p></div>
+    <div class="card bar"><h3>Serverless end to end</h3><p>CloudFront, S3, one Lambda and Aurora Serverless v2. No servers, VPC or NAT.</p></div>
+    <div class="card bar"><h3>Forkable by Everytown Labs</h3><p>Two CloudFormation stacks, app and database, one deploy script.</p></div>
+    <div class="card bar"><h3>Progress over time</h3><p>All 8 areas ready. Re-assess and see closed growth priorities and stage moves.</p></div>
   </div>
-  <p class="muted" style="font-size:24px;">140 organizations × 2 assessments a year × $0.10 ≈ $28 in model costs. Figures measured on the live deployment.</p>
-  <aside class="notes">A report costs five to ten cents in Bedrock tokens and the infrastructure costs about nothing when idle. Two assessments a year for the whole network is under thirty dollars of model cost. Everything is one CloudFormation template, so Everytown Labs can deploy it in their own account in one command. When an organization assesses again, the report shows exactly what changed, as you saw in the demo: three growth priorities closed and one area moved up a stage, and the summary opens by celebrating it.</aside>
+  <p class="muted" style="font-size:24px;">140 organizations × 2 assessments × $0.10 ≈ $28 a year in tokens, plus $12 to $36 a year of hosting with auto-pause.</p>
+  <aside class="notes">A report costs five to ten cents in Bedrock tokens. With Aurora on auto-pause, hosting is one to three dollars a month; we keep it warm at 0.5 ACU for the demo, which is about forty-five dollars a month and one deploy flag to change. Two assessments a year for the whole network is under a hundred dollars all in. Everything is two CloudFormation stacks, app and database, so Everytown Labs can deploy it in their own account with one script. When an organization assesses again, the report shows exactly what changed and the summary opens by celebrating it.</aside>
 </section>
 
-<!-- 8. Originality -->
-<section class="slide roomy" aria-label="Slide 8: Originality">
+<!-- 10. Originality -->
+<section class="slide" aria-label="Slide 10: Originality">
   <p class="kicker">Originality</p>
   <h2>Not a score report. A plan a team can start Monday.</h2>
-  <div class="grid2" style="gap:28px;">
-    <div class="card bar"><h3>30 / 60 / 90 day plan with owners</h3><p>Every action names a role, like "Executive director with bookkeeper", and concrete steps. Follows BJA checklist 3.2: tasks, deadlines, people responsible.</p></div>
-    <div class="card bar"><h3>Team conversation guide</h3><p>Questions for the next leadership meeting, so the report becomes a shared reflection, not a document in a drawer.</p></div>
-    <div class="card bar"><h3>Show your work</h3><p>"Based on your answers to: FR7". Each action shows the exact statements behind it, one click away.</p></div>
-    <div class="card bar"><h3>Sample organizations for training</h3><p>Three synthetic organizations from the builder package let CSF staff demo and train without any real data.</p></div>
+  <div class="grid3 fill" style="grid-template-rows:1fr 1fr;gap:28px;">
+    <div class="card bar"><h3>Start here</h3><p>One or two first priorities, explained in plain words, before anything else.</p></div>
+    <div class="card bar"><h3>30 / 60 / 90 plan with owners</h3><p>Every action names a role and steps. BJA checklist 3.2: tasks, deadlines, people.</p></div>
+    <div class="card bar"><h3>Show your work</h3><p>"Based on your answers to: FM4, FM6". The evidence is one click away.</p></div>
+    <div class="card bar"><h3>Team conversation guide</h3><p>Questions for the next leadership meeting, so the report becomes a shared reflection.</p></div>
+    <div class="card bar"><h3>Grantees to connect</h3><p>The network's own data suggests who should learn together.</p></div>
+    <div class="card bar"><h3>Sample organizations</h3><p>Three synthetic organizations, one click each, for demos and staff training.</p></div>
   </div>
-  <aside class="notes">Most assessment tools stop at a score. The manual pilot was valuable because of the recommendations, so that is what we automated, and we went further: role owners per action, a team conversation guide, and visible grounding for every action. Three synthetic sample organizations run with one click, which is how we opened the demo, so CSF staff can train and demo without any real organization data.</aside>
+  <aside class="notes">Most assessment tools stop at a score. The manual pilot was valuable because of the recommendations, so that is what we automated, and we went further: a Start here section with just one or two priorities, role owners per action, a team conversation guide, and visible grounding for every action. On the staff side, the network's data suggests which grantees to connect. Three synthetic sample organizations run with one click, which is how we opened the demo, so CSF staff can train without any real organization data.</aside>
 </section>
 
-<!-- 9. Roadmap -->
-<section class="slide roomy" aria-label="Slide 9: Roadmap">
+<!-- 11. Roadmap -->
+<section class="slide roomy" aria-label="Slide 11: Roadmap">
   <p class="kicker">Roadmap</p>
   <h2>Built to be iterated on, not rebuilt</h2>
   <div class="grid3">
-    <div class="card" style="border-color:var(--teal-600);"><p class="chip">Now: live MVP</p><ul class="clean" style="margin-top:20px;"><li>8 domains, self-service</li><li>Grounded 30 / 60 / 90 plans</li><li>English and Spanish</li><li>PDF, read aloud, mobile</li></ul></div>
-    <div class="card"><p class="chip">Next: with Everytown</p><ul class="clean" style="margin-top:20px;"><li>Everytown experts review the field guides</li><li>Real authentication replaces the demo login</li><li>More languages for the network</li></ul></div>
-    <div class="card"><p class="chip">Later: post-hackathon</p><ul class="clean" style="margin-top:20px;"><li>CSF staff cohort insights across the network</li><li class="muted">Explicitly out of MVP scope</li></ul></div>
+    <div class="card"><p class="chip">Now: live</p><ul class="clean" style="margin-top:20px;"><li>8 areas, self-service</li><li>Start here and grounded 30 / 60 / 90 plans</li><li>Staff network dashboard</li><li>English and Spanish, PDF</li></ul></div>
+    <div class="card"><p class="chip">Next: with Everytown</p><ul class="clean" style="margin-top:20px;"><li>Everytown experts review the field guides</li><li>Real authentication replaces the demo logins</li><li>More languages for the network</li></ul></div>
+    <div class="card"><p class="chip">Later: as data grows</p><ul class="clean" style="margin-top:20px;"><li>Peer benchmarking beyond the staff preview</li><li>Match new grantees with established peers</li></ul></div>
   </div>
-  <aside class="notes">The MVP is deliberately scoped. Next, Everytown's subject experts should review the field-guide library the AI retrieves from, and real authentication replaces the mocked login. Cohort insights for CSF staff, such as which growth priorities are common across grantees, are a post-hackathon feature and out of MVP scope.</aside>
+  <aside class="notes">The network view Everytown asked for is already live. Next, Everytown's subject experts should review the field-guide library the AI retrieves from, and real authentication replaces the demo logins. Their representative called benchmarking and peer matching future capabilities that need enough organizations to take the assessment first; the database is ready for both.</aside>
 </section>
 
-<!-- 10. Ask -->
-<section class="slide dark" aria-label="Slide 10: The ask" style="justify-content:center;">
+<!-- 12. Ask -->
+<section class="slide dark" aria-label="Slide 12: The ask" style="justify-content:center;">
   <p class="kicker">Our ask</p>
   <h1 style="font-size:96px;">Pilot with 3 to 4 CVI organizations this quarter</h1>
-  <ul class="clean" style="color:var(--teal-100);">
+  <ul class="clean">
     <li>CSF invites 3 to 4 grantees to take the assessment, about 15 minutes each.</li>
     <li>CSF staff review the reports with each organization and rate how helpful they are.</li>
-    <li>Everytown Labs deploys the same template into Everytown's own AWS account.</li>
+    <li>Everytown Labs deploys the same templates into Everytown's own AWS account.</li>
   </ul>
   <div style="display:flex;gap:40px;align-items:center;margin-top:12px;">
     <span class="cta">Try it now</span>
-    <p class="url">d2mi2h3eu8y69s.cloudfront.net · sign in demo / demo</p>
+    <p class="url">d2mi2h3eu8y69s.cloudfront.net · demo / demo · staff / staff</p>
   </div>
-  <aside class="notes">Close on the ask. The vision document's success metric is 3 to 4 CVI organizations finding the recommendations helpful. We are ready to run that this quarter. Thank the Everytown team. Leave this slide up during questions.</aside>
+  <aside class="notes">Close on the ask. The vision document's success metric is 3 to 4 CVI organizations finding the recommendations helpful. We are ready to run that this quarter, and the staff dashboard will show the results as they come in. Thank the Everytown team. Leave this slide up during questions.</aside>
 </section>
 
 </main>
@@ -283,7 +326,7 @@ ul.clean { list-style: none; display: grid; gap: 18px; }
 <div class="panel" id="panel" hidden aria-live="polite"><h2>Speaker notes</h2><p id="panel-text"></p></div>
 <nav class="controls" aria-label="Slide controls">
   <button type="button" id="prev" aria-label="Previous slide"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
-  <span class="counter" id="counter" aria-live="polite">1 / 10</span>
+  <span class="counter" id="counter" aria-live="polite">1 / 12</span>
   <button type="button" id="next" aria-label="Next slide"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
   <button type="button" id="notes" aria-pressed="false">Notes (N)</button>
 </nav>
