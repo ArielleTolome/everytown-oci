@@ -2,6 +2,27 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v0.9.0 — Modern AI features and a smoother questionnaire (from the team brief)
+
+Built in parallel by four Herdr-orchestrated worker agents on new feature modules (`features/*.py` blueprints auto-registered by `app.py`, `features/*.sql` applied by `python3 -m db migrate`).
+
+**AI, still as fixed steps (Claude never scores, re-ranks or sets answers)**
+- **Code picks "Start here".** The one or two first priorities are chosen by fixed code: the engine's top growth priority, then the highest-ranked one from a different area. Claude only explains them. The server keeps exactly those, in that order, and fills in any the AI skipped from the engine's own next steps.
+- **Reading-level check.** A fixed Flesch-Kincaid formula measures each English report. Above grade 8.5, one rewrite step asks Claude for plainer words with the same structure, priorities and links; the rewrite is rejected if any id or link moves, and the plainer version is kept. New progress step "Checking it reads clearly"; the report and PDF show "Reading level: about grade N".
+- **Amazon Bedrock Guardrails** on every Claude call: hate, insults and sexual content filters; a violence filter on output only (CVI field guides discuss violence); prompt-attack blocking on input (covers website text and coach questions); emails, phone numbers, SSNs and card numbers masked. Blocked answers show a plain message and the scores stay saved. New `OCI_GUARDRAIL_ID` / `OCI_GUARDRAIL_VERSION`.
+- **Ask about your report.** A new section after "Start here" lets a leader (or Everytown staff) ask questions in their own words. Each question is one fixed Claude call (`POST /api/assessments/<id>/ask`) with the scored facts, the checked report, the prompt-cached CVI library and the last 6 turns. Answers are validated like reports (only this assessment's growth priorities and catalog links), show "Based on your answers to" chips, and never change scores. Questions about immediate danger get a fixed 911 / 988 answer without calling the model. 15 questions per report, 500 characters each, stored in `coach_messages`.
+- **Read-aloud with Amazon Polly.** Listen buttons play natural generative voices (Ruth in English, Lupe in Spanish) from `GET /api/assessments/<id>/audio/<section>`, with a shared player: play/pause, 1x / 1.25x / 0.85x speed and Stop.
+- **Staff AI training briefs.** "Draft a training brief" on each cohort and top growth priority writes a Community Training Institute session plan (why it matters, who it is for, 3 to 5 outline steps, pre-work, catalog-only resources, follow-up) in one fixed Claude call that sees only the statement, the engine's next steps and code-computed counts, never organization names. Labelled as an AI draft to review; printable.
+
+**Questionnaire and flow**
+- **Checklist view:** answer each area as "Yes / No for each" or "Checklist: tick what's true". A required "Done: everything I didn't tick is a No" button turns unticked statements into explicit No answers, because the engine treats a missing answer as favorable.
+- **Plain-language help:** jargon such as "logic model" or "restricted funding" gets a "What does it mean?" disclosure with a plain definition and example (37-term glossary written once offline by `scripts/gen_content.py`, then reviewed).
+- **Spanish questionnaire:** "Questions in: English / Español", defaulting to the report language. All 143 statements and area descriptions are machine-translated and reviewed, with the English original one click away. Answers are keyed by statement id, so scores are identical in both languages. Everytown should review the translation before real use.
+- **Save and resume, and send an area to a teammate.** "Save and finish later" gives a resume link and a short check code; the new "Continue an assessment you started" page (`/resume/`) picks it up on any device. "Send this area to a teammate" (for example Financial Management for the bookkeeper) gives a separate link that can see and answer only that area; answers merge into the same assessment. New `drafts` and `draft_shares` tables.
+- Y and N keys answer the focused statement; each finished area gets a short encouraging line written by us, not by AI.
+- **About your organization (optional):** program model, staff size and state from fixed lists, stored on the assessment and the organization, never scored. Staff can filter Grantees to connect, Support requests and Organizations by them.
+- `scripts/build.sh` now packages `features/` into the Lambda zip.
+
 ## v0.8.0 — Community Safety Fund alignment and support requests
 
 Modeled on the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) site and its Grantee Portal, where grantees "sign up for future training opportunities and complete surveys, which inform our program development".

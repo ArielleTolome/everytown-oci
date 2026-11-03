@@ -5,6 +5,7 @@ import { icon } from "./icons";
 const SECTIONS: [string, string][] = [
   ["truth-title", "What's true about you"],
   ["focus-title", "Start here"],
+  ["coach-title", "Ask about your report"],
   ["stages-title", "Where you are today"],
   ["progress-title", "Progress"],
   ["plan-title", "30 / 60 / 90 day plan"],

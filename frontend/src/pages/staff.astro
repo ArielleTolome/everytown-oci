@@ -9,15 +9,27 @@ import Icon from "../components/Icon.astro";
 </Base>
 
 <script>
-  import { api, getMeta, requireUser, type Analytics } from "../lib/api";
-  import { $, announce, esc, plural } from "../lib/dom";
+  import { api, ApiError, getMeta, requireUser, type Analytics } from "../lib/api";
+  import { $, $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "../lib/dom";
   import { icon } from "../lib/icons";
+  import type { OrgMeta } from "../lib/draft";
 
-  type Org = Analytics["organizations"][number];
+  type Org = Analytics["organizations"][number] & { org_meta?: OrgMeta };
+  interface MetaOptions { program_models: string[]; staff_sizes: string[]; states: { code: string; name: string }[] }
+  interface Brief {
+    question_id: string; statement: string; domain_name: string; title: string; why_it_matters: string;
+    session_outline: string[]; pre_work: string; follow_up: string; resources: { title: string; url: string }[]; generated: string;
+    who: { orgs: number; high_priority: number; assessed: number; not_given: number;
+      program_models: { name: string; orgs: number }[]; staff_sizes: { name: string; orgs: number }[] };
+  }
   const root = $("#staff-root")!;
   let data: Analytics;
   let stageNames: string[] = [];
   let domainNames = new Map<string, string>();
+  let options: MetaOptions = { program_models: [], staff_sizes: [], states: [] };
+  let stateNames = new Map<string, string>();
+  const filters = { domain: "", model: "", size: "", state: "" };
+  const briefs = new Map<string, Promise<Brief>>();
 
   const pct = (n: number) => `${Math.round(n)}%`;
   const ordinal = (n: number) => {
@@ -27,7 +39,10 @@ import Icon from "../components/Icon.astro";
   const SOURCE: Record<Org["source"], string> = { web: "Web", demo: "Demo sample", seed: "Synthetic seed" };
 
   function shell() {
-    const options = data.domains.map((d) => `<option value="${esc(d.domain_id)}">${esc(d.domain_name)}</option>`).join("");
+    const areaOptions = data.domains.map((d) => `<option value="${esc(d.domain_id)}">${esc(d.domain_name)}</option>`).join("");
+    const opts = (values: string[], label = (v: string) => v) => values.map((v) => `<option value="${esc(v)}">${esc(label(v))}</option>`).join("");
+    const usedStates = [...new Set(data.organizations.map((o) => (o as Org).org_meta?.state).filter((s): s is string => !!s))]
+      .sort((a, b) => (stateNames.get(a) || a).localeCompare(stateNames.get(b) || b));
     root.innerHTML = `
       <div class="title-band">
         <span class="eyebrow">Everytown staff</span>
@@ -54,17 +69,30 @@ import Icon from "../components/Icon.astro";
       <div class="toolbar">
         <div class="field">
           <label for="domain-filter">Show capacity area</label>
-          <select class="input" id="domain-filter"><option value="">All areas</option>${options}</select>
+          <select class="input" id="domain-filter" data-filter="domain"><option value="">All areas</option>${areaOptions}</select>
         </div>
-        <p class="hint toolbar__note">Filters every section below.</p>
+        <div class="field">
+          <label for="model-filter">Program model</label>
+          <select class="input" id="model-filter" data-filter="model"><option value="">All program models</option>${opts(options.program_models)}</select>
+        </div>
+        <div class="field">
+          <label for="size-filter">Staff size</label>
+          <select class="input" id="size-filter" data-filter="size"><option value="">All sizes</option>${opts(options.staff_sizes, (s) => `${s} staff`)}</select>
+        </div>
+        <div class="field">
+          <label for="state-filter">State</label>
+          <select class="input" id="state-filter" data-filter="state"><option value="">All states</option>${opts(usedStates, (c) => stateNames.get(c) || c)}</select>
+        </div>
+        <p class="hint toolbar__note">The area filters every section. Program model, staff size and state come from the optional details grantees share; they filter Grantees to connect, Support requests and Organizations.</p>
       </div>
       <div id="dash"></div>`;
-    $<HTMLSelectElement>("#domain-filter")!.addEventListener("change", (e) => {
-      const v = (e.target as HTMLSelectElement).value;
-      renderDash(v);
-      announce(`Showing ${v ? domainNames.get(v) : "all areas"}.`);
-    });
-    renderDash("");
+    $$<HTMLSelectElement>("[data-filter]").forEach((sel) => sel.addEventListener("change", () => {
+      filters[sel.dataset.filter as keyof typeof filters] = sel.value;
+      renderDash();
+      const shown = $$<HTMLSelectElement>("[data-filter]").filter((x) => x.value).map((x) => x.selectedOptions[0].text);
+      announce(`Showing ${shown.join(", ") || "all organizations"}. ${plural(orgsShown, "organization", "organizations")} in the table.`);
+    }));
+    renderDash();
   }
 
   function head(id: string, eyebrow: string, title: string, extra = "") {
@@ -101,12 +129,14 @@ import Icon from "../components/Icon.astro";
       <td><span class="chip">${esc(g.question_id)}</span> ${esc(g.question_text)}</td>
       <td>${esc(g.domain_name)}</td><td>${esc(g.stage_name)}</td>
       <td><span class="share"><span class="share__track" aria-hidden="true"><span class="share__fill" style="width:${Math.min(100, g.share_pct)}%"></span></span><span>${g.orgs} (${pct(g.share_pct)})</span></span></td>
-    </tr>`).join("");
+      <td>${briefButton(g.question_id, `gap-${i}`)}</td>
+    </tr>
+    <tr class="brief-row" hidden><td colspan="6"><div class="brief-slot" id="brief-gap-${i}"></div></td></tr>`).join("");
     return `<section class="section" aria-labelledby="gaps-title">
       ${head("gaps-title", "Training and service needs", "Most common growth priorities across the network (training and service needs)")}
       ${gaps.length ? `<div class="table-wrap" role="region" aria-labelledby="gaps-caption" tabindex="0"><table>
         <caption id="gaps-caption">Statements most often marked as a growth priority, with the number and share of organizations</caption>
-        <thead><tr><th scope="col" class="num">Rank</th><th scope="col">Statement</th><th scope="col">Area</th><th scope="col">Stage</th><th scope="col">Organizations</th></tr></thead>
+        <thead><tr><th scope="col" class="num">Rank</th><th scope="col">Statement</th><th scope="col">Area</th><th scope="col">Stage</th><th scope="col">Organizations</th><th scope="col">Training</th></tr></thead>
         <tbody>${rows}</tbody></table></div>` : `<p class="notice">${icon("info")}<span>No growth priorities in this area yet.</span></p>`}
     </section>`;
   }
@@ -134,12 +164,14 @@ import Icon from "../components/Icon.astro";
     return `<section class="section" aria-labelledby="cohorts-title">
       ${head("cohorts-title", "Peer learning", "Grantees to connect")}
       <p>Each group shares the same High priority growth priority. They may learn well together in a cohort, call, or convening.</p>
-      ${cohorts.length ? `<ul class="cohorts" role="list">${cohorts.map((c) => `
+      ${cohorts.length ? `<ul class="cohorts" role="list">${cohorts.map((c, i) => `
         <li class="card cohort">
           <span class="eyebrow">${esc(c.domain_name)} · ${plural(c.priority_orgs, "organization", "organizations")}</span>
           <h3>${esc(c.question_text)}</h3>
           ${orgList(c.organizations.slice(0, 6))}
           ${c.organizations.length > 6 ? `<details class="about"><summary>Show ${c.organizations.length - 6} more</summary>${orgList(c.organizations.slice(6))}</details>` : ""}
+          ${briefButton(c.question_id, `cohort-${i}`)}
+          <div class="brief-slot" id="brief-cohort-${i}" hidden></div>
         </li>`).join("")}</ul>` : `<p class="notice">${icon("info")}<span>No shared High priority growth priorities in this area yet.</span></p>`}
     </section>`;
   }
@@ -164,7 +196,7 @@ import Icon from "../components/Icon.astro";
       return `<tr>
         <th scope="row"><a href="/results/?id=${encodeURIComponent(o.assessment_id)}">${esc(o.name)}</a></th>
         <td class="nowrap">${esc(o.assessed)}</td><td>${esc(SOURCE[o.source] || o.source)}</td>
-        <td class="num">${o.gap_count}</td><td class="num">${o.high_count}</td>${cells}
+        <td class="num">${o.gap_count}</td><td class="num">${o.high_count}</td><td>${details(o) || '<span class="meta">Not shared</span>'}</td>${cells}
       </tr>`;
     }).join("");
     return `<section class="section" aria-labelledby="orgs-title">
@@ -172,7 +204,7 @@ import Icon from "../components/Icon.astro";
       <p class="notice preview-note">${icon("shield")}<span><strong>Staff only.</strong> Peer percentile is a benchmarking preview: an organization's rank among peers in each area. Organizations never see peer comparisons.</span></p>
       <div class="table-wrap" role="region" aria-labelledby="orgs-caption" tabindex="0"><table class="org-table">
         <caption id="orgs-caption">${plural(orgs.length, "organization", "organizations")}${domain ? ` assessed in ${esc(domainNames.get(domain) || domain)}` : ""}, latest assessment each. Select a name to open its report.</caption>
-        <thead><tr><th scope="col">Organization</th><th scope="col">Assessed</th><th scope="col">Source</th><th scope="col" class="num">Growth priorities</th><th scope="col" class="num">High priority</th>${header}</tr></thead>
+        <thead><tr><th scope="col">Organization</th><th scope="col">Assessed</th><th scope="col">Source</th><th scope="col" class="num">Growth priorities</th><th scope="col" class="num">High priority</th><th scope="col">Program, size, state</th>${header}</tr></thead>
         <tbody>${rows}</tbody>
       </table></div>
     </section>`;
@@ -186,17 +218,20 @@ import Icon from "../components/Icon.astro";
       return `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"`;
     };
     const header = ["Organization", "Assessment id", "Assessed", "Source", "Growth priorities", "High priority",
+      "Program models", "Staff size", "State",
       ...ids.flatMap((id) => { const n = domainNames.get(id) || id; return [`${n} stage`, `${n} capacity %`, `${n} peer percentile (staff-only preview)`]; })];
     const lines = orgs.map((o) => {
       const by = new Map(o.domains.map((d) => [d.domain_id, d]));
+      const m = o.org_meta;
       return [o.name, o.assessment_id, o.assessed, SOURCE[o.source] || o.source, o.gap_count, o.high_count,
+        m?.program_models.join("; ") ?? "", m?.staff_size ?? "", m?.state ? stateNames.get(m.state) || m.state : "",
         ...ids.flatMap((id) => { const d = by.get(id); return d ? [d.estimated_stage, Math.round(d.score_pct), d.percentile == null ? "" : Math.round(d.percentile)] : ["", "", ""]; })];
     });
     const text = [header, ...lines].map((r) => r.map(cell).join(",")).join("\r\n");
     const url = URL.createObjectURL(new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `oci-organizations${domain ? `-${domain}` : ""}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `oci-organizations${domain ? `-${domain}` : ""}${filters.model || filters.size || filters.state ? "-filtered" : ""}-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.append(a);
     a.click();
     a.remove();
@@ -204,16 +239,117 @@ import Icon from "../components/Icon.astro";
     announce("Table downloaded as CSV.");
   }
 
-  function renderDash(domain: string) {
+  /** Program model, staff size and state filter by organization (client-side; aggregates stay network-wide). */
+  function matches(org: Org | undefined) {
+    const m = org?.org_meta;
+    return (!filters.model || !!m?.program_models.includes(filters.model))
+      && (!filters.size || m?.staff_size === filters.size) && (!filters.state || m?.state === filters.state);
+  }
+
+  function details(o: Org) {
+    const m = o.org_meta;
+    return m ? [m.program_models.join(", "), m.staff_size ? `${m.staff_size} staff` : "", m.state ? stateNames.get(m.state) || m.state : ""]
+      .filter(Boolean).map(esc).join("<br>") : "";
+  }
+
+  let orgsShown = 0;
+  function renderDash() {
+    const { domain } = filters;
     const name = domain ? domainNames.get(domain) : "";
+    const byId = new Map(data.organizations.map((o) => [o.id, o as Org]));
+    const keep = <T extends { id: string }>(list: T[]) => list.filter((o) => matches(byId.get(o.id)));
     const domains = domain ? data.domains.filter((d) => d.domain_id === domain) : data.domains;
     const gaps = domain ? data.top_gaps.filter((g) => g.domain_id === domain) : data.top_gaps;
-    const cohorts = domain ? data.cohorts.filter((c) => c.domain_name === name) : data.cohorts;
-    const requests = [...(data.support_requests ?? [])].filter((r) => !domain || r.domain_id === domain).sort((a, b) => b.orgs - a.orgs);
-    const orgs = domain ? data.organizations.filter((o) => o.domains.some((d) => d.domain_id === domain)) : data.organizations;
+    const cohorts = (domain ? data.cohorts.filter((c) => c.domain_name === name) : data.cohorts)
+      .map((c) => { const organizations = keep(c.organizations); return { ...c, organizations, priority_orgs: organizations.length }; })
+      .filter((c) => c.priority_orgs >= 2);
+    const requests = (data.support_requests ?? []).filter((r) => !domain || r.domain_id === domain)
+      .map((r) => { const organizations = keep(r.organizations); return { ...r, organizations, orgs: organizations.length }; })
+      .filter((r) => r.orgs).sort((a, b) => b.orgs - a.orgs);
+    const orgs = (domain ? data.organizations.filter((o) => o.domains.some((d) => d.domain_id === domain)) : data.organizations)
+      .filter((o) => matches(o as Org)) as Org[];
+    orgsShown = orgs.length;
     $("#dash")!.innerHTML = stagesSection(domains) + gapsSection(gaps) + cohortsSection(cohorts) + supportSection(requests) + orgsSection(orgs, domain);
     $("#csv-btn")!.addEventListener("click", () => csv(orgs, domain));
   }
+
+  // ---------- AI training brief (aggregated counts only; the server never sends organization names to the model) ----------
+
+  const briefButton = (qid: string, slot: string) =>
+    `<button type="button" class="btn btn-secondary btn-sm" data-brief="${esc(qid)}" aria-expanded="false" aria-controls="brief-${slot}">${icon("book")}<span>Draft a training brief</span></button>`;
+
+  function whoList(b: Brief) {
+    const w = b.who;
+    const by = (rows: { name: string; orgs: number }[], label = (n: string) => n) => rows.map((r) => `${esc(label(r.name))}: ${r.orgs}`).join(", ");
+    return `<ul>
+      <li>${plural(w.orgs, "organization", "organizations")} of ${w.assessed} assessed in ${esc(b.domain_name)} have this growth priority${w.high_priority ? `, ${w.high_priority} of them as High priority` : ""}.</li>
+      ${w.program_models.length ? `<li>By program model: ${by(w.program_models)}.</li>` : ""}
+      ${w.staff_sizes.length ? `<li>By staff size: ${by(w.staff_sizes, (n) => `${n} staff`)}.</li>` : ""}
+      ${w.not_given ? `<li>${plural(w.not_given, "organization has", "organizations have")} not shared program or size details.</li>` : ""}
+    </ul>`;
+  }
+
+  function briefHtml(b: Brief, h: number) {
+    const id = `bt-${Math.random().toString(36).slice(2, 8)}`;
+    return `<article class="brief" aria-labelledby="${id}">
+      <span class="eyebrow">Training brief · ${esc(b.domain_name)}</span>
+      <h${h} id="${id}" tabindex="-1">${esc(b.title)}</h${h}>
+      <p class="notice brief__ai">${icon("info")}<span>Draft generated with AI from aggregated results; review before sharing. Counts come from the assessment data, not the AI.</span></p>
+      <p><span class="chip">${esc(b.question_id)}</span> ${esc(b.statement)}</p>
+      <h${h + 1}>Why it matters</h${h + 1}><p>${esc(b.why_it_matters)}</p>
+      <h${h + 1}>Who it is for</h${h + 1}>${whoList(b)}
+      <h${h + 1}>Session outline</h${h + 1}><ol>${b.session_outline.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>
+      <h${h + 1}>Before the session</h${h + 1}><p>${esc(b.pre_work)}</p>
+      ${b.resources.length ? `<h${h + 1}>Resources</h${h + 1}><ul>${b.resources.map((r) => `<li><a href="${esc(safeUrl(r.url))}" target="_blank" rel="noopener">${esc(r.title)}<span class="visually-hidden"> (opens in a new tab)</span></a> <span class="meta">${esc(hostOf(r.url))}</span></li>`).join("")}</ul>` : ""}
+      <h${h + 1}>Follow-up</h${h + 1}><p>${esc(b.follow_up)}</p>
+      <p class="meta">Drafted ${esc(b.generated)}.</p>
+      <button type="button" class="btn btn-secondary btn-sm" data-print-brief>${icon("download")}<span>Print this brief</span></button>
+    </article>`;
+  }
+
+  async function openBrief(btn: HTMLButtonElement) {
+    const slot = document.getElementById(btn.getAttribute("aria-controls")!)!;
+    const holder = slot.closest<HTMLElement>(".brief-row") ?? slot;
+    const open = btn.getAttribute("aria-expanded") !== "true";
+    btn.setAttribute("aria-expanded", String(open));
+    holder.hidden = !open;
+    if (!open || slot.dataset.loaded) return;
+    const qid = btn.dataset.brief!;
+    slot.innerHTML = `<p class="loading" role="status">${icon("loader", "spin")}Writing a training brief. This takes about 20 seconds.</p>`;
+    if (!briefs.has(qid)) briefs.set(qid, api.post<Brief>("/staff/briefs", { question_id: qid }));
+    try {
+      const b = await briefs.get(qid)!;
+      slot.innerHTML = briefHtml(b, slot.closest(".cohort") ? 4 : 3);
+      slot.dataset.loaded = "1";
+      focusEl(slot.querySelector("h3, h4"));
+    } catch (e) {
+      briefs.delete(qid);
+      slot.innerHTML = `<p class="field-error" role="alert">${icon("alert")}<span>${esc(e instanceof ApiError && e.message ? e.message : "We could not write the brief. Please try again.")}</span></p>`;
+      btn.setAttribute("aria-expanded", "false");
+      // Keep the message visible; the next click retries.
+      holder.hidden = false;
+    }
+  }
+
+  /** Print only one brief: copy it into a top-level print area that the print stylesheet shows alone. */
+  function printBrief(article: HTMLElement) {
+    const area = document.createElement("div");
+    area.id = "print-area";
+    area.innerHTML = article.outerHTML;
+    document.body.append(area);
+    document.documentElement.classList.add("print-brief");
+    const done = () => { area.remove(); document.documentElement.classList.remove("print-brief"); window.removeEventListener("afterprint", done); };
+    window.addEventListener("afterprint", done);
+    window.print();
+  }
+
+  root.addEventListener("click", (e) => {
+    const t = e.target as HTMLElement;
+    const btn = t.closest<HTMLButtonElement>("[data-brief]");
+    if (btn) { openBrief(btn); return; }
+    const print = t.closest<HTMLElement>("[data-print-brief]");
+    if (print) printBrief(print.closest<HTMLElement>(".brief")!);
+  });
 
   async function init() {
     const user = await requireUser();
@@ -224,8 +360,10 @@ import Icon from "../components/Icon.astro";
         <p><a href="/">Go to your assessment</a></p>`;
       return;
     }
-    const [analytics, meta] = await Promise.all([api.get<Analytics>("/staff/analytics"), getMeta()]);
+    const [analytics, meta, opts] = await Promise.all([api.get<Analytics>("/staff/analytics"), getMeta(), api.get<MetaOptions>("/org-meta")]);
     data = analytics;
+    options = opts;
+    stateNames = new Map(opts.states.map((s) => [s.code, s.name]));
     stageNames = [...meta.stages].sort((a, b) => a.n - b.n).map((s) => s.name);
     domainNames = new Map([...meta.domains.map((d) => [d.id, d.name] as const), ...data.domains.map((d) => [d.domain_id, d.domain_name] as const)]);
     root.removeAttribute("aria-busy");

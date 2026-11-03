@@ -7,6 +7,7 @@ import Icon from "../components/Icon.astro";
     <span class="eyebrow">Step 1 of 3: Your organization</span>
     <h1 id="page-title" tabindex="-1">Tell us about your organization</h1>
     <p class="lead">This takes about 15 minutes. You will answer Yes or No to short statements about how your organization works today. There are no wrong answers: the goal is to see where you are and what to grow next.</p>
+    <p class="resume-cta"><a href="/resume/"><Icon name="refresh" /><span>Continue an assessment you started</span></a></p>
   </div>
 
   <section class="how" aria-labelledby="how-title">
@@ -40,7 +41,7 @@ import Icon from "../components/Icon.astro";
 
       <fieldset class="field">
         <legend>Report language</legend>
-        <p class="hint" id="language-hint">The questions are in English. Your report and PDF will be written in the language you choose.</p>
+        <p class="hint" id="language-hint">Questions and your report can be in English or Spanish.</p>
         <div class="choice-row">
           <label class="choice">
             <input type="radio" name="language" value="en" aria-describedby="language-hint" checked>
@@ -61,6 +62,12 @@ import Icon from "../components/Icon.astro";
       <div id="domain-groups"><p class="loading"><Icon name="loader" class="spin" />Loading capacity areas</p></div>
     </fieldset>
 
+    <section class="card stack" aria-labelledby="about-org-title" aria-describedby="about-org-hint">
+      <h2 id="about-org-title" class="org-meta__title">About your organization <span class="optional">(optional)</span></h2>
+      <p class="hint" id="about-org-hint">This helps Everytown connect you with groups that do similar work. It does not change your results.</p>
+      <div id="org-meta" class="stack"><p class="loading"><Icon name="loader" class="spin" />Loading</p></div>
+    </section>
+
     <p class="notice"><Icon name="shield" /><span>Do not enter personal information about staff or participants. Your answers are used only to build this report.</span></p>
 
     <div class="actions">
@@ -80,7 +87,7 @@ import Icon from "../components/Icon.astro";
   import { api, ApiError, getMeta, requireUser, type Domain } from "../lib/api";
   import { $, $$, esc, focusEl } from "../lib/dom";
   import { icon } from "../lib/icons";
-  import { loadDraft, saveDraft } from "../lib/draft";
+  import { loadDraft, saveDraft, type OrgMeta } from "../lib/draft";
 
   const form = $<HTMLFormElement>("#org-form")!;
   const nameEl = $<HTMLInputElement>("#org_name")!;
@@ -182,16 +189,54 @@ import Icon from "../components/Icon.astro";
     $("#domains")!.addEventListener("change", () => { if (chosen().length) setError("domains", null); });
   }
 
+  interface MetaOptions { program_models: string[]; staff_sizes: string[]; states: { code: string; name: string }[] }
+
+  /** Optional details for grouping on the staff dashboard. "Prefer not to say" is the default, so nothing is forced. */
+  function renderOrgMeta(o: MetaOptions, saved: OrgMeta | null | undefined) {
+    const sizes: [string, string][] = [["", "Prefer not to say"], ...o.staff_sizes.map((s): [string, string] => [s, `${s} staff`])];
+    $("#org-meta")!.innerHTML = `
+      <fieldset class="field">
+        <legend>What kind of work do you do? <span class="optional">Choose all that fit.</span></legend>
+        <div class="choice-row">${o.program_models.map((m) => `
+          <label class="choice"><input type="checkbox" name="program_models" value="${esc(m)}" ${saved?.program_models.includes(m) ? "checked" : ""}>
+            <span class="choice__text">${esc(m)}</span>${icon("check", "choice__check")}</label>`).join("")}
+        </div>
+      </fieldset>
+      <fieldset class="field">
+        <legend>How many staff do you have?</legend>
+        <div class="choice-row org-meta__sizes">${sizes.map(([v, label]) => `
+          <label class="choice"><input type="radio" name="staff_size" value="${esc(v)}" ${(saved?.staff_size ?? "") === v ? "checked" : ""}>
+            <span class="choice__text">${esc(label)}</span>${icon("check", "choice__check")}</label>`).join("")}
+        </div>
+      </fieldset>
+      <div class="field">
+        <label for="org-state">State or territory</label>
+        <select class="input" id="org-state" name="state">
+          <option value="">Prefer not to say</option>
+          ${o.states.map((s) => `<option value="${esc(s.code)}" ${saved?.state === s.code ? "selected" : ""}>${esc(s.name)}</option>`).join("")}
+        </select>
+      </div>`;
+  }
+
+  function orgMeta(): OrgMeta | null {
+    const m: OrgMeta = {
+      program_models: $$<HTMLInputElement>("input[name=program_models]:checked").map((b) => b.value),
+      staff_size: $<HTMLInputElement>("input[name=staff_size]:checked")?.value || null,
+      state: $<HTMLSelectElement>("#org-state")?.value || null,
+    };
+    return m.program_models.length || m.staff_size || m.state ? m : null;
+  }
+
   async function init() {
     await requireUser();
-    const meta = await getMeta();
-    const draft = loadDraft();
+    const [meta, options, draft] = await Promise.all([getMeta(), api.get<MetaOptions>("/org-meta"), loadDraft()]);
     nameEl.value = draft?.org_name ?? "";
     urlEl.value = draft?.org_url ?? "";
     if (draft?.language === "es") $<HTMLInputElement>("input[name=language][value=es]")!.checked = true;
     const known = new Set(meta.domains.map((d) => d.id));
     const selected = draft?.domain_ids.filter((id) => known.has(id)).length ? draft.domain_ids : meta.default_domains;
     renderDomains(meta.domains, selected);
+    renderOrgMeta(options, draft?.org_meta);
 
     if (meta.samples.length) {
       $("#sample-list")!.innerHTML = meta.samples.map((s) => `
@@ -206,13 +251,13 @@ import Icon from "../components/Icon.astro";
       const errors = validate();
       showErrors(errors);
       if (Object.keys(errors).length) return;
-      const prev = loadDraft();
       saveDraft({
         org_name: nameEl.value.trim(),
         org_url: normalizeUrl(urlEl.value) || "",
         language: language(),
         domain_ids: meta.domains.map((d) => d.id).filter((id) => chosen().includes(id)),
-        answers: prev?.answers ?? {},
+        answers: draft?.answers ?? {},
+        org_meta: orgMeta(),
       });
       location.assign("/questionnaire/#1");
     });

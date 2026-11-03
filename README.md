@@ -7,7 +7,7 @@ The Organizational Capacity Index (OCI) for community violence intervention (CVI
 
 AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/vision.md), [`docs/tech.md`](docs/tech.md).
 
-**Current release:** v0.8.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+**Current release:** v0.9.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 The tool is designed to sit inside the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) Grantee Portal: CSF says new grantees "complete a self-assessment that shapes their participation in cohort-based and customized training through our Community Training Institute", and the portal is where grantees "sign up for future training opportunities and complete surveys". The look follows that site (navy and royal blue, serif headlines, pill buttons, pale-blue title bands).
 
@@ -56,10 +56,10 @@ cd frontend && npx astro check && npm run build
 ## User journey
 
 1. Sign in with the mocked credentials.
-2. Enter the organization name and, optionally, its website. Choose the report language (English or Español) and the areas to assess. The four priority areas (Planning, Fundraising, Financial Management, ML&E) are pre-selected. Or open "Try a synthetic sample organization" to submit one of the three fictional organizations from the builder package in one click (for demos and staff training).
-3. Answer one area per screen. Each area must be fully answered before you move on, because an unanswered statement would count as favorable. Back keeps your answers.
+2. Enter the organization name and, optionally, its website and a few details (program model, staff size, state). Choose the language (English or Español) and the areas to assess. The four priority areas (Planning, Fundraising, Financial Management, ML&E) are pre-selected. Or open "Try a synthetic sample organization" to submit one of the three fictional organizations from the builder package in one click (for demos and staff training).
+3. Answer one area per screen, as Yes / No for each statement or as a checklist ("tick what's true", then "Done: everything I didn't tick is a No"). Jargon has a "What does it mean?" help; the questions can be shown in Spanish. Each area must be fully answered before you move on, because an unanswered statement would count as favorable. "Save and finish later" gives a resume link for any device (`/resume/`), and "Send this area to a teammate" lets, for example, the bookkeeper answer Financial Management.
 4. The results page shows the stage ladder and scores immediately, then live progress through: reading answers, scoring, researching the website, consulting the CVI resource library, and writing recommendations. If a step fails, "Try again" reruns only the AI steps.
-5. Read "What's true about you", then "Start here: your top priorities" (one or two, each showing the statements it is based on, what to do, and a vetted resource), then strengths, the 30 / 60 / 90 day plan, team conversation guide and all growth priorities. Listen to any section aloud, then download the PDF.
+5. Read "What's true about you" (with its measured reading level), then "Start here: your top priorities" (one or two, chosen by code from the engine's ranking, each showing the statements it is based on, what to do, and a vetted resource), then ask your own questions in "Ask about your report", then strengths, the 30 / 60 / 90 day plan, team conversation guide and all growth priorities. Listen to any section with Amazon Polly voices, then download the PDF.
 6. Reassess later under the same organization name, in the same sign-in session: the results page and PDF show "Progress since your last assessment", with growth priorities closed, new ones, and stage moves per area. The comparison is deterministic and covers only the areas both assessments included; the AI summary celebrates it first. Progress is scoped to the sign-in session because login is mocked; real accounts would replace this.
 7. Ask the Community Safety Fund for support: on the report, pick the areas where you want training or coaching (the areas behind your "Start here" priorities are pre-checked) and send the request.
 8. Everytown staff sign in as `staff` and open the network dashboard: totals, stage distribution per area (bars plus an equivalent table), the most common growth priorities (training and service needs), "Grantees to connect" cohorts sharing a High priority growth priority, support requests by area, and an organizations table with a staff-only peer percentile preview. Filter by area and download CSV.
@@ -105,6 +105,9 @@ Why Aurora PostgreSQL Serverless v2: the Everytown interview asked for network a
 | `latest_assessments` (view) | Each organization's most recent assessment: the unit for network analytics. |
 | `domain_benchmarks` (view) | Peer percentile per organization and domain. Staff only; future benchmarking. |
 | `support_requests` | Areas an organization asked CSF for training or coaching in, per assessment. The staff dashboard counts each organization's latest request. |
+| `coach_messages` (`features/coach.sql`) | "Ask about your report" questions and validated answers, per assessment. |
+| `drafts`, `draft_shares` (`features/drafts.sql`) | Server-side questionnaire drafts and per-area teammate share links. |
+| `organizations.program_models`, `staff_size`, `state` (`features/orgmeta.sql`) | Optional organization details for grouping; never scored. |
 
 ## Deploying to AWS
 
@@ -143,7 +146,9 @@ Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Know
 | Path | Purpose |
 |---|---|
 | `app.py` | Flask JSON API: auth (mocked roles), validation, scoring, progress comparison, job dispatch (thread or async Lambda), staff analytics. |
-| `db.py`, `schema.sql` | Aurora Data API layer, analytics queries, `migrate` and `seed` CLI. |
+| `db.py`, `schema.sql` | Aurora Data API layer, analytics queries, `migrate` (schema.sql plus `features/*.sql`) and `seed` CLI. |
+| `features/` | Feature modules, each a Flask Blueprint auto-registered by `app.py`: `coach.py` (Ask about your report), `tts.py` (Polly audio), `drafts.py` (save, resume, share an area), `orgmeta.py` (organization details), `staff_ai.py` (training briefs). |
+| `frontend/public/content/` | `glossary.json` and `questions_es.json`, generated once offline by `scripts/gen_content.py` and reviewed (re-running it overwrites the manual fixes). |
 | `pipeline.py` | Website research, Knowledge Base retrieval, structured report generation and its validation. |
 | `lambda_handler.py` | Lambda entry point: web requests to Flask, `{"oci_sid": ...}` events to the pipeline. |
 | `report.py` | PDF report, mirroring the sample reports' layout plus the AI sections. |
@@ -155,7 +160,7 @@ Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Know
 | `data/samples.json` | Metadata for the three synthetic sample organizations (answers come from `benchmark/`). |
 | `engine/`, `utils/`, `benchmark/`, `verify_benchmark.py` | Reference scoring engine, loader, synthetic answer key and checker. |
 | `infra/template.yaml`, `infra/database.yaml`, `scripts/` | CloudFormation (app and database stacks) and build/deploy scripts. |
-| `tests/` | Unit tests for the model-output grounding rules and the re-assessment comparison. |
+| `tests/` | Unit tests: model-output grounding and Start-here selection, reading level and rewrite checks, guardrail handling, coach validation and limits, drafts merge rules, re-assessment comparison. |
 | `docs/pitch/` | Hackathon pitch deck (open `index.html`, arrow keys, `n` for notes) and demo script. |
 
 ## Scoring
@@ -178,7 +183,8 @@ priority_score    = stage_weight * domain_weight * gap_density_bonus
 - Error summaries that take focus and link to each field; per-field errors tied with `aria-describedby`.
 - Live processing status in a polite live region that announces only step changes; focus moves to "Your report is ready".
 - Atkinson Hyperlegible (designed for low-vision readers), Display menu for larger text and high contrast, `prefers-reduced-motion` respected, 44px targets.
-- AI-written text is marked with its language (`lang="es"`), so screen readers switch voice. Read-aloud buttons use the browser's speech synthesis.
+- AI-written text is marked with its language (`lang="es"`), so screen readers switch voice. Listen buttons play Amazon Polly generative voices (Ruth, Lupe) with speed control.
+- The questionnaire offers a checklist view, Y/N keyboard shortcuts (only when focus is in a statement), plain-language jargon help and a Spanish translation.
 - The PDF uses real text, bookmarks per section, a document language and title.
 - The sticky questionnaire action bar reserves its height with `scroll-padding-bottom`, so it never hides the focused control (WCAG 2.4.11).
 - Checked with axe-core (WCAG 2.0/2.1/2.2 A and AA rules) at 1280 and 375 px: no violations on login, organization, questionnaire, processing, report and staff pages.

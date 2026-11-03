@@ -1,6 +1,7 @@
 // HTML builders and small behaviors for the results page. Every API string goes through esc(); URLs through safeUrl().
 import { api, ApiError, type Assessment, type Focus, type Gap, type Meta, type PlanItem, type Step, type Support } from "./api";
 import { $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
+import { coachBody } from "./coach";
 import { icon } from "./icons";
 
 export const STATE_TEXT: Record<Step["state"], string> = { pending: "Waiting", running: "In progress", done: "Done", error: "Did not finish" };
@@ -16,15 +17,16 @@ export function pdfButton(sub: Assessment): string {
   return `<a class="btn btn-primary" href="${pdfUrl(sub)}" download>${icon("download")}<span>Download PDF report (${size})</span></a>`;
 }
 
-function listen(target: string, lang: string): string {
-  return `<button type="button" class="btn btn-ghost btn-sm btn-listen" data-listen="${target}" data-lang="${esc(lang)}" aria-pressed="false" hidden>
+/** Read-aloud button for one report section; listen.ts plays it with Amazon Polly. */
+function listen(section: "summary" | "focus" | "plan" | "strengths" | "conversation", lang: string): string {
+  return `<button type="button" class="btn btn-ghost btn-sm btn-listen" data-listen="${section}" data-lang="${esc(lang)}" aria-pressed="false">
     <span class="btn-listen__play">${icon("volume")}<span>Listen</span></span>
     <span class="btn-listen__stop">${icon("stop")}<span>Stop</span></span>
   </button>`;
 }
 
-function sectionHead(id: string, title: string, eyebrow: string, listenTarget?: string, lang = "en", lead = ""): string {
-  return `<div class="section-head"><div><span class="eyebrow">${esc(eyebrow)}</span><h2 id="${id}">${esc(title)}</h2></div>${listenTarget ? listen(listenTarget, lang) : ""}</div>${lead ? `<p class="section-lead">${lead}</p>` : ""}`;
+function sectionHead(id: string, title: string, eyebrow: string, listenSection?: Parameters<typeof listen>[0], lang = "en", lead = ""): string {
+  return `<div class="section-head"><div><span class="eyebrow">${esc(eyebrow)}</span><h2 id="${id}">${esc(title)}</h2></div>${listenSection ? listen(listenSection, lang) : ""}</div>${lead ? `<p class="section-lead">${lead}</p>` : ""}`;
 }
 
 export function stepItems(steps: Step[]): string {
@@ -156,7 +158,7 @@ function focusSection(items: Focus[], gaps: Map<string, Gap>, lang: string): str
   if (!items.length) return "";
   const L = `lang="${esc(lang)}"`;
   return `<section class="section" aria-labelledby="focus-title">
-    ${sectionHead("focus-title", "Start here: your top priorities", "Do these first", "#focus-body", lang,
+    ${sectionHead("focus-title", "Start here: your top priorities", "Do these first", "focus", lang,
       `Do not try to fix everything at once. Out of everything you could work on, ${items.length === 1 ? "this is the one priority" : "these are the two priorities"} to start with. Check off steps as you go; your checks are saved on this device.`)}
     <ol class="focus-list" id="focus-body" role="list">${items.map((f, i) => `
       <li class="card focus-card" data-focus="${i}">
@@ -213,7 +215,7 @@ function planSection(plan: PlanItem[], gaps: Map<string, Gap>, lang: string): st
   }).join("");
   if (!cards) return "";
   return `<section class="section" aria-labelledby="plan-title">
-    ${sectionHead("plan-title", "30 / 60 / 90 day plan", "Your plan", "#plan-body", lang, "A realistic order for a small team over the next three months.")}
+    ${sectionHead("plan-title", "30 / 60 / 90 day plan", "Your plan", "plan", lang, "A realistic order for a small team over the next three months.")}
     <ol class="horizons" id="plan-body" role="list">${cards}</ol>
   </section>`;
 }
@@ -357,10 +359,15 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
   if (r) {
     parts.push(`<p class="notice section-gap">${icon("info")}<span>Recommendations generated with AI from your answers and the CVI resource library. Scores are calculated by a fixed scoring method. Please review them with your team before acting.</span></p>`);
     parts.push(`<section class="section" aria-labelledby="truth-title">
-      ${sectionHead("truth-title", "What's true about you", "In plain words", "#truth-body", lang)}
-      <div class="card truth"><div class="prose" id="truth-body" lang="${esc(lang)}">${r.summary.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join("")}</div></div>
+      ${sectionHead("truth-title", "What's true about you", "In plain words", "summary", lang)}
+      <div class="card truth"><div class="prose" id="truth-body" lang="${esc(lang)}">${r.summary.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join("")}</div>
+        ${r.reading_grade != null ? `<details class="about reading-level"><summary>Reading level: about grade ${Math.round(r.reading_grade)}</summary><p>Measured by a fixed formula (Flesch-Kincaid). We aim for grade 8 or lower.</p></details>` : ""}</div>
     </section>`);
     parts.push(focusSection(r.focus ?? [], gaps, lang));
+    parts.push(`<section class="section coach" aria-labelledby="coach-title" data-no-print>
+      ${sectionHead("coach-title", "Ask about your report", "Questions and answers", undefined, "en", "Ask a question in your own words, like you would ask a coach. Answers are written with AI, so check them with your team.")}
+      ${coachBody(sub)}
+    </section>`);
   } else if (sub.status === "done") {
     parts.push(`<p class="notice section-gap">${icon("info")}<span>AI recommendations were not generated for this synthetic seed record.</span></p>`);
   }
@@ -369,13 +376,13 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
     parts.push(planSection(r.plan ?? [], gaps, lang));
     if (r.strengths?.length) {
       parts.push(`<section class="section" aria-labelledby="strengths-title">
-        ${sectionHead("strengths-title", "What you already do well", "Your strengths", "#strengths-body", lang)}
+        ${sectionHead("strengths-title", "What you already do well", "Your strengths", "strengths", lang)}
         <ul class="check-list prose" id="strengths-body" lang="${esc(lang)}" role="list">${r.strengths.map((s) => `<li>${icon("circle-check")}<span>${esc(s)}</span></li>`).join("")}</ul>
       </section>`);
     }
     if (r.conversation?.length) {
       parts.push(`<section class="section" aria-labelledby="conversation-title">
-        ${sectionHead("conversation-title", "Team conversation guide", "Talk it through", "#conversation-body", lang, "Use these questions at your next team or board meeting.")}
+        ${sectionHead("conversation-title", "Team conversation guide", "Talk it through", "conversation", lang, "Use these questions at your next team or board meeting.")}
         <ol class="prose conversation" id="conversation-body" lang="${esc(lang)}">${r.conversation.map((q) => `<li>${esc(q)}</li>`).join("")}</ol>
       </section>`);
     }

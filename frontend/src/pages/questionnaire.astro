@@ -21,6 +21,39 @@ import Icon from "../components/Icon.astro";
   let missing = new Set<string>();
   let submitting = false;
   let barObserver: ResizeObserver | null = null;
+  type View = "yn" | "check";
+  const VIEW_KEY = "oci-q-view";
+  let view: View = "yn";
+  try { if (localStorage.getItem(VIEW_KEY) === "check") view = "check"; } catch { /* storage disabled */ }
+  // shortcut: question language is not saved; a reload falls back to the report language. Persist it if people ask.
+  let qlang: "en" | "es" = "en";
+  let glossary: { term: string; plain: string; example: string; re: RegExp }[] = [];
+  let es: Record<string, { text: string; about?: string; connects?: string }> = {};
+  let keyed = ""; // set by a Y/N shortcut so the save status says what was chosen
+
+  // Encouragement written by us, not by AI: shown once when an area becomes fully answered.
+  const CHEER: Record<string, string> = {
+    PL: "Planning done. Thank you for being honest, that is what makes the plan useful.",
+    FR: "Fundraising done. Knowing where you stand is the first step to steadier funding.",
+    GV: "Governance done. Honest answers like these help your board grow with you.",
+    HR: "Human Resources done. Your team is your biggest strength. Thank you for looking closely.",
+    FM: "Financial Management done. Clear answers here help you protect the work you do.",
+    ML: "Monitoring, Learning and Evaluation done. You are already learning from your own work.",
+    CE: "Community Engagement done. Your ties to the community are what make this work possible.",
+    TI: "Technology done. Thank you. Even small tools can save your team real time.",
+  };
+
+  const spanish = () => qlang === "es";
+  const textOf = (q: Question) => (spanish() && es[q.id]?.text) || q.text;
+  const stmt = (q: Question) => `<span${spanish() ? ' lang="es"' : ""}>${esc(textOf(q))}</span>`;
+  const noState = (id: string) => (draft.answers[id] === "no" ? "Counted as No" : "");
+
+  /** Spanish: English original. English: plain-language help for up to 2 glossary terms in the statement. */
+  function helpFor(q: Question): string {
+    if (spanish()) return `<details class="q-help" lang="es"><summary>Ver el original en inglés</summary><p lang="en">${esc(q.text)}</p></details>`;
+    return glossary.filter((g) => g.re.test(q.text)).slice(0, 2).map((g) => `
+      <details class="q-help"><summary>What does '${esc(g.term)}' mean?</summary><p>${esc(g.plain)}</p><p>${esc(g.example)}</p></details>`).join("");
+  }
 
   const stepFromHash = () => {
     const n = parseInt(location.hash.slice(1), 10);
@@ -51,8 +84,10 @@ import Icon from "../components/Icon.astro";
     const miss = missing.has(q.id);
     return `
       <fieldset class="question${miss ? " field--error" : ""}" id="q-${esc(q.id)}"${miss ? ` aria-describedby="${esc(q.id)}-error"` : ""}>
-        <legend><span class="question__num">${num}.</span> ${esc(q.text)}</legend>
-        ${miss ? `<p class="field-error" id="${esc(q.id)}-error">${icon("alert")}<span>Please choose Yes or No.</span></p>` : ""}
+        <legend><span class="question__num">${num}.</span> ${stmt(q)}</legend>
+        ${miss ? `<p class="field-error" id="${esc(q.id)}-error">${icon("alert")}<span>Please choose Yes or No.</span></p>`
+          : draft.answers[q.id] ? "" : `<p class="q-pending" id="${esc(q.id)}-pending">${icon("circle-dashed")}<span>Not answered yet</span></p>`}
+        ${helpFor(q)}
         <div class="answer-row">${(["yes", "no"] as const).map((v) => `
           <label class="answer">
             <input type="radio" name="${esc(q.id)}" value="${v}" id="${esc(q.id)}-${v}" required ${draft.answers[q.id] === v ? "checked" : ""}>
@@ -61,6 +96,21 @@ import Icon from "../components/Icon.astro";
           </label>`).join("")}
         </div>
       </fieldset>`;
+  }
+
+  /** Checklist view: ticked = "yes"; unticking records "no"; untouched stays unanswered until the Done button. */
+  function checklistItem(q: Question, num: number): string {
+    const id = esc(q.id);
+    return `
+      <li class="check-item" id="q-${id}">
+        <label class="check-item__row">
+          <input type="checkbox" id="${id}-check" data-q="${id}"${draft.answers[q.id] === "yes" ? " checked" : ""} aria-describedby="${id}-state${q.reverse ? ` ${id}-rev` : ""}">
+          <span class="check-item__text"><span class="question__num">${num}.</span> ${stmt(q)}</span>
+        </label>
+        ${q.reverse ? `<p class="check-item__note" id="${id}-rev">${icon("info")}<span>Ticking this one counts as a growth priority.</span></p>` : ""}
+        <p class="check-item__state" id="${id}-state">${noState(q.id)}</p>
+        ${helpFor(q)}
+      </li>`;
   }
 
   /** Statements grouped under stage subheadings, numbered within the area. */
@@ -76,7 +126,7 @@ import Icon from "../components/Icon.astro";
           <h2 id="${id}"><span class="stage-badge">Stage ${n}</span> ${esc(st?.name ?? qs[0].stage_name)}</h2>
           ${st?.description ? `<p class="stage-group__desc">${esc(st.description)}</p>` : ""}
         </div>
-        ${qs.map((q) => statementCard(q, ++num)).join("")}
+        ${view === "check" ? `<ul class="tick-list" role="list">${qs.map((q) => checklistItem(q, ++num)).join("")}</ul>` : qs.map((q) => statementCard(q, ++num)).join("")}
       </section>`;
     }).join("");
   }
@@ -102,21 +152,37 @@ import Icon from "../components/Icon.astro";
       </div>
       <details class="about-card">
         <summary>${icon("info")}<span>About this area: why ${esc(d.name)} matters</span>${icon("chevron-down", "about-card__chevron")}</summary>
-        <div class="about-card__body"><p>${esc(d.about)}</p>${d.connects ? `<p>${esc(d.connects)}</p>` : ""}</div>
+        <div class="about-card__body" id="about-body"></div>
       </details>
       <div class="callout">
         <span class="callout__icon" aria-hidden="true">${icon("shield")}</span>
         <div><p class="callout__title">There are no wrong answers</p>
-        <p>Choose Yes if the statement describes how your organization works today, and No if it does not yet. Every No is simply a place to grow.</p></div>
+        <p id="callout-text"></p></div>
       </div>
       ${here.length ? `
       <div class="error-summary" id="error-summary" role="alert" tabindex="-1" aria-labelledby="error-summary-title">
         <h2 id="error-summary-title">${icon("alert")}Please answer ${plural(here.length, "more statement", "more statements")}</h2>
-        <ul>${here.map((q) => `<li><a href="#${esc(q.id)}-yes" data-jump>${esc(q.text)}</a></li>`).join("")}</ul>
+        <ul>${here.map((q) => `<li><a href="#q-${esc(q.id)}" data-jump="${esc(q.id)}"${spanish() ? ' lang="es"' : ""}>${esc(textOf(q))}</a></li>`).join("")}</ul>
       </div>` : ""}
+      <div class="q-tools">
+        <fieldset class="seg"><legend>How to answer</legend><div class="seg__opts">
+          ${seg("q-view", "yn", "Yes / No for each", view === "yn")}${seg("q-view", "check", "Checklist: tick what's true", view === "check")}
+        </div></fieldset>
+        ${es[d.questions[0].id] ? `<fieldset class="seg"><legend>Questions in</legend><div class="seg__opts">
+          ${seg("q-lang", "en", "English", !spanish())}${seg("q-lang", "es", '<span lang="es">Español</span>', spanish())}
+        </div></fieldset>` : ""}
+      </div>
+      <details class="about-card kbd-tips">
+        <summary>${icon("type")}<span>Keyboard tips</span>${icon("chevron-down", "about-card__chevron")}</summary>
+        <div class="about-card__body"><ul>
+          <li>Press Tab to move from one statement to the next.</li>
+          <li>In Yes / No view, press Y for Yes or N for No while you are on a statement. The arrow keys also move between Yes and No.</li>
+          <li>In the checklist, press Space to tick or untick a statement.</li>
+        </ul></div>
+      </details>
       <p class="hint">All ${d.questions.length} statements are required. Your answers are saved on this device as you go.</p>
       <form id="area-form" novalidate>
-        <div class="questions">${groupedStatements(d)}</div>
+        <div class="questions" id="questions"></div>
         <p class="field-error" id="submit-error" role="alert" hidden></p>
         <div class="q-bar" id="q-bar">
           <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span class="q-bar__back-label">Back${n === 1 ? '<span class="visually-hidden"> to your organization</span>' : ""}</span></button>
@@ -125,26 +191,69 @@ import Icon from "../components/Icon.astro";
         </div>
       </form>`;
     root.removeAttribute("aria-busy");
+    fillQuestions(d);
     updateProgress();
     watchBar();
 
+    $(".q-tools")!.addEventListener("change", (e) => {
+      const input = e.target as HTMLInputElement;
+      if (input.name === "q-view") {
+        view = input.value === "check" ? "check" : "yn";
+        try { localStorage.setItem(VIEW_KEY, view); } catch { /* storage disabled */ }
+      } else qlang = input.value === "es" ? "es" : "en";
+      fillQuestions(d);
+    });
     const form = $<HTMLFormElement>("#area-form")!;
     form.addEventListener("change", (e) => {
       const input = e.target as HTMLInputElement;
-      if (input.type !== "radio") return;
-      draft.answers[input.name] = input.value as "yes" | "no";
+      const id = input.type === "radio" ? input.name : input.dataset.q;
+      if (!id) return;
+      const wasComplete = isComplete(d);
+      draft.answers[id] = input.type === "radio" ? (input.value as "yes" | "no") : input.checked ? "yes" : "no";
       saveDraft(draft);
-      missing.delete(input.name);
+      missing.delete(id);
       const fs = input.closest<HTMLElement>(".question");
       if (fs?.classList.contains("field--error")) {
         fs.classList.remove("field--error");
         fs.removeAttribute("aria-describedby");
         fs.querySelector(".field-error")?.remove();
       }
-      updateProgress();
-      const done = d.questions.filter((q) => draft.answers[q.id]).length;
-      // One polite status message (the bar's own live region), not a competing second region.
-      $("#save-status span")!.textContent = `Saved on this device. ${done} of ${d.questions.length} answered in this area.`;
+      document.getElementById(`${id}-pending`)?.remove();
+      const state = document.getElementById(`${id}-state`);
+      if (state) state.textContent = noState(id);
+      saved(d, wasComplete, keyed);
+      keyed = "";
+    });
+    // Y / N on a focused Yes/No statement (WCAG 2.1.4: single-key shortcuts only work while that statement has focus).
+    form.addEventListener("keydown", (e) => {
+      const k = e.key.toLowerCase();
+      if ((k !== "y" && k !== "n") || e.ctrlKey || e.metaKey || e.altKey) return;
+      const fs = (e.target as HTMLElement).closest<HTMLElement>("fieldset.question");
+      const radio = fs?.querySelector<HTMLInputElement>(`input[value="${k === "y" ? "yes" : "no"}"]`);
+      if (!fs || !radio) return;
+      e.preventDefault();
+      radio.focus();
+      if (radio.checked) return;
+      radio.checked = true;
+      keyed = `${k === "y" ? "Yes" : "No"} for statement ${parseInt(fs.querySelector(".question__num")?.textContent ?? "", 10)}. `;
+      radio.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    // The deliberate step the brief asks for: the engine treats a missing answer as favorable, so unticked must become an explicit "no".
+    form.addEventListener("click", (e) => {
+      if (!(e.target as Element).closest("#done-btn")) return;
+      const wasComplete = isComplete(d);
+      const rest = d.questions.filter((q) => !draft.answers[q.id]);
+      rest.forEach((q) => {
+        draft.answers[q.id] = "no";
+        missing.delete(q.id);
+        const state = document.getElementById(`${q.id}-state`);
+        if (state) state.textContent = noState(q.id);
+      });
+      saveDraft(draft);
+      $("#done-error")!.hidden = true;
+      $("#done-btn")!.removeAttribute("aria-describedby");
+      $("#error-summary")?.remove();
+      saved(d, wasComplete, rest.length ? `Recorded No for ${plural(rest.length, "statement", "statements")} you did not tick. ` : "");
     });
     form.addEventListener("submit", (e) => { e.preventDefault(); next(n); });
     $("#back-btn")!.addEventListener("click", () => {
@@ -152,13 +261,46 @@ import Icon from "../components/Icon.astro";
     });
     $$<HTMLAnchorElement>("[data-jump]").forEach((a) => a.addEventListener("click", (e) => {
       e.preventDefault();
-      const el = document.getElementById(a.getAttribute("href")!.slice(1));
-      el?.closest(".question")?.scrollIntoView({ block: "center" });
-      el?.focus({ preventScroll: true });
+      const id = a.dataset.jump!;
+      document.getElementById(`q-${id}`)?.scrollIntoView({ block: "center" });
+      (document.getElementById(`${id}-yes`) ?? document.getElementById(`${id}-check`))?.focus({ preventScroll: true });
     }));
 
     if (here.length) focusEl($("#error-summary"));
     else if (moveFocus) { window.scrollTo(0, 0); focusEl($("#area-title")); }
+  }
+
+  const seg = (name: string, value: string, label: string, on: boolean) => `
+    <label class="seg__opt"><input type="radio" name="${name}" value="${value}"${on ? " checked" : ""}><span class="seg__check" aria-hidden="true">${icon("check")}</span><span>${label}</span></label>`;
+
+  /** Statements, About text and the answer instructions for the current view and language. */
+  function fillQuestions(d: Domain) {
+    const check = view === "check";
+    $("#questions")!.innerHTML = `
+      ${spanish() ? `<p class="q-es-note" lang="es">${icon("info")}<span>Traducción automática revisada por el equipo; la versión oficial en inglés está disponible.</span></p>` : ""}
+      ${groupedStatements(d)}
+      ${check ? `<div class="check-done">
+        <p>Anything you did not tick will be saved as No. That is fine: every No is simply a place to grow.</p>
+        <p class="field-error" id="done-error" hidden>${icon("alert")}<span>Please press the button below to confirm, then go on.</span></p>
+        <button type="button" class="btn btn-secondary" id="done-btn">${icon("list-checks")}<span>Done: everything I didn't tick is a No</span></button>
+      </div>` : ""}`;
+    const t = spanish() ? es[d.id] : undefined;
+    const about = $("#about-body")!;
+    about.innerHTML = `<p>${esc(t?.about ?? d.about)}</p>${d.connects ? `<p>${esc(t?.connects ?? d.connects)}</p>` : ""}`;
+    if (t) about.setAttribute("lang", "es"); else about.removeAttribute("lang");
+    $("#callout-text")!.textContent = check
+      ? "Tick each statement that describes how your organization works today. Leave the rest unticked. Every No is simply a place to grow."
+      : "Choose Yes if the statement describes how your organization works today, and No if it does not yet. Every No is simply a place to grow.";
+  }
+
+  /** Update progress and the bar's polite status (the only live region for answer changes). */
+  function saved(d: Domain, wasComplete: boolean, prefix = "") {
+    updateProgress();
+    const done = d.questions.filter((q) => draft.answers[q.id]).length;
+    const msg = !wasComplete && done === d.questions.length
+      ? CHEER[d.id] ?? `${d.name} done. Thank you for your honest answers.`
+      : `Saved on this device. ${done} of ${d.questions.length} answered in this area.`;
+    $("#save-status span")!.textContent = prefix + msg;
   }
 
   /** Keep scroll-padding equal to the sticky bar so focused controls are never hidden behind it (WCAG 2.4.11). */
@@ -177,7 +319,7 @@ import Icon from "../components/Icon.astro";
     const bar = $("#q-bar");
     const el = e.target as HTMLElement;
     if (!bar || bar.contains(el)) return;
-    const target = el.closest(".answer") ?? el;
+    const target = el.closest(".answer, .check-item__row") ?? el;
     const overlap = target.getBoundingClientRect().bottom - bar.getBoundingClientRect().top + 12;
     if (overlap > 0) window.scrollBy({ top: overlap });
   });
@@ -194,6 +336,13 @@ import Icon from "../components/Icon.astro";
   async function next(n: number) {
     const d = domains[n - 1];
     const unanswered = d.questions.filter((q) => !draft.answers[q.id]).map((q) => q.id);
+    if (unanswered.length && view === "check") {
+      // Checklist: unticked is not yet a "no"; ask for the deliberate Done step instead of listing every statement.
+      $("#done-error")!.hidden = false;
+      $("#done-btn")!.setAttribute("aria-describedby", "done-error");
+      $("#done-btn")!.focus();
+      return;
+    }
     if (unanswered.length) {
       unanswered.forEach((id) => missing.add(id));
       render(n, false);
@@ -209,6 +358,7 @@ import Icon from "../components/Icon.astro";
       const { id } = await api.post<{ id: string }>("/assessments", {
         org_name: draft.org_name, org_url: draft.org_url, language: draft.language,
         domain_ids: draft.domain_ids, answers: draft.answers,
+        org_meta: draft.org_meta ?? null, // W4: optional start-page details (program model, staff size, state)
       });
       // Keep the organization details for next time; answers start fresh.
       clearDraft();
@@ -239,12 +389,19 @@ import Icon from "../components/Icon.astro";
   }
 
   async function init() {
+    const json = (url: string) => fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const content = Promise.all([json("/content/glossary.json"), json("/content/questions_es.json")]);
     await requireUser();
     const meta = await getMeta();
     const d = await loadDraft();
     if (!d || !d.org_name || !d.domain_ids.length) { location.replace("/"); return; }
     draft = d;
     stages = meta.stages;
+    const [terms, spanishText] = await content;
+    glossary = (terms ?? []).map((g: { term: string; plain: string; example: string }) =>
+      ({ ...g, re: new RegExp(`\\b${g.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i") }));
+    es = spanishText ?? {};
+    if (draft.language === "es" && Object.keys(es).length) qlang = "es";
     domains = d.domain_ids.map((id) => meta.domains.find((x) => x.id === id)).filter((x): x is Domain => !!x);
     if (!domains.length) { location.replace("/"); return; }
     if (!location.hash) history.replaceState(null, "", "#1");

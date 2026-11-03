@@ -27,7 +27,8 @@ LANGUAGES = ("en", "es")
 STEPS = [("read", "Reading your answers"), ("score", "Scoring capacity domains"),
          ("research", "Researching your organization's website"),
          ("library", "Consulting the CVI resource library"),
-         ("write", "Writing personalized recommendations")]
+         ("write", "Writing personalized recommendations"),
+         ("plain", "Checking it reads clearly")]
 WORKER_FN = os.environ.get("OCI_WORKER_FN")
 MAX_REPORTS_PER_HOUR = int(os.environ.get("OCI_MAX_REPORTS_PER_HOUR", "30"))  # caps Bedrock spend on the public demo
 
@@ -168,7 +169,9 @@ def create_assessment():
     missing = [q["id"] for d in domains for q in d["questions"] if answers.get(q["id"]) not in ("yes", "no")]
     if errors or missing:
         return jsonify(errors=errors, missing=missing), 400
-    org = {"org_name": name, "org_url": url, "language": b.get("language") if b.get("language") in LANGUAGES else "en"}
+    from features.orgmeta import clean_org_meta  # lazy: features import app
+    org = {"org_name": name, "org_url": url, "language": b.get("language") if b.get("language") in LANGUAGES else "en",
+           "org_meta": clean_org_meta(b.get("org_meta"))}
     clean = {q["id"]: answers[q["id"]] for d in domains for q in d["questions"]}
     return jsonify(id=submit(org, clean, domains, source="web")), 201
 
@@ -183,8 +186,10 @@ def demo():
     if not sample:
         return error("Unknown sample.", 400)
     domains = _domains(b.get("domain_ids")) or _domains(DEFAULT_DOMAINS)
+    from features.orgmeta import clean_org_meta
     org = {"org_name": sample["name"], "org_url": "",
-           "language": b.get("language") if b.get("language") in LANGUAGES else "en"}
+           "language": b.get("language") if b.get("language") in LANGUAGES else "en",
+           "org_meta": clean_org_meta(sample.get("org_meta"))}
     answers = {q["id"]: sample["answers"][q["id"]] for d in domains for q in d["questions"]}
     return jsonify(id=submit(org, answers, domains, source="demo", profile=sample["profile"])), 201
 
@@ -211,7 +216,7 @@ def build_assessment(org, answers, domains, profile=None):
         "steps": [{"key": k, "label": label, "state": "done" if k in ("read", "score") else "pending"}
                   for k, label in STEPS],
         "status": "running", "error": None, "profile": profile, "progress": None, "pdf_kb": None, "report": None,
-        "support": None,
+        "support": None, "org_meta": org.get("org_meta"),
     }
 
 
@@ -258,8 +263,9 @@ def run_job(sid):
     steps = {s["key"]: s for s in sub["steps"]}
 
     def mark(key, state):
-        steps[key]["state"] = state
-        db.update(sub)
+        if key in steps:  # assessments created before a step existed don't list it
+            steps[key]["state"] = state
+            db.update(sub)
 
     try:
         mark("research", "running")
@@ -271,8 +277,12 @@ def run_job(sid):
         mark("library", "done")
         mark("write", "running")
         sub["report"] = pipeline.write_report(sub, library)
+        mark("write", "done")
+        mark("plain", "running")
+        sub["report"] = pipeline.plain_language(sub)  # never fails: keeps the first report if a rewrite does
         sub["pdf_kb"] = max(1, round(len(report.build_pdf(sub, INFO["stage_descriptions"])) / 1024))
-        steps["write"]["state"] = "done"
+        for s in sub["steps"]:
+            s["state"] = "done"
         sub["status"] = "done"
     except Exception as exc:  # surface the failed step; scores stay valid
         app.logger.exception("pipeline failed for %s", sid)

@@ -1,0 +1,471 @@
+{
+ "PL1": {
+  "text": "Nosotros nos enfocamos principalmente en planes y actividades a corto plazo."
+ },
+ "PL2": {
+  "text": "Nosotros tenemos planes de trabajo escritos, un modelo lógico o un plan estratégico que guían nuestro trabajo."
+ },
+ "PL3": {
+  "text": "El personal de toda la organización puede explicar con claridad nuestras metas."
+ },
+ "PL4": {
+  "text": "Nosotros tenemos claro de dónde vendrá el dinero para apoyar nuestros programas por lo menos durante los próximos 6 a 12 meses."
+ },
+ "PL5": {
+  "text": "Nosotros mantenemos planes de trabajo escritos que guían nuestras actividades durante los próximos 6 a 12 meses."
+ },
+ "PL6": {
+  "text": "Nosotros revisamos de manera constante nuestro avance en comparación con nuestros planes de trabajo escritos."
+ },
+ "PL7": {
+  "text": "Nosotros mantenemos documentos escritos que describen nuestra misión, nuestro contexto, nuestras estrategias, nuestro presupuesto y nuestras políticas."
+ },
+ "PL8": {
+  "text": "Nosotros elaboramos y actualizamos nuestros planes de trabajo con regularidad."
+ },
+ "PL9": {
+  "text": "Nosotros tenemos claro de dónde vendrá el dinero para el próximo año."
+ },
+ "PL10": {
+  "text": "Nosotros estamos trabajando activamente en un plan estratégico."
+ },
+ "PL11": {
+  "text": "Nosotros tenemos un plan estratégico de 2 a 3 años que incluye un presupuesto para varios años, el fortalecimiento de nuestra capacidad y estrategias para mantenernos a largo plazo."
+ },
+ "PL12": {
+  "text": "Nuestro plan estratégico se actualiza con regularidad y está conectado con nuestros planes operativos o de trabajo."
+ },
+ "PL13": {
+  "text": "Nosotros tenemos claro de dónde vendrá el dinero para los próximos 2 años o más."
+ },
+ "PL14": {
+  "text": "Nosotros estamos aplicando nuestro segundo plan estratégico o uno posterior."
+ },
+ "PL15": {
+  "text": "Nosotros somos un modelo para otras organizaciones en planeación y estrategia."
+ },
+ "PL": {
+  "text": "Planeación",
+  "about": "La planeación mide la capacidad de una organización en estos temas: visión estratégica y rumbo a largo plazo, planeación operativa y planes de trabajo, formas de tomar decisiones, y cálculo de fondos futuros. Las organizaciones avanzan desde una planeación informal y a corto plazo (Siembra) hasta convertirse en organizaciones modelo con planes estratégicos de varios ciclos (Transformacional). Esta área es la base de todo, porque la capacidad de planear impulsa la eficacia en todas las demás áreas.",
+  "connects": "La planeación es un impulsor principal del área prioritaria \"Planeación estratégica y desarrollo de la organización\". Apoya directamente el Monitoreo, el Aprendizaje y la Evaluación (lo que usted planea lograr define lo que mide) y la Gobernanza (la junta directiva debe participar en la planeación estratégica)."
+ },
+ "FR1": {
+  "text": "Tenemos un grupo de personas y organizaciones que nos apoyan con dinero para nuestro trabajo."
+ },
+ "FR2": {
+  "text": "Obtenemos recursos económicos, no solo apoyo en especie (por ejemplo, tiempo de voluntarios o espacio donado)."
+ },
+ "FR3": {
+  "text": "Tenemos claro de dónde vendrá el financiamiento en los próximos 6 a 12 meses."
+ },
+ "FR4": {
+  "text": "Conseguimos subvenciones que alcanzan o superan montos pequeños (por ejemplo, $10,000 o más)."
+ },
+ "FR5": {
+  "text": "Recibimos compromisos de financiamiento que duran más que un apoyo único o de un solo año."
+ },
+ "FR6": {
+  "text": "Mantenemos un equilibrio entre fondos restringidos y fondos flexibles (no restringidos)."
+ },
+ "FR7": {
+  "text": "Sabemos de dónde vendrán los fondos que cubren al menos el próximo año."
+ },
+ "FR8": {
+  "text": "Conseguimos subvenciones de montos moderados (por ejemplo, de $25,000 a $75,000)."
+ },
+ "FR9": {
+  "text": "Tenemos una combinación de donantes de varios años y fuentes de financiamiento que apoyan tanto los programas como el funcionamiento de la organización."
+ },
+ "FR10": {
+  "text": "Conseguimos subvenciones de montos más altos (por ejemplo, $75,000 o más)."
+ },
+ "FR11": {
+  "text": "Tenemos un grupo diverso de financiadores de varios años en distintos sectores."
+ },
+ "FR12": {
+  "text": "Una parte importante de nuestro financiamiento es flexible y se puede usar de forma estratégica."
+ },
+ "FR13": {
+  "text": "Tenemos un plan escrito para recaudar fondos o desarrollar recursos."
+ },
+ "FR14": {
+  "text": "Sabemos de dónde vendrán los fondos en un plazo de 3 años."
+ },
+ "FR15": {
+  "text": "Tenemos una persona (del equipo o consultora) dedicada a recaudar fondos."
+ },
+ "FR16": {
+  "text": "Conseguimos al menos algunas subvenciones grandes (por ejemplo, $75,000 o más)."
+ },
+ "FR17": {
+  "text": "Hemos dado pasos para lograr estabilidad financiera a largo plazo (por ejemplo, reservas o financiamiento de varios años)."
+ },
+ "FR18": {
+  "text": "Hemos puesto en práctica nuestro plan de recaudación de fondos y lo hemos mejorado con el tiempo."
+ },
+ "FR19": {
+  "text": "Más de una persona apoya los esfuerzos para recaudar fondos."
+ },
+ "FR20": {
+  "text": "Hemos conseguido al menos una subvención muy grande (por ejemplo, $150,000 o más)."
+ },
+ "FR": {
+  "text": "Recaudación de fondos",
+  "about": "Esta área mide qué tan bien una organización consigue y diversifica sus recursos económicos. Incluye la variedad de ingresos y de donantes, la estabilidad y previsibilidad del financiamiento, el tamaño y tipo de las subvenciones (restringidas o no restringidas) y la planeación y estrategia para recaudar fondos. Las organizaciones avanzan desde depender de pocos donantes pequeños y de recursos en especie (Siembra) hasta lograr una estabilidad financiera a largo plazo con fondos de dotación e ingresos por inversiones (Transformacional).",
+  "connects": "La recaudación de fondos es un motor principal del área prioritaria \"Sistemas de Sostenibilidad Financiera\". Se conecta directamente con la Gestión Financiera (necesitan sistemas para manejar lo que recaudan), la Planeación (la estrategia para recaudar fondos debe ir de acuerdo con el plan estratégico) y la Participación Comunitaria (que la gente los conozca y confíe en ustedes ayuda a atraer donantes)."
+ },
+ "GV1": {
+  "text": "Tenemos un órgano de gobierno (por ejemplo, una junta directiva o un consejo asesor) que nos da orientación y supervisa nuestro trabajo."
+ },
+ "GV2": {
+  "text": "Nuestro órgano de gobierno se reúne con regularidad y sigue una estructura constante en sus reuniones."
+ },
+ "GV3": {
+  "text": "Nuestro órgano de gobierno participa de forma activa en la estrategia, en conseguir recursos y en supervisar la organización."
+ },
+ "GV4": {
+  "text": "Tenemos documentos de gobierno (por ejemplo, estatutos y acta constitutiva) que definen los roles y las responsabilidades."
+ },
+ "GV5": {
+  "text": "Nuestro órgano de gobierno ayuda a establecer la estrategia, las políticas y las prioridades de la organización."
+ },
+ "GV6": {
+  "text": "Nuestro órgano de gobierno participa de forma activa en impulsar la misión y las prioridades de la organización."
+ },
+ "GV7": {
+  "text": "Nuestro órgano de gobierno incluye a personas con diversas habilidades, experiencias y puntos de vista de la comunidad."
+ },
+ "GV8": {
+  "text": "Dejamos constancia por escrito de las decisiones importantes de las reuniones del órgano de gobierno y mantenemos registros de fácil acceso."
+ },
+ "GV9": {
+  "text": "Nuestro órgano de gobierno revisa y aprueba cada año el presupuesto y las finanzas de la organización."
+ },
+ "GV10": {
+  "text": "Los roles, las responsabilidades y los períodos de servicio de los miembros del órgano de gobierno están claramente definidos."
+ },
+ "GV11": {
+  "text": "Nuestro órgano de gobierno tiene comités activos que apoyan las áreas clave del trabajo de la organización."
+ },
+ "GV12": {
+  "text": "Nuestro órgano de gobierno exige rendición de cuentas a los líderes, e incluye la evaluación de la dirección ejecutiva."
+ },
+ "GV13": {
+  "text": "Las decisiones importantes de las reuniones del órgano de gobierno se comparten con las partes interesadas que corresponden."
+ },
+ "GV14": {
+  "text": "Hay límites claros entre el gobierno de la organización y las operaciones del día a día."
+ },
+ "GV15": {
+  "text": "Tenemos un plan para la sucesión del liderazgo (a corto plazo, a largo plazo, o ambos)."
+ },
+ "GV16": {
+  "text": "Nuestro órgano de gobierno recluta con regularidad a nuevos miembros y los integra al grupo."
+ },
+ "GV17": {
+  "text": "Nuestro órgano de gobierno está preparado para apoyar los cambios en la dirección ejecutiva."
+ },
+ "GV18": {
+  "text": "Nuestro órgano de gobierno contribuye al aprendizaje entre colegas y comparte sus prácticas con otras personas del campo."
+ },
+ "GV": {
+  "text": "Gobernanza",
+  "about": "Gobernanza evalúa la estructura, la composición y la eficacia del órgano de gobierno de una organización (junta directiva o consejo asesor). Abarca la estructura y la composición de la junta, la participación de sus miembros y la frecuencia de las reuniones, la supervisión fiduciaria y la rendición de cuentas, la diversidad y las habilidades de sus miembros, y la planificación de la sucesión del liderazgo. Las organizaciones avanzan desde no tener un grupo de gobierno o tomar decisiones guiadas por quien fundó la organización (Siembra) hasta tener una junta diversa, organizada en comités, que sirve de modelo para otras (Transformacional).",
+  "connects": "La gobernanza es un impulsor principal del área de prioridad \"Fortalecimiento de la gobernanza\". Se conecta directamente con la Gestión financiera (la junta debe aprobar los presupuestos y las auditorías), la Planificación (la junta define la dirección estratégica) y los Recursos humanos (la junta evalúa a la persona que dirige la organización y se asegura de que haya planificación de la sucesión)."
+ },
+ "HR1": {
+  "text": "El personal de nuestra organización recibe una compensación constante (sueldos o salarios)."
+ },
+ "HR2": {
+  "text": "Tenemos un proceso de bienvenida e inducción con estructura que apoya al personal nuevo."
+ },
+ "HR3": {
+  "text": "Los puestos y las responsabilidades del personal están claramente definidos."
+ },
+ "HR4": {
+  "text": "Tenemos sistemas para contratar y conservar a personal de las comunidades a las que servimos, incluidos mensajeros creíbles."
+ },
+ "HR5": {
+  "text": "El personal recibe capacitación y oportunidades de desarrollo profesional."
+ },
+ "HR6": {
+  "text": "El personal se reúne con regularidad con sus supervisores para recibir orientación y apoyo."
+ },
+ "HR7": {
+  "text": "Apoyamos al personal para enfrentar el trauma, el estrés y el agotamiento relacionados con el trabajo."
+ },
+ "HR8": {
+  "text": "El personal está empleado principalmente mediante sistemas formales de nómina y no mediante estipendios."
+ },
+ "HR9": {
+  "text": "Tenemos personal con funciones especializadas (por ejemplo, programas, operaciones, recaudación de fondos)."
+ },
+ "HR10": {
+  "text": "Tenemos descripciones de puesto por escrito para todos los puestos del personal."
+ },
+ "HR11": {
+  "text": "Tenemos sistemas para conservar al personal a lo largo del tiempo."
+ },
+ "HR12": {
+  "text": "Ofrecemos capacitación sobre el trauma, el agotamiento y el bienestar del personal."
+ },
+ "HR13": {
+  "text": "Tenemos políticas básicas de recursos humanos (por ejemplo, permisos, conducta, contratación, expectativas en el lugar de trabajo)."
+ },
+ "HR14": {
+  "text": "La compensación del personal es competitiva y corresponde a sus puestos y responsabilidades."
+ },
+ "HR15": {
+  "text": "Los supervisores están capacitados para dirigir y apoyar al personal de manera eficaz."
+ },
+ "HR16": {
+  "text": "Tenemos caminos para el ascenso del personal y su crecimiento dentro de la organización."
+ },
+ "HR17": {
+  "text": "Tenemos personal que se queda a largo plazo (por ejemplo, varios años)."
+ },
+ "HR18": {
+  "text": "Ofrecemos al personal acceso a beneficios (por ejemplo, salud, bienestar, jubilación) según nuestra capacidad."
+ },
+ "HR19": {
+  "text": "Hacemos evaluaciones de desempeño del personal con regularidad."
+ },
+ "HR20": {
+  "text": "Revisamos y actualizamos las descripciones de puesto y las funciones a medida que la organización cambia."
+ },
+ "HR21": {
+  "text": "Usamos las opiniones del personal y lo que aprendemos de la rotación de personal para mejorar la contratación y la permanencia del personal."
+ },
+ "HR22": {
+  "text": "Nuestra organización es reconocida como un lugar de trabajo sólido y que brinda apoyo."
+ },
+ "HR": {
+  "text": "Recursos Humanos",
+  "about": "El Desarrollo de Recursos Humanos evalúa la compensación y los beneficios del personal, las prácticas de contratación y permanencia, las descripciones de puesto y la claridad de las funciones, el desarrollo profesional y la capacitación, la supervisión y el apoyo al personal, y la cultura de la organización y las prácticas basadas en el conocimiento del trauma. Las organizaciones avanzan desde tener personal en su mayoría sin pago y sin una estructura formal (Siembra) hasta ser conocidas como uno de los mejores lugares para trabajar, con beneficios completos y poca rotación de personal (Transformacional).",
+  "connects": "Recursos Humanos apoya las áreas prioritarias de \"Planificación Estratégica y Desarrollo Organizacional\" y \"Fortalecimiento de la Gobernanza\". Se conecta con la Gobernanza (la junta directiva evalúa a la persona que dirige la dirección ejecutiva y se planifica la sucesión), la Planificación (el plan de personal va de acuerdo con el plan estratégico) y la Gestión Financiera (la compensación suele ser el gasto más grande del presupuesto)."
+ },
+ "FM1": {
+  "text": "Usamos un sistema de contabilidad (un programa de computadora o herramientas organizadas) para manejar nuestras finanzas."
+ },
+ "FM2": {
+  "text": "Las responsabilidades financieras se comparten para asegurar supervisión y rendición de cuentas."
+ },
+ "FM3": {
+  "text": "Elaboramos y manejamos un presupuesto anual para toda la organización."
+ },
+ "FM4": {
+  "text": "Podemos pagar la nómina y cumplir con nuestras obligaciones financieras de manera constante."
+ },
+ "FM5": {
+  "text": "Hemos completado al menos una revisión financiera o auditoría independiente."
+ },
+ "FM6": {
+  "text": "Damos seguimiento a nuestro desempeño financiero y comparamos los gastos e ingresos reales con nuestro presupuesto."
+ },
+ "FM7": {
+  "text": "Tenemos controles financieros para manejar los riesgos y asegurar la rendición de cuentas."
+ },
+ "FM8": {
+  "text": "Preparamos informes financieros (por ejemplo, estado de resultados y balance general) y los revisamos con regularidad."
+ },
+ "FM9": {
+  "text": "Nos han auditado más de una vez y hemos mejorado a partir de los hallazgos."
+ },
+ "FM10": {
+  "text": "Presentamos los impuestos y los documentos financieros requeridos de forma correcta y a tiempo."
+ },
+ "FM11": {
+  "text": "Elaboramos presupuestos y proyecciones financieras para varios años."
+ },
+ "FM12": {
+  "text": "Manejamos reservas financieras, bienes o inversiones para apoyar nuestra sostenibilidad."
+ },
+ "FM13": {
+  "text": "La dirección y/o la junta directiva revisan los informes financieros con regularidad."
+ },
+ "FM14": {
+  "text": "En general, nuestro desempeño financiero coincide con las proyecciones de nuestro presupuesto."
+ },
+ "FM15": {
+  "text": "Preparamos informes financieros que dan seguimiento a los gastos de cada programa o fuente de fondos."
+ },
+ "FM16": {
+  "text": "Cada año completamos auditorías independientes, como se requiere."
+ },
+ "FM17": {
+  "text": "Nuestras auditorías muestran una solidez financiera constante a lo largo del tiempo."
+ },
+ "FM18": {
+  "text": "Nuestra planificación y nuestro desempeño financiero son transparentes y las partes interesadas los entienden."
+ },
+ "FM19": {
+  "text": "Completamos las auditorías a tiempo después del cierre del año fiscal."
+ },
+ "FM20": {
+  "text": "Nuestra organización es reconocida por sus buenas prácticas de manejo financiero."
+ },
+ "FM": {
+  "text": "Manejo Financiero",
+  "about": "El área de Manejo Financiero evalúa los sistemas y controles de contabilidad, la preparación y exactitud del presupuesto, los informes y el análisis financiero, las prácticas de auditoría, el manejo del flujo de efectivo y la separación de las tareas financieras. Las organizaciones avanzan desde presupuestos pequeños con sistemas manuales y sin auditorías (Siembra) hasta tener excelentes auditorías de varios años, con presupuestos que coinciden con los gastos e ingresos reales y que son transparentes para las partes interesadas (Transformacional).",
+  "connects": "El Manejo Financiero es un motor principal de las áreas prioritarias \"Fortalecimiento del Gobierno Organizacional\" y \"Sistemas de Sostenibilidad Financiera\". Se conecta con el Gobierno Organizacional (la junta directiva debe aprobar y revisar las finanzas), la Recaudación de Fondos (la credibilidad financiera atrae a quienes financian), y la Planificación (los presupuestos deben coincidir con los planes estratégicos)."
+ },
+ "ML1": {
+  "text": "Nosotros llevamos un registro de las actividades básicas del programa (por ejemplo, cuántos participantes atendimos y qué servicios brindamos)."
+ },
+ "ML2": {
+  "text": "Nosotros recopilamos datos sobre las personas y las comunidades a las que servimos."
+ },
+ "ML3": {
+  "text": "Nosotros tenemos resultados o metas definidos para nuestros programas."
+ },
+ "ML4": {
+  "text": "Nosotros damos seguimiento a nuestro avance hacia los resultados de nuestros programas."
+ },
+ "ML5": {
+  "text": "Nosotros usamos datos para tomar decisiones sobre el programa y para mejorarlo."
+ },
+ "ML6": {
+  "text": "Nuestro personal recibe capacitación para recopilar y usar datos de manera consistente."
+ },
+ "ML7": {
+  "text": "Nosotros usamos herramientas o sistemas estandarizados para recopilar y manejar datos."
+ },
+ "ML8": {
+  "text": "Nosotros revisamos los datos del programa en equipo de manera regular."
+ },
+ "ML9": {
+  "text": "Nosotros compartimos los datos del programa con actores externos (por ejemplo, quienes nos financian y nuestros aliados)."
+ },
+ "ML10": {
+  "text": "Nosotros usamos datos para apoyar la recaudación de fondos y la comunicación externa."
+ },
+ "ML11": {
+  "text": "Nosotros tenemos personal o capacidad dedicada que se encarga de los datos y la evaluación."
+ },
+ "ML12": {
+  "text": "Nosotros evaluamos qué tan bien funciona el programa más allá de los productos o servicios entregados (por ejemplo, cambios en la conducta, en la seguridad o en los resultados)."
+ },
+ "ML13": {
+  "text": "Nosotros trabajamos con evaluadores, investigadores o aliados de aprendizaje externos cuando es apropiado."
+ },
+ "ML14": {
+  "text": "Nosotros usamos los datos y lo que aprendemos para adaptar los programas con el tiempo."
+ },
+ "ML15": {
+  "text": "Nosotros tenemos sistemas para asegurar que los datos sean de buena calidad y consistentes."
+ },
+ "ML16": {
+  "text": "Nosotros tenemos una agenda de aprendizaje o un conjunto de preguntas que guía nuestros esfuerzos de evaluación."
+ },
+ "ML17": {
+  "text": "Nosotros aportamos datos, conocimientos o prácticas para el aprendizaje de todo el campo."
+ },
+ "ML": {
+  "text": "Monitoreo, Aprendizaje y Evaluación",
+  "about": "MAE evalúa cómo se recopilan los datos y se llevan los registros, cómo se da seguimiento a los resultados y se mide el impacto, cómo se analizan los datos y se aprende de ellos, los mecanismos para recibir opiniones, la cultura de aprendizaje de la organización y cómo se comparten las lecciones aprendidas. Las organizaciones avanzan desde un monitoreo informal y sin documentación (Siembra) hasta evaluar el impacto en toda la comunidad, con participación de la comunidad, y ser buscadas por otros para pedir orientación (Transformacional).",
+  "connects": "MAE es un motor principal del área prioritaria \"Planificación Estratégica y Desarrollo Organizacional\". Se conecta con la Planificación (lo que usted mide debe ir de acuerdo con sus metas estratégicas), la Participación Comunitaria (las opiniones de la comunidad son parte de la evaluación) y la Recaudación de Fondos (mostrar su impacto ayuda a recaudar fondos)."
+ },
+ "CE1": {
+  "text": "Tenemos relaciones sólidas y de confianza con las comunidades a las que servimos."
+ },
+ "CE2": {
+  "text": "Involucramos a miembros de la comunidad para dar forma a nuestros programas y prioridades."
+ },
+ "CE3": {
+  "text": "Tenemos alianzas con organizaciones locales que apoyan nuestro trabajo."
+ },
+ "CE4": {
+  "text": "Nos coordinamos con otras organizaciones para unir esfuerzos y evitar que se repita el mismo trabajo."
+ },
+ "CE5": {
+  "text": "Tenemos relaciones con actores clave, como agencias de la ciudad, escuelas u hospitales."
+ },
+ "CE6": {
+  "text": "Trabajamos en colaboración con nuestros aliados en metas o iniciativas compartidas."
+ },
+ "CE7": {
+  "text": "Nos reconocen como un aliado de confianza dentro de nuestro entorno local."
+ },
+ "CE8": {
+  "text": "Tenemos acuerdos formales o informales que guían nuestras alianzas."
+ },
+ "CE9": {
+  "text": "Los miembros de la comunidad ven a nuestra organización como creíble y relevante."
+ },
+ "CE10": {
+  "text": "Involucramos a personas con experiencia vivida en la ejecución de los programas y en el liderazgo."
+ },
+ "CE11": {
+  "text": "Participamos en esfuerzos más amplios de seguridad comunitaria o de prevención de la violencia."
+ },
+ "CE12": {
+  "text": "Compartimos información y nos coordinamos con regularidad con nuestros aliados."
+ },
+ "CE13": {
+  "text": "Contribuimos a estrategias o iniciativas colectivas que van más allá de nuestra organización."
+ },
+ "CE14": {
+  "text": "Nos ven como líderes o convocantes dentro de nuestro entorno local."
+ },
+ "CE15": {
+  "text": "Tenemos alianzas que van más allá del nivel local (regionales o nacionales)."
+ },
+ "CE16": {
+  "text": "Nuestra organización ayuda a dar forma a estrategias, políticas o sistemas más amplios relacionados con la seguridad comunitaria."
+ },
+ "CE": {
+  "text": "Participación Comunitaria y Alianzas",
+  "about": "Participación Comunitaria evalúa el conocimiento que la comunidad tiene de nosotros y nuestra reputación, la participación en redes y las alianzas, la presencia en los medios y la visibilidad, las relaciones con actores clave, la defensa de causas y la influencia en políticas, y el reconocimiento externo y los premios. Las organizaciones avanzan desde ser desconocidas fuera de su comunidad inmediata (Siembra) hasta tener reconocimiento internacional e influencia directa en las políticas (Transformacional).",
+  "connects": "Participación Comunitaria apoya el área prioritaria \"Sistemas de Sostenibilidad Financiera\". Se conecta con la Recaudación de Fondos (la visibilidad atrae donantes), con MA&E (ciclos de retroalimentación de la comunidad) y con la Planificación (las opiniones de la comunidad dan forma a la estrategia)."
+ },
+ "TI1": {
+  "text": "Nosotros tenemos acceso a tecnología confiable (dispositivos, internet y herramientas básicas) para apoyar nuestro trabajo."
+ },
+ "TI2": {
+  "text": "El personal usa herramientas compartidas (por ejemplo, correo electrónico, almacenamiento de archivos y calendarios) para coordinar el trabajo."
+ },
+ "TI3": {
+  "text": "Nosotros tenemos sistemas para guardar y manejar de forma segura los datos de la organización."
+ },
+ "TI4": {
+  "text": "Nosotros usamos tecnología para apoyar las operaciones de los programas (por ejemplo, manejo de casos y seguimiento del trabajo de acercamiento)."
+ },
+ "TI5": {
+  "text": "Nosotros usamos sistemas para dar seguimiento a los datos de los participantes y de los programas."
+ },
+ "TI6": {
+  "text": "El personal recibe capacitación para usar la tecnología y los sistemas que necesita para su puesto."
+ },
+ "TI7": {
+  "text": "Nosotros tenemos procesos para proteger los datos sensibles y asegurar la confidencialidad."
+ },
+ "TI8": {
+  "text": "Nosotros usamos tecnología para apoyar la comunicación y la coordinación entre los equipos."
+ },
+ "TI9": {
+  "text": "Nuestros sistemas de tecnología están integrados o alineados entre las distintas áreas (programas, finanzas y recaudación de fondos)."
+ },
+ "TI10": {
+  "text": "Nosotros tenemos capacidad dedicada (personal o un consultor) para manejar la tecnología y los sistemas."
+ },
+ "TI11": {
+  "text": "Nosotros revisamos y actualizamos con regularidad nuestros sistemas de tecnología para responder a las necesidades de la organización."
+ },
+ "TI12": {
+  "text": "Nosotros usamos tecnología para apoyar el análisis de datos, los informes y la toma de decisiones."
+ },
+ "TI13": {
+  "text": "Nosotros tenemos sistemas que apoyan el trabajo remoto o flexible cuando se necesita."
+ },
+ "TI14": {
+  "text": "Nosotros tenemos planes para mantener las operaciones durante interrupciones (por ejemplo, fallas de servicio y emergencias)."
+ },
+ "TI15": {
+  "text": "Nuestra organización usa la tecnología de maneras que fortalecen la eficiencia, el impacto y el alcance a mayor escala."
+ },
+ "TI": {
+  "text": "Tecnología e Infraestructura",
+  "about": "El área de Tecnología de la Información evalúa el equipo y los aparatos, la conexión a internet y qué tan confiable es, los sistemas de software y las bases de datos, el sitio web y la presencia en línea, el apoyo y el mantenimiento de TI, y la seguridad y el manejo de los datos. Las organizaciones avanzan desde tener un par de computadoras viejas compartidas, con internet poco confiable y sin sitio web (Siembra), hasta tener apoyo de TI de tiempo completo, teléfonos celulares para el personal, informes basados en bases de datos y una conexión rápida y confiable (Transformacional).",
+  "connects": "TI es un motor principal del área prioritaria \"Sistemas de Sostenibilidad Financiera\". Se conecta con la Gestión Financiera (software de contabilidad), con MAE (recolección de datos y bases de datos), con la Participación Comunitaria (sitio web y comunicaciones) y con la Recaudación de Fondos (sistemas para manejar a los donantes)."
+ }
+}

@@ -129,7 +129,6 @@ const wrapClass = { default: "wrap", narrow: "wrap wrap--narrow", report: "wrap 
       if (logout) logout.hidden = false;
     });
 
-    window.addEventListener("pagehide", () => { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); });
     window.addEventListener("beforeprint", () => {
       $$<HTMLDetailsElement>("main details:not([open])").forEach((d) => { d.open = true; d.dataset.printOpened = ""; });
     });

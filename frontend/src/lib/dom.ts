@@ -1,4 +1,4 @@
-// Small DOM helpers for client scripts: escaping, querying, announcements, read-aloud.
+// Small DOM helpers for client scripts: escaping, querying, announcements.
 
 const ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 export const esc = (v: unknown): string => String(v ?? "").replace(/[&<>"']/g, (c) => ESC[c]);
@@ -31,31 +31,4 @@ export function announce(text: string) {
   if (!live) return;
   live.textContent = "";
   window.setTimeout(() => { live.textContent = text; }, 50);
-}
-
-/** Wire "Listen" buttons ([data-listen="#target"]) to the browser speech engine; hidden when unsupported. */
-let speaking: HTMLButtonElement | null = null;
-export function wireListen(root: ParentNode = document) {
-  const ok = "speechSynthesis" in window;
-  $$<HTMLButtonElement>("[data-listen]", root).forEach((btn) => {
-    if (!ok) return;
-    btn.hidden = false;
-    btn.addEventListener("click", () => {
-      const wasMe = speaking === btn;
-      window.speechSynthesis.cancel();
-      if (speaking) speaking.setAttribute("aria-pressed", "false");
-      speaking = null;
-      if (wasMe) return;
-      const target = document.querySelector<HTMLElement>(btn.dataset.listen || "");
-      if (!target) return;
-      const u = new SpeechSynthesisUtterance(target.innerText);
-      u.lang = btn.dataset.lang === "es" ? "es-US" : "en-US";
-      u.onend = u.onerror = () => {
-        if (speaking === btn) { btn.setAttribute("aria-pressed", "false"); speaking = null; }
-      };
-      speaking = btn;
-      btn.setAttribute("aria-pressed", "true");
-      window.speechSynthesis.speak(u);
-    });
-  });
 }

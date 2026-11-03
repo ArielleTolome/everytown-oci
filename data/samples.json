@@ -3,18 +3,43 @@
   "file": "benchmark/sample_A_answers.json",
   "name": "Southside Youth Peace Collective (synthetic sample)",
   "summary": "Grassroots, founded 2023, 4 staff, about $310K budget",
-  "profile": "Grassroots, founded 2023, 4 staff (2 full time), about $310K budget. A neighborhood-rooted violence interruption and youth mentoring group in its third year. Credibility with young people and families is its greatest asset; nearly all back-office function runs through the founder and executive director. Funding is one city contract plus small individual gifts."
+  "profile": "Grassroots, founded 2023, 4 staff (2 full time), about $310K budget. A neighborhood-rooted violence interruption and youth mentoring group in its third year. Credibility with young people and families is its greatest asset; nearly all back-office function runs through the founder and executive director. Funding is one city contract plus small individual gifts.",
+  "org_meta": {
+   "program_models": [
+    "Street outreach",
+    "Mentoring/youth development"
+   ],
+   "staff_size": "1-5",
+   "state": "IL"
+  }
  },
  "B": {
   "file": "benchmark/sample_B_answers.json",
   "name": "Riverbend Violence Interruption Network (synthetic sample)",
   "summary": "Mid-size, founded 2016, 19 staff, about $2.1M budget",
-  "profile": "Mid-size, founded 2016, 19 staff, about $2.1M budget. An established CVI provider operating hospital-based intervention and street outreach across two precincts. Core systems exist and are used, but they are uneven: the board is functioning yet thin on finance expertise, and evaluation is still mostly output counting. Roughly 80% of revenue is restricted government funding."
+  "profile": "Mid-size, founded 2016, 19 staff, about $2.1M budget. An established CVI provider operating hospital-based intervention and street outreach across two precincts. Core systems exist and are used, but they are uneven: the board is functioning yet thin on finance expertise, and evaluation is still mostly output counting. Roughly 80% of revenue is restricted government funding.",
+  "org_meta": {
+   "program_models": [
+    "Street outreach",
+    "Hospital-based violence intervention"
+   ],
+   "staff_size": "11-20",
+   "state": "OH"
+  }
  },
  "C": {
   "file": "benchmark/sample_C_answers.json",
   "name": "Metro Community Safety Alliance (synthetic sample)",
   "summary": "Mature, founded 2009, 48 staff, about $7.4M budget",
-  "profile": "Mature, founded 2009, 48 staff, about $7.4M budget. A regional anchor organization running CVI programming, a training institute for peer organizations, and a policy shop. Most domains are mature and integrated. The remaining work is at the top of the ladder: an endowment-grade reserve strategy, independent impact evaluation, and modernizing data infrastructure that has not kept pace with headcount."
+  "profile": "Mature, founded 2009, 48 staff, about $7.4M budget. A regional anchor organization running CVI programming, a training institute for peer organizations, and a policy shop. Most domains are mature and integrated. The remaining work is at the top of the ladder: an endowment-grade reserve strategy, independent impact evaluation, and modernizing data infrastructure that has not kept pace with headcount.",
+  "org_meta": {
+   "program_models": [
+    "Street outreach",
+    "Hospital-based violence intervention",
+    "Re-entry support"
+   ],
+   "staff_size": "21-50",
+   "state": "CA"
+  }
  }
 }

@@ -10,7 +10,9 @@ import Icon from "../components/Icon.astro";
 
 <script>
   import { api, ApiError, getMeta, requireUser, type Assessment, type Meta, type StatusResponse, type User } from "../lib/api";
-  import { $, announce, esc, focusEl, wireListen } from "../lib/dom";
+  import { $, announce, esc, focusEl } from "../lib/dom";
+  import { wireCoach } from "../lib/coach";
+  import { wireListen } from "../lib/listen";
   import { icon } from "../lib/icons";
   import { pdfButton, reportBody, statusPanel, STATE_TEXT, stepItems, wireChecklists, wireReminder, wireSupport } from "../lib/results";
   import { wireToc } from "../lib/toc";
@@ -48,7 +50,8 @@ import Icon from "../components/Icon.astro";
       </div>`;
     root.replaceChildren(view);
     root.removeAttribute("aria-busy");
-    wireListen(view);
+    wireListen(sub.id, view);
+    wireCoach(sub, view);
     wireChecklists(sub, view);
     wireReminder(sub, view);
     wireSupport(sub, view);

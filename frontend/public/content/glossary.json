@@ -1,0 +1,187 @@
+[
+ {
+  "term": "actuals",
+  "plain": "The real amounts you earned and spent, as opposed to what you planned.",
+  "example": "For example, we compare actuals to our budget each month to see if we are overspending on travel."
+ },
+ {
+  "term": "articles of incorporation",
+  "plain": "The legal paper filed with the state that creates your nonprofit.",
+  "example": "For example, we filed our articles of incorporation before we applied for our first grant."
+ },
+ {
+  "term": "audit",
+  "plain": "A review of your finances by an outside accountant to check that they are accurate.",
+  "example": "For example, our audit found that our records were sound and gave us tips to track grants better."
+ },
+ {
+  "term": "balance sheet",
+  "plain": "A report showing what your group owns and what it owes on a certain day.",
+  "example": "For example, our balance sheet shows our cash in the bank and a bill we still need to pay."
+ },
+ {
+  "term": "bylaws",
+  "plain": "The written rules for how your organization and its board run.",
+  "example": "For example, our bylaws say how many board members we need and how they are chosen."
+ },
+ {
+  "term": "capacity building",
+  "plain": "Steps that make your group stronger, like training, better systems, or more staff.",
+  "example": "For example, our capacity building this year includes training for our team on writing grant reports."
+ },
+ {
+  "term": "case management",
+  "plain": "Working one on one with a person to set goals and connect them to services.",
+  "example": "For example, our case management helps a participant find a job, housing, and counseling."
+ },
+ {
+  "term": "convener",
+  "plain": "A group or person who brings others together to work on a shared goal.",
+  "example": "For example, as a convener, we host a monthly meeting where partners plan how to respond to shootings together."
+ },
+ {
+  "term": "credible messengers",
+  "plain": "People with life experience like your participants, who earn trust and can guide them away from violence.",
+  "example": "For example, our credible messengers once lived through street conflict and now mentor young people at risk."
+ },
+ {
+  "term": "data quality",
+  "plain": "How accurate, complete, and consistent your information is.",
+  "example": "For example, we improved data quality by using one form so every worker records contacts the same way."
+ },
+ {
+  "term": "ecosystem",
+  "plain": "All the groups and agencies in your area that work on the same issue.",
+  "example": "For example, our local ecosystem includes hospitals, schools, police, and other violence intervention groups."
+ },
+ {
+  "term": "external evaluators",
+  "plain": "Outside experts who study how well your program works.",
+  "example": "For example, we hired external evaluators from a local university to study our mentoring program."
+ },
+ {
+  "term": "financial controls",
+  "plain": "Rules that protect your money, like needing two people to approve a payment.",
+  "example": "For example, our financial controls require two signatures on any check over $500."
+ },
+ {
+  "term": "financial projections",
+  "plain": "Your best guesses about future income and spending.",
+  "example": "For example, our financial projections show we may run short of cash next spring if a grant is late."
+ },
+ {
+  "term": "fiscal year",
+  "plain": "The 12-month period your organization uses for its budget and financial reports.",
+  "example": "For example, our fiscal year runs from July 1 to June 30, so our audit begins in the summer."
+ },
+ {
+  "term": "funding streams",
+  "plain": "The different sources your money comes from.",
+  "example": "For example, our funding streams include a city contract, two foundations, and local donors."
+ },
+ {
+  "term": "governing body",
+  "plain": "The group of people, like a board, who guide and oversee your organization.",
+  "example": "For example, our governing body meets monthly to review the budget and support our director."
+ },
+ {
+  "term": "in-kind support",
+  "plain": "Help given as goods, time, or space instead of cash.",
+  "example": "For example, a church gives us in-kind support by letting us use its hall for community healing circles."
+ },
+ {
+  "term": "income statement",
+  "plain": "A report showing how much money came in and went out over a period of time.",
+  "example": "For example, our income statement shows we spent more on salaries this quarter than we planned."
+ },
+ {
+  "term": "leadership succession",
+  "plain": "A plan for who will lead if your top leader leaves or steps down.",
+  "example": "For example, our leadership succession plan names who steps in if our director is out for a long time."
+ },
+ {
+  "term": "learning agenda",
+  "plain": "A short list of questions you want to answer to get better at your work.",
+  "example": "For example, our learning agenda asks which outreach hours help us reach the most high-risk young people."
+ },
+ {
+  "term": "lived experience",
+  "plain": "Knowledge gained from going through something yourself.",
+  "example": "For example, staff with lived experience of incarceration help young people see a different path."
+ },
+ {
+  "term": "logic model",
+  "plain": "A simple chart that shows how your activities lead to the changes you want to see.",
+  "example": "For example, our logic model shows how street outreach leads to fewer retaliation shootings."
+ },
+ {
+  "term": "multi-year budget",
+  "plain": "A budget that looks ahead more than one year.",
+  "example": "For example, our multi-year budget shows we will need to hire a case manager in year two."
+ },
+ {
+  "term": "onboarding",
+  "plain": "The process of welcoming and training a new staff member.",
+  "example": "For example, our onboarding includes a first-week plan and a buddy who shadows the new outreach worker."
+ },
+ {
+  "term": "outcomes",
+  "plain": "The changes that result from your work.",
+  "example": "For example, one outcome we track is whether participants stay out of violent conflicts for six months."
+ },
+ {
+  "term": "outputs",
+  "plain": "The things you do and count, like events held or people served.",
+  "example": "For example, our outputs this month were 40 home visits and 12 mediations."
+ },
+ {
+  "term": "performance evaluations",
+  "plain": "Check-ins where a supervisor talks with staff about how their work is going.",
+  "example": "For example, we hold performance evaluations twice a year to share praise and set goals."
+ },
+ {
+  "term": "reserves",
+  "plain": "Money set aside for emergencies or slow times.",
+  "example": "For example, our reserves helped us make payroll when a city payment came two months late."
+ },
+ {
+  "term": "resource development plan",
+  "plain": "A written plan for how you will raise the money and other support you need.",
+  "example": "For example, our resource development plan lists the funders we will ask and when."
+ },
+ {
+  "term": "restricted",
+  "plain": "Money that a funder says must be spent only on certain things.",
+  "example": "For example, a restricted grant can pay for hospital-based violence intervention but not for rent."
+ },
+ {
+  "term": "stakeholders",
+  "plain": "People or groups who care about or are affected by your work.",
+  "example": "For example, our stakeholders include residents, funders, school staff, and the families we serve."
+ },
+ {
+  "term": "stipends",
+  "plain": "Small set payments for time or work that are not regular wages.",
+  "example": "For example, we paid stipends to young people who helped plan the summer peace event."
+ },
+ {
+  "term": "strategic plan",
+  "plain": "A written plan for where your group wants to be in a few years and how it will get there.",
+  "example": "For example, our strategic plan sets goals for growing from two outreach workers to six over three years."
+ },
+ {
+  "term": "sustainability strategies",
+  "plain": "Plans to keep your work going over the long run.",
+  "example": "For example, our sustainability strategies include building a savings fund and finding funders who commit for three years."
+ },
+ {
+  "term": "unrestricted",
+  "plain": "Money you can spend on whatever your group needs most.",
+  "example": "For example, unrestricted gifts let us pay for a van repair when a program grant cannot."
+ },
+ {
+  "term": "work plans",
+  "plain": "Step-by-step lists of who will do what and by when.",
+  "example": "For example, our work plans list who runs the youth mentoring group each week and when we review it."
+ }
+]

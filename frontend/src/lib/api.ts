@@ -21,6 +21,7 @@ export interface Focus { title: string; why: string; gap_ids: string[]; steps: s
 export interface PlanItem extends Focus { horizon: 30 | 60 | 90; owner: string }
 export interface Report {
   summary: string; focus: Focus[]; strengths: string[]; plan: PlanItem[]; conversation: string[]; sources: Resource[];
+  reading_grade?: number | null; simplified?: boolean;
 }
 export interface Progress {
   previous_id: string; previous_created: string;

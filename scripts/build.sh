@@ -9,7 +9,7 @@ mkdir -p build/pkg
 python3 -m pip install -q -r requirements.txt -t build/pkg \
   --platform manylinux2014_x86_64 --platform manylinux_2_28_x86_64 \
   --only-binary=:all: --python-version 3.12 --implementation cp
-cp -r app.py pipeline.py report.py lambda_handler.py db.py schema.sql engine utils data benchmark resources build/pkg/
+cp -r app.py pipeline.py report.py lambda_handler.py db.py schema.sql features engine utils data benchmark resources build/pkg/
 # report.py embeds the Atkinson Hyperlegible fonts from frontend/public/fonts.
 mkdir -p build/pkg/frontend/public
 cp -r frontend/public/fonts build/pkg/frontend/public/

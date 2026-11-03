@@ -1,0 +1,103 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+---
+<Base title="Continue an assessment">
+  <div class="title-band">
+    <span class="eyebrow">Save and resume</span>
+    <h1 id="page-title" tabindex="-1">Continue an assessment you started</h1>
+    <p class="lead">Paste the link you saved with "Save and finish later", or a teammate link someone sent you.</p>
+  </div>
+
+  <form class="card stack" id="resume-form" novalidate>
+    <div class="field" id="link-field">
+      <label for="resume-link">Your saved link</label>
+      <p class="hint" id="resume-link-hint">It starts with this site's address and has <code>?d=</code> in it. The short resume code is only for checking: you need the whole link.</p>
+      <p class="field-error" id="resume-link-error" hidden></p>
+      <input class="input" type="text" id="resume-link" name="link" autocomplete="off" spellcheck="false" aria-describedby="resume-link-hint">
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn btn-primary"><span>Find my assessment</span><Icon name="arrow-right" /></button>
+    </div>
+  </form>
+
+  <section class="card stack" id="found" aria-labelledby="found-title" hidden></section>
+
+  <p><a href="/">Start a new assessment instead</a></p>
+</Base>
+
+<script>
+  import { api, ApiError, getMeta, requireUser } from "../lib/api";
+  import { $, esc, focusEl, plural } from "../lib/dom";
+  import { icon } from "../lib/icons";
+  import { resumeCode, type Draft } from "../lib/draft";
+
+  const form = $<HTMLFormElement>("#resume-form")!;
+  const input = $<HTMLInputElement>("#resume-link")!;
+  const err = $("#resume-link-error")!;
+  const found = $("#found")!;
+  const MISSING = "We could not find that saved assessment. Check that you copied the whole link, then try again.";
+
+  function setError(msg: string | null) {
+    $("#link-field")!.classList.toggle("field--error", !!msg);
+    err.hidden = !msg;
+    if (msg) {
+      err.innerHTML = `${icon("alert")}<span>${esc(msg)}</span>`;
+      input.setAttribute("aria-invalid", "true");
+      input.setAttribute("aria-describedby", "resume-link-hint resume-link-error");
+      input.focus();
+    } else {
+      input.removeAttribute("aria-invalid");
+      input.setAttribute("aria-describedby", "resume-link-hint");
+    }
+  }
+
+  /** Accept a full link or a bare token; never a short code (it is a human check, not a key). */
+  function tokenOf(raw: string): string | null {
+    const v = raw.trim();
+    if (/^[A-Za-z0-9_-]{22,64}$/.test(v)) return v;
+    try { return new URL(v, location.origin).searchParams.get("d"); } catch { return null; }
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    found.hidden = true;
+    const token = tokenOf(input.value);
+    if (!token) {
+      setError(/^[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}$/.test(input.value.trim())
+        ? "That looks like a resume code. Please paste the whole link instead; the code is only for checking."
+        : "Paste the whole link you saved. It has ?d= in it.");
+      return;
+    }
+    setError(null);
+    const btn = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+    btn.setAttribute("aria-disabled", "true");
+    try {
+      const [{ data, area }, meta] = await Promise.all([
+        api.get<{ data: Draft; area: string | null }>(`/drafts/${encodeURIComponent(token)}`), getMeta()]);
+      const areas = meta.domains.filter((d) => data.domain_ids.includes(d.id));
+      const total = areas.reduce((n, d) => n + d.questions.length, 0);
+      const done = areas.reduce((n, d) => n + d.questions.filter((q) => data.answers[q.id]).length, 0);
+      const href = `/questionnaire/?d=${encodeURIComponent(token)}${area ? `&area=${encodeURIComponent(area)}` : ""}#1`;
+      found.innerHTML = `
+        <h2 id="found-title" tabindex="-1">${esc(data.org_name || "Your assessment")}</h2>
+        ${area ? `<p class="notice">${icon("users")}<span>This is a teammate link. You will answer only <strong>${esc(areas[0]?.name ?? area)}</strong>.</span></p>` : ""}
+        <dl class="resume-facts">
+          <div><dt>Areas</dt><dd>${esc(areas.map((d) => d.name).join(", ") || "None chosen yet")}</dd></div>
+          <div><dt>Answered so far</dt><dd>${plural(done, "statement", "statements")} of ${total}</dd></div>
+          ${area ? "" : `<div><dt>Resume code</dt><dd><strong class="draft-panel__code">${esc(resumeCode(token))}</strong> <span class="hint">Check it matches the code you saved.</span></dd></div>`}
+        </dl>
+        <div class="actions actions--start"><a class="btn btn-primary" href="${esc(href)}"><span>Continue where I left off</span>${icon("arrow-right")}</a></div>`;
+      found.hidden = false;
+      focusEl($("#found-title"));
+    } catch (ex) {
+      setError(ex instanceof ApiError && ex.status === 404 ? MISSING : "We could not reach the server. Please try again in a moment.");
+    } finally {
+      btn.removeAttribute("aria-disabled");
+    }
+  });
+
+  requireUser().then(() => {
+    if (new URLSearchParams(location.search).get("missing")) setError(MISSING);
+  });
+</script>

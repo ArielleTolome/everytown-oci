@@ -182,6 +182,9 @@ def build_pdf(sub, stage_descriptions):
         for p in [p.strip() for p in report["summary"].split("\n\n") if p.strip()]:
             pdf.para(p)
             pdf.ln(2)
+        if report.get("reading_grade") is not None:  # English only; measured by pipeline.reading_grade
+            pdf.para("Reading level: about grade %d (Flesch-Kincaid formula). We aim for grade 8 or lower."
+                     % round(report["reading_grade"]), size=10, color=MUTED)
     else:
         for part in _fallback_summary(sub):
             if isinstance(part, str):
