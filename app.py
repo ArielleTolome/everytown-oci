@@ -353,5 +353,13 @@ def analytics():
     return jsonify(db.analytics(get_domains(), get_stage_names()))
 
 
+# Feature modules (features/*.py) each expose a Flask Blueprint `bp`; they are registered here so new features
+# don't need to edit this file. They import helpers from `app` lazily, inside their route functions.
+import features  # noqa: E402
+
+for _bp in features.blueprints():
+    app.register_blueprint(_bp)
+
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=int(os.environ.get("PORT", 8000)), debug=False)

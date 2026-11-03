@@ -241,6 +241,8 @@ def _facts(sub):
                                       "priority": g["priority"], "statement": g["question_text"],
                                       "engine_next_steps": g["next_steps"]} for g in sub["gaps"]],
         "favorable_statements_sample": favorable,
+        # Optional intake details (program model, staff size, region) when the organization gave them.
+        "organization_details": sub.get("org_meta"),
         "progress_since_last_assessment": sub.get("progress"),  # deterministic, from app.compare
     }
 

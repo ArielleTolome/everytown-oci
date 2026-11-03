@@ -2,7 +2,7 @@
 import { request as httpRequest } from "node:http";
 import { defineConfig } from "astro/config";
 
-const API_TARGET = "http://127.0.0.1:8000";
+const API_TARGET = process.env.OCI_API || "http://127.0.0.1:8000";
 
 /**
  * Dev-only proxy: /api/* → Flask on :8000 (CloudFront does this in production).

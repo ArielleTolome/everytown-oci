@@ -94,6 +94,7 @@ import Icon from "../components/Icon.astro";
         <h1 id="area-title" tabindex="-1">${esc(d.name)}</h1>
       </div>
       <nav aria-label="Capacity areas" class="area-stepper"><ol role="list">${stepper(n)}</ol></nav>
+      <div id="draft-tools" data-area="${esc(d.id)}"></div>
       <div class="q-progress">
         <p class="q-progress__where"><span class="dot" aria-hidden="true"></span>Area ${n} of ${domains.length}${last ? " · Last area" : ` · Next: ${esc(nextName)}`}</p>
         <label for="overall-progress" class="q-progress__label" id="progress-text"></label>
@@ -240,7 +241,7 @@ import Icon from "../components/Icon.astro";
   async function init() {
     await requireUser();
     const meta = await getMeta();
-    const d = loadDraft();
+    const d = await loadDraft();
     if (!d || !d.org_name || !d.domain_ids.length) { location.replace("/"); return; }
     draft = d;
     stages = meta.stages;

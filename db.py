@@ -2,6 +2,7 @@
 
 CLI: `python3 -m db migrate` applies schema.sql; `python3 -m db seed` loads synthetic organizations for analytics demos.
 """
+import glob
 import json
 import os
 import random
@@ -81,11 +82,13 @@ def batch(sql, rows, tx):
 
 
 def migrate():
-    with open(os.path.join(ROOT, "schema.sql")) as f:
-        sql = re.sub(r"(?m)^--.*$", "", f.read())
-    for stmt in (s.strip() for s in sql.split(";")):
-        if stmt:
-            query(stmt)
+    """Apply schema.sql, then each feature's features/*.sql, statement by statement (all idempotent)."""
+    for path in [os.path.join(ROOT, "schema.sql")] + sorted(glob.glob(os.path.join(ROOT, "features", "*.sql"))):
+        with open(path) as f:
+            sql = re.sub(r"(?m)^--.*$", "", f.read())
+        for stmt in (s.strip() for s in sql.split(";")):
+            if stmt:
+                query(stmt)
 
 
 def name_key(name):
