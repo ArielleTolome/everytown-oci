@@ -1,0 +1,70 @@
+{
+  "note": "One-at-a-time view only. Each multiple-choice question answers several laddered yes/no statements by a fixed cumulative rule: a choice records Yes for the statements in its `yes` list and No for every other statement in `statements`. The person sees what was recorded and can change any single answer. Scoring is unchanged: the engine still receives one explicit yes or no per statement. Groups and choices come from the team brief (Questionnaire design); ids checked against data/questions.json.",
+  "ladders": [
+    {
+      "id": "funding-horizon",
+      "question": "How far ahead do you know where funding will come from?",
+      "question_es": "¿Con cuánta anticipación saben de dónde vendrán sus fondos?",
+      "statements": ["PL4", "FR3", "PL9", "FR7", "PL13", "FR14"],
+      "choices": [
+        { "label": "Less than 6 months", "label_es": "Menos de 6 meses", "yes": [] },
+        { "label": "6 to 12 months", "label_es": "De 6 a 12 meses", "yes": ["PL4", "FR3"] },
+        { "label": "About 1 year", "label_es": "Alrededor de 1 año", "yes": ["PL4", "FR3", "PL9", "FR7"] },
+        { "label": "2 years", "label_es": "2 años", "yes": ["PL4", "FR3", "PL9", "FR7", "PL13"] },
+        { "label": "3 years or more", "label_es": "3 años o más", "yes": ["PL4", "FR3", "PL9", "FR7", "PL13", "FR14"] }
+      ]
+    },
+    {
+      "id": "largest-grant",
+      "question": "What is the largest single grant you have received?",
+      "question_es": "¿Cuál es la subvención individual más grande que han recibido?",
+      "statements": ["FR4", "FR8", "FR10", "FR16", "FR20"],
+      "choices": [
+        { "label": "We have not had a grant yet", "label_es": "Todavía no hemos recibido una subvención", "yes": [] },
+        { "label": "Under $10,000", "label_es": "Menos de $10,000", "yes": [] },
+        { "label": "$10,000 to $25,000", "label_es": "De $10,000 a $25,000", "yes": ["FR4"] },
+        { "label": "$25,000 to $75,000", "label_es": "De $25,000 a $75,000", "yes": ["FR4", "FR8"] },
+        { "label": "$75,000 to $150,000", "label_es": "De $75,000 a $150,000", "yes": ["FR4", "FR8", "FR10", "FR16"] },
+        { "label": "$150,000 or more", "label_es": "$150,000 o más", "yes": ["FR4", "FR8", "FR10", "FR16", "FR20"] }
+      ]
+    },
+    {
+      "id": "planning",
+      "question": "Where are you with planning?",
+      "question_es": "¿En qué punto están con la planificación?",
+      "statements": ["PL2", "PL5", "PL10", "PL11", "PL14"],
+      "choices": [
+        { "label": "We do not have written plans yet", "label_es": "Todavía no tenemos planes escritos", "yes": [] },
+        { "label": "A basic work plan or logic model", "label_es": "Un plan de trabajo básico o un modelo lógico", "yes": ["PL2"] },
+        { "label": "Written work plans for the next 6 to 12 months", "label_es": "Planes de trabajo escritos para los próximos 6 a 12 meses", "yes": ["PL2", "PL5"] },
+        { "label": "We are building a strategic plan", "label_es": "Estamos preparando un plan estratégico", "yes": ["PL2", "PL5", "PL10"] },
+        { "label": "We have a 2 to 3 year strategic plan", "label_es": "Tenemos un plan estratégico de 2 a 3 años", "yes": ["PL2", "PL5", "PL10", "PL11"] },
+        { "label": "We are on our second strategic plan or later", "label_es": "Estamos en nuestro segundo plan estratégico o uno posterior", "yes": ["PL2", "PL5", "PL10", "PL11", "PL14"] }
+      ]
+    },
+    {
+      "id": "audits",
+      "question": "Have you had an independent financial review or audit?",
+      "question_es": "¿Han tenido una revisión financiera o auditoría independiente?",
+      "statements": ["FM5", "FM9", "FM16", "FM19"],
+      "choices": [
+        { "label": "Not yet", "label_es": "Todavía no", "yes": [] },
+        { "label": "Once", "label_es": "Una vez", "yes": ["FM5"] },
+        { "label": "More than once, and we made changes from what we learned", "label_es": "Más de una vez, e hicimos cambios con lo que aprendimos", "yes": ["FM5", "FM9"] },
+        { "label": "Every year", "label_es": "Cada año", "yes": ["FM5", "FM9", "FM16"] },
+        { "label": "Every year, and finished on time", "label_es": "Cada año, y terminada a tiempo", "yes": ["FM5", "FM9", "FM16", "FM19"] }
+      ]
+    },
+    {
+      "id": "fundraising-staff",
+      "question": "Who works on fundraising?",
+      "question_es": "¿Quién trabaja en la recaudación de fondos?",
+      "statements": ["FR15", "FR19"],
+      "choices": [
+        { "label": "Nobody is focused on it yet", "label_es": "Todavía nadie se dedica a eso", "yes": [] },
+        { "label": "One person or a consultant", "label_es": "Una persona o un consultor", "yes": ["FR15"] },
+        { "label": "More than one person", "label_es": "Más de una persona", "yes": ["FR15", "FR19"] }
+      ]
+    }
+  ]
+}

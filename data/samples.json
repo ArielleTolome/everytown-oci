@@ -10,8 +10,10 @@
     "Mentoring/youth development"
    ],
    "staff_size": "1-5",
+   "budget": "$250K to $1M",
    "state": "IL"
-  }
+  },
+  "respondent": {"name": null, "title": "Founder and executive director", "role": "Executive director"}
  },
  "B": {
   "file": "benchmark/sample_B_answers.json",
@@ -24,8 +26,10 @@
     "Hospital-based violence intervention"
    ],
    "staff_size": "11-20",
+   "budget": "$1M to $5M",
    "state": "OH"
-  }
+  },
+  "respondent": {"name": null, "title": "Executive director", "role": "Executive director"}
  },
  "C": {
   "file": "benchmark/sample_C_answers.json",
@@ -39,7 +43,9 @@
     "Re-entry support"
    ],
    "staff_size": "21-50",
+   "budget": "Over $5M",
    "state": "CA"
-  }
+  },
+  "respondent": {"name": null, "title": "Chief operating officer", "role": "Other leadership role"}
  }
 }

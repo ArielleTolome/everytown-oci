@@ -40,20 +40,6 @@ export interface Assessment {
 export interface StatusResponse { status: Assessment["status"]; steps: Step[]; error: string | null }
 export interface Support { domain_ids: string[]; requested_at: string }
 
-export interface Analytics {
-  totals: { organizations: number; assessments: number; last_30_days: number };
-  domains: { domain_id: string; domain_name: string; assessed: number; avg_capacity: number; stages: Record<string, number> }[];
-  top_gaps: { question_id: string; domain_id: string; domain_name: string; question_text: string; stage_name: string; orgs: number; share_pct: number }[];
-  cohorts: { question_id: string; question_text: string; domain_name: string; priority_orgs: number; organizations: { id: string; name: string; assessment_id: string }[] }[];
-  /** Latest support request per organization, grouped by area, sorted by orgs desc (v0.8). */
-  support_requests?: { domain_id: string; domain_name: string; orgs: number; organizations: { id: string; name: string; assessment_id: string; requested_at: string }[] }[];
-  organizations: {
-    id: string; name: string; assessment_id: string; assessed: string; source: "web" | "demo" | "seed";
-    gap_count: number; high_count: number;
-    domains: { domain_id: string; estimated_stage: string; score_pct: number; percentile: number | null }[];
-  }[];
-}
-
 /** Error bodies: {error} for 401/403/404, {errors, missing} for validation 400s. */
 export interface ApiErrorBody { error?: string; errors?: Record<string, string>; missing?: string[] }
 

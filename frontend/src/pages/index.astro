@@ -25,6 +25,25 @@ import Icon from "../components/Icon.astro";
   </div>
 
   <form class="stack" id="org-form" novalidate>
+    <section class="card stack" aria-labelledby="respondent-title" aria-describedby="respondent-hint">
+      <h2 id="respondent-title" class="org-meta__title">Who is filling this out?</h2>
+      <p class="hint" id="respondent-hint">Someone in a leadership role should fill this out. It can be the executive director, a finance lead, a board chair, or another leader.</p>
+      <fieldset class="field" data-field="respondent_role">
+        <legend>Your role</legend>
+        <p class="field-error" id="respondent_role-error" hidden></p>
+        <div class="choice-row" id="role-options"><p class="loading"><Icon name="loader" class="spin" />Loading</p></div>
+      </fieldset>
+      <div class="field">
+        <label for="resp_title">Your job title <span class="optional">(optional)</span></label>
+        <input class="input" type="text" id="resp_title" name="resp_title" autocomplete="organization-title" maxlength="100">
+      </div>
+      <div class="field">
+        <label for="resp_name">Your name <span class="optional">(optional)</span></label>
+        <p class="hint" id="resp_name-hint">Shown only on your own report. We never send your name to the AI.</p>
+        <input class="input" type="text" id="resp_name" name="resp_name" autocomplete="name" maxlength="100" aria-describedby="resp_name-hint">
+      </div>
+    </section>
+
     <div class="card stack">
       <div class="field" data-field="org_name">
         <label for="org_name">Organization name</label>
@@ -38,6 +57,14 @@ import Icon from "../components/Icon.astro";
         <p class="field-error" id="org_url-error" hidden></p>
         <input class="input" type="url" id="org_url" name="org_url" inputmode="url" autocomplete="url" spellcheck="false" maxlength="500" aria-describedby="org_url-hint">
       </div>
+
+      <fieldset class="field" data-field="social" id="social" aria-describedby="social-hint">
+        <legend>Social media links <span class="optional">(optional, up to 5)</span></legend>
+        <p class="hint" id="social-hint">Facebook, Instagram, X, LinkedIn, YouTube, TikTok or any web address. We also look for news stories about you. What we find only shapes the wording of your plan. It never changes your scores.</p>
+        <p class="field-error" id="social-error" hidden></p>
+        <ul class="social-links" id="social-list" role="list"></ul>
+        <button type="button" class="btn btn-secondary btn-sm" id="social-add"><Icon name="plus" /><span>Add a social media link</span></button>
+      </fieldset>
 
       <fieldset class="field">
         <legend>Report language</legend>
@@ -55,18 +82,18 @@ import Icon from "../components/Icon.astro";
       </fieldset>
     </div>
 
+    <section class="card stack" aria-labelledby="about-org-title" aria-describedby="about-org-hint">
+      <h2 id="about-org-title" class="org-meta__title">About your organization</h2>
+      <p class="hint" id="about-org-hint">This helps us tailor your plan and connect you with similar groups. It does not change your scores.</p>
+      <div id="org-meta" class="stack"><p class="loading"><Icon name="loader" class="spin" />Loading</p></div>
+    </section>
+
     <fieldset class="card stack" id="domains" data-field="domains" aria-describedby="domains-hint">
       <legend class="legend-heading">Which capacity areas do you want to look at?</legend>
       <p class="hint" id="domains-hint">The four areas marked Recommended are a good place to start. Add or remove any.</p>
       <p class="field-error" id="domains-error" hidden></p>
       <div id="domain-groups"><p class="loading"><Icon name="loader" class="spin" />Loading capacity areas</p></div>
     </fieldset>
-
-    <section class="card stack" aria-labelledby="about-org-title" aria-describedby="about-org-hint">
-      <h2 id="about-org-title" class="org-meta__title">About your organization <span class="optional">(optional)</span></h2>
-      <p class="hint" id="about-org-hint">This helps Everytown connect you with groups that do similar work. It does not change your results.</p>
-      <div id="org-meta" class="stack"><p class="loading"><Icon name="loader" class="spin" />Loading</p></div>
-    </section>
 
     <p class="notice"><Icon name="shield" /><span>Do not enter personal information about staff or participants. Your answers are used only to build this report.</span></p>
 
@@ -85,33 +112,51 @@ import Icon from "../components/Icon.astro";
 
 <script>
   import { api, ApiError, getMeta, requireUser, type Domain } from "../lib/api";
-  import { $, $$, esc, focusEl } from "../lib/dom";
+  import { $, $$, announce, esc, focusEl } from "../lib/dom";
   import { icon } from "../lib/icons";
-  import { loadDraft, saveDraft, type OrgMeta } from "../lib/draft";
+  import { loadDraft, saveDraft, type OrgMeta, type Respondent } from "../lib/draft";
 
   const form = $<HTMLFormElement>("#org-form")!;
   const nameEl = $<HTMLInputElement>("#org_name")!;
   const urlEl = $<HTMLInputElement>("#org_url")!;
+  const titleEl = $<HTMLInputElement>("#resp_title")!;
+  const personEl = $<HTMLInputElement>("#resp_name")!;
+  const socialList = $("#social-list")!;
+  const socialAdd = $<HTMLButtonElement>("#social-add")!;
   const summary = $("#error-summary")!;
   const list = $("#error-list")!;
+  const MAX_SOCIAL = 5;
+  const URL_ERROR = "Enter a full web address, like https://example.org, or leave it blank";
+  const SOCIAL_ERROR = "Enter each social media link as a full web address, like https://instagram.com/yourgroup, or remove it";
 
-  type Field = "org_name" | "org_url" | "domains";
-  const describedBase: Record<Field, string> = { org_name: "", org_url: "org_url-hint", domains: "domains-hint" };
+  type Field = "respondent_role" | "org_name" | "org_url" | "social" | "domains";
+  const FIELDS: Field[] = ["respondent_role", "org_name", "org_url", "social", "domains"];
+  // Groups of controls: the error is described on the fieldset, and the summary links to the first control.
+  const GROUPS = new Set<Field>(["respondent_role", "social", "domains"]);
+  const describedBase: Record<Field, string> = { respondent_role: "", org_name: "", org_url: "org_url-hint", social: "social-hint", domains: "domains-hint" };
+  const socialInputs = () => $$<HTMLInputElement>("input", socialList);
+  const badSocial = () => socialInputs().filter((i) => normalizeUrl(i.value) === null);
   const targets: Record<Field, () => HTMLElement | null> = {
+    respondent_role: () => $<HTMLInputElement>("input[name=respondent_role]"),
     org_name: () => nameEl,
     org_url: () => urlEl,
+    social: () => badSocial()[0] ?? socialAdd,
     domains: () => $<HTMLInputElement>("input[name=domains]"),
   };
 
   function setError(field: Field, msg: string | null) {
     const err = $(`#${field}-error`)!;
     const wrap = $(`[data-field=${field}]`)!;
-    const control = field === "domains" ? $("#domains")! : targets[field]()!;
+    const control = GROUPS.has(field) ? wrap : targets[field]()!;
     wrap.classList.toggle("field--error", !!msg);
+    if (field === "social") {
+      const bad = new Set(msg ? badSocial() : []);
+      socialInputs().forEach((i) => { if (bad.has(i)) i.setAttribute("aria-invalid", "true"); else i.removeAttribute("aria-invalid"); });
+    }
     if (msg) {
       err.innerHTML = `${icon("alert")}<span>${esc(msg)}</span>`;
       err.hidden = false;
-      if (field !== "domains") control.setAttribute("aria-invalid", "true");
+      if (!GROUPS.has(field)) control.setAttribute("aria-invalid", "true");
       control.setAttribute("aria-describedby", `${describedBase[field]} ${field}-error`.trim());
     } else {
       err.hidden = true;
@@ -132,20 +177,24 @@ import Icon from "../components/Icon.astro";
 
   const chosen = () => $$<HTMLInputElement>("input[name=domains]:checked").map((b) => b.value);
   const language = () => ($<HTMLInputElement>("input[name=language]:checked")?.value === "es" ? "es" : "en") as "en" | "es";
+  const role = () => $<HTMLInputElement>("input[name=respondent_role]:checked")?.value ?? null;
+  const socialLinks = () => [...new Set(socialInputs().map((i) => normalizeUrl(i.value)).filter((u): u is string => !!u))];
 
   function validate(): Partial<Record<Field, string>> {
     const errors: Partial<Record<Field, string>> = {};
+    if (!role()) errors.respondent_role = "Choose your role";
     if (!nameEl.value.trim()) errors.org_name = "Enter your organization's name";
-    if (normalizeUrl(urlEl.value) === null) errors.org_url = "Enter a full web address, like https://example.org, or leave it blank";
+    if (normalizeUrl(urlEl.value) === null) errors.org_url = URL_ERROR;
+    if (badSocial().length) errors.social = SOCIAL_ERROR;
     if (!chosen().length) errors.domains = "Choose at least one capacity area";
     return errors;
   }
 
   function showErrors(errors: Partial<Record<Field, string>>) {
-    (["org_name", "org_url", "domains"] as Field[]).forEach((f) => setError(f, errors[f] ?? null));
-    const entries = Object.entries(errors) as [Field, string][];
+    FIELDS.forEach((f) => setError(f, errors[f] ?? null));
+    const entries = FIELDS.filter((f) => errors[f]).map((f): [Field, string] => [f, errors[f]!]);
     if (!entries.length) { summary.hidden = true; return; }
-    list.innerHTML = entries.map(([f, msg]) => `<li><a href="#${f === "domains" ? (targets.domains()?.id ?? "domains") : f}">${esc(msg)}</a></li>`).join("");
+    list.innerHTML = entries.map(([f, msg]) => `<li><a href="#${targets[f]()?.id ?? f}">${esc(msg)}</a></li>`).join("");
     summary.hidden = false;
     summary.setAttribute("role", "alert");
     document.title = `Check your answers: Your organization · OCI Capacity Coach`;
@@ -163,10 +212,40 @@ import Icon from "../components/Icon.astro";
 
   // Clear a field's error as soon as it is fixed (validation on blur, not on every keystroke).
   nameEl.addEventListener("blur", () => { if (nameEl.value.trim()) setError("org_name", null); });
-  urlEl.addEventListener("blur", () => {
-    const n = normalizeUrl(urlEl.value);
-    if (n === null) setError("org_url", "Enter a full web address, like https://example.org, or leave it blank");
-    else setError("org_url", null);
+  urlEl.addEventListener("blur", () => setError("org_url", normalizeUrl(urlEl.value) === null ? URL_ERROR : null));
+  socialList.addEventListener("focusout", () => {
+    if (!$("#social-error")!.hidden) setError("social", badSocial().length ? SOCIAL_ERROR : null);
+  });
+
+  /** One input per link, each with a visible label and its own Remove button; focus follows every add or remove. */
+  function renderSocial(values: string[]) {
+    socialList.innerHTML = values.map((v, i) => `
+      <li class="social-links__item">
+        <label for="social-${i}">Link ${i + 1}</label>
+        <div class="input-group">
+          <input class="input" type="url" id="social-${i}" inputmode="url" autocomplete="url" spellcheck="false" maxlength="500" value="${esc(v)}">
+          <button type="button" class="btn btn-secondary btn-sm social-links__remove" data-remove="${i}" aria-label="Remove link ${i + 1}">${icon("x")}<span class="social-links__remove-text" aria-hidden="true">Remove</span></button>
+        </div>
+      </li>`).join("");
+    socialAdd.hidden = values.length >= MAX_SOCIAL;
+  }
+
+  socialAdd.addEventListener("click", () => {
+    const values = [...socialInputs().map((i) => i.value), ""];
+    renderSocial(values);
+    socialInputs()[values.length - 1]?.focus();
+    announce(`Link ${values.length} added.`);
+  });
+
+  socialList.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-remove]");
+    if (!btn) return;
+    const at = Number(btn.dataset.remove);
+    const values = socialInputs().map((i) => i.value).filter((_, i) => i !== at);
+    renderSocial(values);
+    if (!$("#social-error")!.hidden) setError("social", badSocial().length ? SOCIAL_ERROR : null);
+    (socialInputs()[Math.min(at, values.length - 1)] ?? socialAdd).focus();
+    announce(`Link ${at + 1} removed.`);
   });
 
   /** Checkbox cards with a "Recommended" tag (Airwallex "Primary interest"), statement count and time estimate (~15 s per statement). */
@@ -189,14 +268,28 @@ import Icon from "../components/Icon.astro";
     $("#domains")!.addEventListener("change", () => { if (chosen().length) setError("domains", null); });
   }
 
-  interface MetaOptions { program_models: string[]; staff_sizes: string[]; states: { code: string; name: string }[] }
+  interface MetaOptions {
+    program_models: string[]; staff_sizes: string[]; budgets: string[]; respondent_roles: string[];
+    states: { code: string; name: string }[];
+  }
 
-  /** Optional details for grouping on the staff dashboard. "Prefer not to say" is the default, so nothing is forced. */
+  function renderRoles(roles: string[], saved: string | null | undefined) {
+    $("#role-options")!.innerHTML = roles.map((r, i) => `
+      <label class="choice"><input type="radio" name="respondent_role" id="role-${i}" value="${esc(r)}" ${saved === r ? "checked" : ""}>
+        <span class="choice__text">${esc(r)}</span>${icon("check", "choice__check")}</label>`).join("");
+    $("#role-options")!.addEventListener("change", () => setError("respondent_role", null));
+  }
+
+  const radios = (name: string, options: [string, string][], saved: string) => options.map(([v, label]) => `
+    <label class="choice"><input type="radio" name="${name}" value="${esc(v)}" ${saved === v ? "checked" : ""}>
+      <span class="choice__text">${esc(label)}</span>${icon("check", "choice__check")}</label>`).join("");
+
+  /** Not required, so "Prefer not to say" is the default; program model and size tailor the plan and peer groups. */
   function renderOrgMeta(o: MetaOptions, saved: OrgMeta | null | undefined) {
-    const sizes: [string, string][] = [["", "Prefer not to say"], ...o.staff_sizes.map((s): [string, string] => [s, `${s} staff`])];
+    const skip: [string, string] = ["", "Prefer not to say"];
     $("#org-meta")!.innerHTML = `
       <fieldset class="field">
-        <legend>What kind of work do you do? <span class="optional">Choose all that fit.</span></legend>
+        <legend>What does your organization do? <span class="optional">(pick all that apply)</span></legend>
         <div class="choice-row">${o.program_models.map((m) => `
           <label class="choice"><input type="checkbox" name="program_models" value="${esc(m)}" ${saved?.program_models.includes(m) ? "checked" : ""}>
             <span class="choice__text">${esc(m)}</span>${icon("check", "choice__check")}</label>`).join("")}
@@ -204,13 +297,14 @@ import Icon from "../components/Icon.astro";
       </fieldset>
       <fieldset class="field">
         <legend>How many staff do you have?</legend>
-        <div class="choice-row org-meta__sizes">${sizes.map(([v, label]) => `
-          <label class="choice"><input type="radio" name="staff_size" value="${esc(v)}" ${(saved?.staff_size ?? "") === v ? "checked" : ""}>
-            <span class="choice__text">${esc(label)}</span>${icon("check", "choice__check")}</label>`).join("")}
-        </div>
+        <div class="choice-row org-meta__sizes">${radios("staff_size", [skip, ...o.staff_sizes.map((s): [string, string] => [s, `${s} staff`])], saved?.staff_size ?? "")}</div>
+      </fieldset>
+      <fieldset class="field">
+        <legend>What is your yearly budget?</legend>
+        <div class="choice-row org-meta__sizes">${radios("budget", [skip, ...o.budgets.map((b): [string, string] => [b, b])], saved?.budget ?? "")}</div>
       </fieldset>
       <div class="field">
-        <label for="org-state">State or territory</label>
+        <label for="org-state">State or territory <span class="optional">(optional)</span></label>
         <select class="input" id="org-state" name="state">
           <option value="">Prefer not to say</option>
           ${o.states.map((s) => `<option value="${esc(s.code)}" ${saved?.state === s.code ? "selected" : ""}>${esc(s.name)}</option>`).join("")}
@@ -222,19 +316,26 @@ import Icon from "../components/Icon.astro";
     const m: OrgMeta = {
       program_models: $$<HTMLInputElement>("input[name=program_models]:checked").map((b) => b.value),
       staff_size: $<HTMLInputElement>("input[name=staff_size]:checked")?.value || null,
+      budget: $<HTMLInputElement>("input[name=budget]:checked")?.value || null,
       state: $<HTMLSelectElement>("#org-state")?.value || null,
     };
-    return m.program_models.length || m.staff_size || m.state ? m : null;
+    return m.program_models.length || m.staff_size || m.budget || m.state ? m : null;
   }
+
+  const respondent = (): Respondent => ({ role: role(), title: titleEl.value.trim() || null, name: personEl.value.trim() || null });
 
   async function init() {
     await requireUser();
     const [meta, options, draft] = await Promise.all([getMeta(), api.get<MetaOptions>("/org-meta"), loadDraft()]);
     nameEl.value = draft?.org_name ?? "";
     urlEl.value = draft?.org_url ?? "";
+    titleEl.value = draft?.respondent?.title ?? "";
+    personEl.value = draft?.respondent?.name ?? "";
     if (draft?.language === "es") $<HTMLInputElement>("input[name=language][value=es]")!.checked = true;
+    renderSocial(draft?.org_links?.social.length ? draft.org_links.social.slice(0, MAX_SOCIAL) : [""]);
     const known = new Set(meta.domains.map((d) => d.id));
     const selected = draft?.domain_ids.filter((id) => known.has(id)).length ? draft.domain_ids : meta.default_domains;
+    renderRoles(options.respondent_roles, draft?.respondent?.role);
     renderDomains(meta.domains, selected);
     renderOrgMeta(options, draft?.org_meta);
 
@@ -244,6 +345,11 @@ import Icon from "../components/Icon.astro";
           <span class="sample-btn__name">${esc(s.name)}</span><span class="sample-btn__summary">${esc(s.summary)}</span>
         </button></li>`).join("");
       $("#samples")!.hidden = false;
+      // Opening the sample section marks this browser as a demo, which shows the questionnaire's
+      // "Demo: fill this area with sample answers" button (demo login only).
+      $("#samples")!.addEventListener("toggle", () => {
+        if (($("#samples") as HTMLDetailsElement).open) { try { localStorage.setItem("oci-demo-preload", "1"); } catch { /* private mode */ } }
+      });
     }
 
     form.addEventListener("submit", (e) => {
@@ -251,6 +357,7 @@ import Icon from "../components/Icon.astro";
       const errors = validate();
       showErrors(errors);
       if (Object.keys(errors).length) return;
+      const social = socialLinks();
       saveDraft({
         org_name: nameEl.value.trim(),
         org_url: normalizeUrl(urlEl.value) || "",
@@ -258,6 +365,8 @@ import Icon from "../components/Icon.astro";
         domain_ids: meta.domains.map((d) => d.id).filter((id) => chosen().includes(id)),
         answers: draft?.answers ?? {},
         org_meta: orgMeta(),
+        respondent: respondent(),
+        org_links: social.length ? { social } : null,
       });
       location.assign("/questionnaire/#1");
     });

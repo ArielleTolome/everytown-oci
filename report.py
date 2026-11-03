@@ -67,11 +67,11 @@ class _PDF(FPDF):
         self.multi_cell(0, h, text, align="L", new_x="LMARGIN", new_y="NEXT")
         self.set_text_color(*INK)
 
-    def bullet(self, text, indent=4, size=11.5):
+    def bullet(self, text, indent=4, size=11.5, h=None):
         self.set_font(FONT, "", size)
         x = self.l_margin + indent
         self.set_x(x)
-        h = max(6.5, size * 0.56)
+        h = h or max(6.5, size * 0.56)
         self.cell(5, h, "•")
         self.multi_cell(self.w - self.r_margin - x - 5, h, text, align="L", new_x="LMARGIN", new_y="NEXT")
 
@@ -128,6 +128,253 @@ def _steps(next_steps):
     return [s.strip() for s in next_steps if s.strip()]
 
 
+DETAILS_TITLE = "Behind the plan: your detailed results"
+# Code-written words of the letter, in the report language (the AI-written parts already are).
+LETTER = {
+    "en": {
+        "by": "Completed by", "part1": "Your plan: a letter to your team", "eyebrow": "PART 1: YOUR PLAN",
+        "title": "A letter to %s", "dear": "Dear %s team,",
+        "intro": "Thank you for taking the Organizational Capacity Index. Here is what I learned about you, what "
+                 "you already do well, and where I would start. Your detailed results come after this letter.",
+        "learned": "What we learned about you", "truth": "What's true about you",
+        "strong": "What you already do well", "start": "If I were you, I would start with",
+        "todo": "What to do", "based": "Based on your answers to", "resource": "Resource: ",
+        "weeks": "Your next 12 weeks",
+        "weeks_lead": "You do not get it all at once. Your roadmap gives you a few steps each week, and the next "
+                      "week opens when you finish one (or after 7 days). Check off steps on your plan page.",
+        "week": "This week, week %d: %s", "week_next": "Coming up, week %d: %s",
+        "help": "How the Community Safety Fund can help",
+        "support_done": "You asked for training or coaching in: %s.",
+        "support_ask": "Ask for training or coaching in the areas you choose. Use \"Ask the Community Safety Fund "
+                       "for support\" on your online report.",
+        "peer_done": "You asked us to connect you with similar groups. We will reach out.",
+        "peer_ask": "Ask us to connect you with groups like yours: a similar program model, size and growth "
+                    "priorities. We share names only when both groups agree.",
+        "share": "Share this letter with your team, your board, a funder or a trainer. Talk it through together.",
+        "sign": "With you in the work,", "signer": "Your Capacity Coach, for the Everytown Community Safety Fund",
+        "why_fallback": "This is your top-ranked growth priority in %s.",
+        # research sentences
+        "web": "your website", "social": ("%d social media page", "%d social media pages"),
+        "news": ("%d news story", "%d news stories"), "and": "and",
+        "rich": "We personalized this plan from %s.",
+        "limited": "We found a little about you online (%s). Most of this plan comes from your answers.",
+        "none": "We did not find much about you online, so this plan is based on your answers.",
+        "answers": "This plan is based on your answers.",
+    },
+    "es": {
+        "by": "Completado por", "part1": "Su plan: una carta para su equipo", "eyebrow": "PARTE 1: SU PLAN",
+        "title": "Una carta para %s", "dear": "Estimado equipo de %s:",
+        "intro": "Gracias por completar el Índice de Capacidad Organizacional. Aquí está lo que aprendí sobre "
+                 "ustedes, lo que ya hacen bien y por dónde yo empezaría. Sus resultados detallados vienen después "
+                 "de esta carta.",
+        "learned": "Lo que aprendimos sobre ustedes", "truth": "Lo que es cierto sobre ustedes",
+        "strong": "Lo que ya hacen bien", "start": "Si yo fuera ustedes, empezaría con",
+        "todo": "Qué hacer", "based": "Según sus respuestas a", "resource": "Recurso: ",
+        "weeks": "Sus próximas 12 semanas",
+        "weeks_lead": "No reciben todo de una vez. Su hoja de ruta les da unos pasos cada semana, y la semana "
+                      "siguiente se abre cuando terminan una (o después de 7 días). Marquen los pasos en su "
+                      "página del plan.",
+        "week": "Esta semana, semana %d: %s", "week_next": "Próximamente, semana %d: %s",
+        "help": "Cómo puede ayudar el Community Safety Fund",
+        "support_done": "Pidieron capacitación o acompañamiento en: %s.",
+        "support_ask": "Pidan capacitación o acompañamiento en las áreas que elijan, desde su informe en línea.",
+        "peer_done": "Pidieron que los conectemos con grupos similares. Nos pondremos en contacto.",
+        "peer_ask": "Pidan que los conectemos con grupos como el suyo: un modelo de programa, tamaño y "
+                    "prioridades de crecimiento parecidos. Solo compartimos nombres cuando ambos grupos están de "
+                    "acuerdo.",
+        "share": "Compartan esta carta con su equipo, su junta, un financiador o un capacitador. Conversen sobre "
+                 "ella juntos.",
+        "sign": "Con ustedes en este trabajo,", "signer": "Su Capacity Coach, del Everytown Community Safety Fund",
+        "why_fallback": "Esta es su prioridad de crecimiento mejor clasificada en %s.",
+        "web": "su sitio web", "social": ("%d página de redes sociales", "%d páginas de redes sociales"),
+        "news": ("%d noticia", "%d noticias"), "and": "y",
+        "rich": "Personalizamos este plan con %s.",
+        "limited": "Encontramos un poco sobre ustedes en internet (%s). Casi todo este plan viene de sus "
+                   "respuestas.",
+        "none": "No encontramos mucho sobre ustedes en internet, así que este plan se basa en sus respuestas.",
+        "answers": "Este plan se basa en sus respuestas.",
+    },
+}
+
+
+def respondent_line(sub):
+    """'Executive director (Founder and executive director)': role and title only, never the person's name."""
+    r = sub.get("respondent") or {}
+    role, title = (r.get("role") or "").strip(), (r.get("title") or "").strip()
+    if role and title and title.lower() != role.lower():
+        return "%s (%s)" % (role, title)
+    return role or title
+
+
+def _join(parts, word):
+    return parts[0] if len(parts) == 1 else "%s %s %s" % (", ".join(parts[:-1]), word, parts[-1])
+
+
+def research_line(sub, lang="en"):
+    """One code-written sentence on how much the online research could personalize the plan (sub.research)."""
+    t = LETTER.get(lang, LETTER["en"])
+    research = sub.get("research")
+    if not isinstance(research, dict):  # reports before v1.0: only a website profile, if any
+        return t["rich"] % t["web"] if sub.get("org_url") and sub.get("profile") else t["answers"]
+    used = [s for s in research.get("sources") or [] if isinstance(s, dict) and s.get("used")]
+    count = lambda kind: sum(1 for s in used if s.get("kind") == kind)
+    parts = [t["web"]] if count("website") else []
+    for kind in ("social", "news"):
+        n = count(kind)
+        if n:
+            parts.append(t[kind][n != 1] % n)
+    strength = research.get("strength")
+    if not parts or strength == "none":
+        return t["none"]
+    return (t["limited"] if strength == "limited" else t["rich"]) % _join(parts, t["and"])
+
+
+def _profile_blurb(sub):
+    """The first two sentences of the research profile, unless research found nothing."""
+    profile = (sub.get("profile") or "").strip()
+    research = sub.get("research") if isinstance(sub.get("research"), dict) else {}
+    if not profile or research.get("strength") == "none" or profile.startswith("The website could not be"):
+        return ""
+    sentences = [s for s in profile.replace("\n", " ").split(". ") if s.strip()]
+    return ". ".join(sentences[:2]).rstrip(".") + "."
+
+
+def first_weeks(sub, n=3):
+    """The first weeks of the code-built 12-week roadmap (features/milestones.py), if that feature is present."""
+    try:
+        from features import milestones
+        roadmap = milestones.build_roadmap(sub)
+        weeks = roadmap.get("weeks") if isinstance(roadmap, dict) else roadmap
+        return [w for w in weeks or [] if isinstance(w, dict) and w.get("tasks")][:n]
+    except Exception:  # no roadmap feature, or a report it cannot use: the letter just skips the section
+        return []
+
+
+def _focus_items(sub, t):
+    """Start here: the validated AI items, or (no AI report) the same code choice explained with engine text."""
+    focus = ((sub.get("report") or {}).get("focus")) or []
+    if focus:
+        return focus
+    from pipeline import choose_focus
+    return [{"title": g["question_text"], "why": t["why_fallback"] % g["domain_name"], "gap_ids": [g["question_id"]],
+             "steps": _steps(g.get("next_steps") or [])[:4], "resource": None}
+            for g in choose_focus(sub.get("gaps") or [])]
+
+
+LS, LH = 11, 5.8  # letter body size and line height: keeps the letter to about two pages
+
+
+def _letter_head(pdf, text):
+    if pdf.will_page_break(24):
+        pdf.add_page()
+    pdf.start_section(text, level=1)
+    pdf.ln(2.5)
+    pdf.set_font(FONT, "B", 13.5)
+    pdf.set_text_color(*ACCENT)
+    pdf.multi_cell(0, 7, text, align="L", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(*INK)
+    pdf.ln(0.5)
+
+
+def _letter(pdf, sub, t):
+    """Pages 2 to 3: what we learned, what's true, strengths, where to start, the first weeks, how CSF helps."""
+    report = sub.get("report") or {}
+    org = sub["org_name"]
+    para = lambda text, **kw: pdf.para(text, **{"size": LS, "h": LH, **kw})
+    bullet = lambda text: pdf.bullet(text, size=LS, h=LH)
+    pdf.add_page()
+    pdf.start_section(t["part1"], level=0)
+    pdf.set_font(FONT, "B", 10)
+    pdf.set_text_color(*LINK)
+    pdf.cell(0, 6, t["eyebrow"], new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font(FONT, "B", 20)
+    pdf.set_text_color(*ACCENT)
+    pdf.multi_cell(0, 10, t["title"] % org, align="L", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(*INK)
+    pdf.ln(2)
+    para(t["dear"] % org, style="B")
+    para(t["intro"])
+
+    _letter_head(pdf, t["learned"])
+    para(research_line(sub, sub.get("language") or "en"))
+    blurb = _profile_blurb(sub)
+    if blurb:
+        para(blurb, size=10, color=MUTED, h=5.4)
+
+    _letter_head(pdf, t["truth"])
+    if report.get("summary"):
+        for p in [p.strip() for p in report["summary"].split("\n\n") if p.strip()]:
+            para(p)
+            pdf.ln(1.5)
+    else:
+        for part in _fallback_summary(sub):
+            if isinstance(part, str):
+                para(part)
+            else:
+                para(part[0], style="B")
+                for line in part[1]:
+                    bullet(line)
+    if report.get("strengths"):
+        _letter_head(pdf, t["strong"])
+        for s in report["strengths"]:
+            bullet(s)
+
+    focus = _focus_items(sub, t)
+    if focus:
+        gap_text = {g["question_id"]: g["question_text"] for g in sub.get("gaps") or []}
+        _letter_head(pdf, t["start"])
+        for i, f in enumerate(focus, 1):
+            if pdf.will_page_break(36):
+                pdf.add_page()
+            para("%d. %s" % (i, f["title"]), style="B", size=12.5, h=6.5)
+            if f.get("why"):
+                para(f["why"])
+            stmts = [gap_text[g] for g in f.get("gap_ids") or [] if g in gap_text]
+            if stmts:
+                para("%s: %s." % (t["based"], "; ".join(s.rstrip(". ") for s in stmts)), size=10, color=MUTED, h=5.4)
+            if f.get("steps"):
+                para(t["todo"], style="B")
+                for s in f["steps"]:
+                    bullet(s)
+            res = f.get("resource")
+            if res and res.get("url"):
+                pdf.set_font(FONT, "B", LS)
+                pdf.write(LH, t["resource"])
+                pdf.set_font(FONT, "U", LS)
+                pdf.set_text_color(*LINK)
+                pdf.write(LH, res.get("title") or res["url"], link=res["url"])
+                pdf.set_text_color(*INK)
+                pdf.ln(LH + 1)
+            pdf.ln(1.5)
+
+    weeks = first_weeks(sub)
+    if weeks:
+        _letter_head(pdf, t["weeks"])
+        para(t["weeks_lead"])
+        for i, w in enumerate(weeks, 1):
+            n = w.get("week") or i
+            if i > 1:  # later weeks unlock one at a time on the plan page, so the letter only names them
+                para(t["week_next"] % (n, w.get("title") or ""))
+                continue
+            para(t["week"] % (n, w.get("title") or ""), style="B")
+            for task in w.get("tasks") or []:
+                text = task.get("text") if isinstance(task, dict) else str(task)
+                owner = task.get("owner") if isinstance(task, dict) else None
+                bullet("%s (%s)" % (text, owner) if owner else text)
+            pdf.ln(1)
+
+    _letter_head(pdf, t["help"])
+    support = sub.get("support") or {}
+    names = {d["domain_id"]: d["domain_name"] for d in sub["domains"]}
+    bullet(t["support_done"] % ", ".join(names.get(d, d) for d in support["domain_ids"])
+           if support.get("domain_ids") else t["support_ask"])
+    bullet(t["peer_done"] if sub.get("peer_request") else t["peer_ask"])
+    bullet(t["share"])
+    pdf.ln(3)
+    para(t["sign"])
+    para(t["signer"], style="B")
+
+
 def build_pdf(sub, stage_descriptions):
     report = sub.get("report") or None
     gaps = sub.get("gaps") or []
@@ -153,6 +400,7 @@ def build_pdf(sub, stage_descriptions):
     pdf.set_text_color(*INK)
 
     # 1. Cover
+    t = LETTER.get(lang, LETTER["en"])
     pdf.add_page()
     pdf.start_section("Cover", level=0)
     pdf.ln(30)
@@ -160,7 +408,7 @@ def build_pdf(sub, stage_descriptions):
     pdf.set_text_color(*ACCENT)
     pdf.multi_cell(0, 13, "Organizational Capacity Index", new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(*INK)
-    pdf.para("Capacity Coach report: response record and recommendations", size=15, h=8)
+    pdf.para("Capacity Coach report: your plan, then your detailed results", size=15, h=8)
     pdf.ln(10)
     pdf.para(sub["org_name"], style="B", size=20, h=10)
     if sub.get("org_url"):
@@ -169,6 +417,9 @@ def build_pdf(sub, stage_descriptions):
         pdf.cell(0, 7, sub["org_url"], link=sub["org_url"], new_x="LMARGIN", new_y="NEXT")
         pdf.set_text_color(*INK)
     pdf.para(sub.get("created", ""), size=12, color=MUTED, h=7)
+    who = respondent_line(sub)
+    if who:
+        pdf.para("%s: %s" % (t["by"], who), size=12, h=7)
     pdf.ln(8)
     pdf.para("Community Safety Fund | Everytown for Gun Safety", style="B", size=13, h=7)
     pdf.ln(14)
@@ -176,69 +427,18 @@ def build_pdf(sub, stage_descriptions):
                 "Recommendations generated with AI (Claude on Amazon Bedrock) from your answers and the CVI "
                 "resource library. Scores are calculated by a fixed scoring method.")
 
-    # 2. Executive summary ("What's true about you" when the AI wrote it)
-    pdf.h1("What's true about you" if report and report.get("summary") else "Executive summary")
-    if report and report.get("summary"):
-        for p in [p.strip() for p in report["summary"].split("\n\n") if p.strip()]:
-            pdf.para(p)
-            pdf.ln(2)
-        if report.get("reading_grade") is not None:  # English only; measured by pipeline.reading_grade
-            pdf.para("Reading level: about grade %d (Flesch-Kincaid formula). We aim for grade 8 or lower."
-                     % round(report["reading_grade"]), size=10, color=MUTED)
-    else:
-        for part in _fallback_summary(sub):
-            if isinstance(part, str):
-                pdf.para(part)
-            else:
-                pdf.ln(1)
-                pdf.para(part[0], style="B")
-                for line in part[1]:
-                    pdf.bullet(line)
-            pdf.ln(2)
-    focus = (report or {}).get("focus") or []
-    if focus:
-        gap_text = {g["question_id"]: g["question_text"] for g in gaps}
-        if pdf.will_page_break(60):
-            pdf.add_page()
-        pdf.start_section("Start here: your top priorities", level=1)
-        pdf.ln(4)
-        pdf.set_font(FONT, "B", 18)
-        pdf.set_text_color(*ACCENT)
-        pdf.multi_cell(0, 9, "Start here: your top priorities", new_x="LMARGIN", new_y="NEXT")
-        pdf.set_text_color(*INK)
-        pdf.para("If you only do one or two things first, do these.", size=12.5, h=7)
-        pdf.ln(2)
-        for i, f in enumerate(focus, 1):
-            if pdf.will_page_break(50):
-                pdf.add_page()
-            pdf.set_draw_color(*ACCENT)
-            pdf.set_line_width(0.8)
-            pdf.line(pdf.l_margin, pdf.get_y(), pdf.w - pdf.r_margin, pdf.get_y())
-            pdf.set_line_width(0.2)
-            pdf.ln(3)
-            pdf.para("%d. %s" % (i, f["title"]), style="B", size=15, h=8)
-            if f.get("why"):
-                pdf.para(f["why"], size=12.5, h=7)
-            stmts = [(gid, gap_text[gid]) for gid in f.get("gap_ids") or [] if gid in gap_text]
-            if stmts:
-                pdf.ln(1)
-                pdf.para("Based on your answers:", style="B", size=12.5, h=7)
-                for gid, text in stmts:
-                    pdf.bullet("%s: %s" % (gid, text), size=12.5)
-            if f.get("steps"):
-                pdf.ln(1)
-                pdf.para("What to do", style="B", size=12.5, h=7)
-                for s in f["steps"]:
-                    pdf.bullet(s, size=12.5)
-            res = f.get("resource")
-            if res:
-                pdf.ln(1)
-                pdf.link_line("Resource: ", res.get("title", ""), res.get("url"), size=12.5)
-            pdf.ln(4)
-    if report and report.get("strengths"):
-        pdf.h2("What you already do well")
-        for s in report["strengths"]:
-            pdf.bullet(s)
+    # 2. Part one: a short, conversational letter (the Everytown rep: "two pages that are conversational")
+    _letter(pdf, sub, t)
+
+    # 3. Part two: everything behind the plan
+    pdf.h1(DETAILS_TITLE)
+    pdf.para("The letter gave you the short version. These pages hold the numbers behind it: your stages and "
+             "scores by area, the full 30 / 60 / 90 day plan, every growth priority with next steps, a team "
+             "conversation guide, and a record of every answer. Scores come from a fixed scoring method.")
+    pdf.ln(2)
+    if report and report.get("summary") and report.get("reading_grade") is not None:  # English only
+        pdf.para("Reading level of your letter: about grade %d (Flesch-Kincaid formula). We aim for grade 8 or "
+                 "lower." % round(report["reading_grade"]), size=10, color=MUTED)
 
     # 2b. Progress since the previous assessment
     prog = sub.get("progress")

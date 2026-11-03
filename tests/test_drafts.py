@@ -23,8 +23,10 @@ def client(role="demo"):
 class OrgMeta(unittest.TestCase):
     def test_only_known_values_are_kept(self):
         self.assertEqual(clean_org_meta({"program_models": ["Therapy/CBT", "Bowling", "Street outreach"],
-                                         "staff_size": "6-10", "state": "PR"}),
-                         {"program_models": ["Street outreach", "Therapy/CBT"], "staff_size": "6-10", "state": "PR"})
+                                         "staff_size": "6-10", "budget": "Over $5M", "state": "PR"}),
+                         {"program_models": ["Street outreach", "Therapy/CBT"], "staff_size": "6-10",
+                          "budget": "Over $5M", "state": "PR"})
+        self.assertEqual(clean_org_meta({"budget": "$3"}), None)
         self.assertEqual(clean_org_meta({"program_models": "Street outreach", "staff_size": "7", "state": "XX"}), None)
         self.assertIsNone(clean_org_meta("nope"))
 

@@ -1,18 +1,23 @@
 // "On this page" section nav for the results page (CSF site pattern): sticky left column from 1100px, a disclosure on smaller screens.
+// Links are grouped by report layer (tab panel); following a link into a hidden layer opens that layer first.
 import { $$, esc } from "./dom";
 import { icon } from "./icons";
 
 const SECTIONS: [string, string][] = [
   ["truth-title", "What's true about you"],
+  ["learned-title", "What we learned about you"],
   ["focus-title", "Start here"],
+  ["roadmap-title", "Your 12-week roadmap"],
   ["coach-title", "Ask about your report"],
+  ["support-title", "Ask for support"],
+  ["peers-title", "Connect with similar groups"],
+  ["explore-title", "Explore any area"],
   ["stages-title", "Where you are today"],
   ["progress-title", "Progress"],
   ["plan-title", "30 / 60 / 90 day plan"],
   ["strengths-title", "Strengths"],
   ["conversation-title", "Conversation guide"],
   ["gaps-title", "All growth priorities"],
-  ["support-title", "Ask for support"],
   ["sources-title", "Sources"],
 ];
 
@@ -27,9 +32,19 @@ export function wireToc(nav: HTMLElement, content: HTMLElement) {
   if (onWideChange) WIDE.removeEventListener("change", onWideChange);
   const present = SECTIONS.filter(([id]) => content.querySelector(`#${id}`));
   if (present.length < 2) { nav.hidden = true; return; }
+  // Group consecutive links by their layer (tab panel title); sections outside any layer get no group label.
+  const groups: { title: string; items: [string, string][] }[] = [];
+  for (const item of present) {
+    const title = content.querySelector(`#${item[0]}`)!.closest<HTMLElement>("[data-layer-title]")?.dataset.layerTitle ?? "";
+    if (groups.at(-1)?.title === title) groups.at(-1)!.items.push(item);
+    else groups.push({ title, items: [item] });
+  }
+  const links = (items: [string, string][]) => items.map(([id, label]) => `<li><a href="#${id}" data-toc="${id}">${esc(label)}</a></li>`).join("");
   nav.innerHTML = `<details class="toc__details">
       <summary>${icon("list-checks")}<span>On this page</span>${icon("chevron-down", "about-card__chevron")}</summary>
-      <ol class="toc__list" role="list">${present.map(([id, label]) => `<li><a href="#${id}" data-toc="${id}">${esc(label)}</a></li>`).join("")}</ol>
+      <ol class="toc__list" role="list">${groups.map((g) => g.title && g.items.some(([, label]) => label !== g.title)
+        ? `<li class="toc__group"><span class="toc__group-title">${esc(g.title)}</span><ol class="toc__list" role="list">${links(g.items)}</ol></li>`
+        : links(g.items)).join("")}</ol>
     </details>`;
   const details = nav.querySelector<HTMLDetailsElement>("details")!;
   onWideChange = () => { details.open = WIDE.matches; };
@@ -43,28 +58,32 @@ export function wireToc(nav: HTMLElement, content: HTMLElement) {
     e.preventDefault();
     const h = document.getElementById(a.dataset.toc!);
     if (!h) return;
+    const panel = h.closest<HTMLElement>('[role="tabpanel"]');
+    if (panel?.hidden) document.getElementById(panel.getAttribute("aria-labelledby")!)?.click();
     if (!h.hasAttribute("tabindex")) h.setAttribute("tabindex", "-1");
     h.scrollIntoView({ block: "start" });
     h.focus({ preventScroll: true });
     if (!WIDE.matches) details.open = false;
   });
 
-  const links = $$<HTMLAnchorElement>("a[data-toc]", nav);
+  const anchors = $$<HTMLAnchorElement>("a[data-toc]", nav);
   const headings = present.map(([id]) => content.querySelector<HTMLElement>(`#${id}`)!);
   const update = () => {
-    // Current = last heading above the top 30% of the viewport (or the first one).
+    // Current = last visible heading above the top 30% of the viewport (or the first visible one); hidden layers are skipped.
+    const visible = headings.filter((h) => h.offsetParent !== null);
+    if (!visible.length) return;
     const line = window.innerHeight * 0.3;
-    let current = headings[0];
-    for (const h of headings) if (h.getBoundingClientRect().top <= line) current = h;
+    let current = visible[0];
+    for (const h of visible) if (h.getBoundingClientRect().top <= line) current = h;
     // At the very bottom the last short sections never reach the line; select the last one.
-    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) current = headings[headings.length - 1];
-    links.forEach((a) => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) current = visible[visible.length - 1];
+    anchors.forEach((a) => {
       if (a.dataset.toc === current.id) a.setAttribute("aria-current", "true");
       else a.removeAttribute("aria-current");
     });
   };
   // Observe whole sections (they tile the page), so even a long jump makes the section under the 30% line fire a callback;
-  // the footer entering view covers reaching the bottom of the page.
+  // the footer entering view covers reaching the bottom of the page. Switching layers re-runs the update.
   observer = new IntersectionObserver(update, { rootMargin: "0px 0px -70% 0px" });
   headings.forEach((h) => observer!.observe(h.closest("section") ?? h));
   bottomObserver?.disconnect();
@@ -72,4 +91,5 @@ export function wireToc(nav: HTMLElement, content: HTMLElement) {
   const footer = document.querySelector(".site-footer");
   if (footer) bottomObserver.observe(footer);
   update();
+  content.addEventListener("oci:layer", () => requestAnimationFrame(update));
 }

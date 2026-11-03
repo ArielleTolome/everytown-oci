@@ -6,7 +6,9 @@ import { api, ApiError, getMeta } from "./api";
 import { $, announce, esc, focusEl } from "./dom";
 import { icon } from "./icons";
 
-export interface OrgMeta { program_models: string[]; staff_size: string | null; state: string | null }
+export interface OrgMeta { program_models: string[]; staff_size: string | null; budget?: string | null; state: string | null }
+export interface Respondent { role: string | null; title: string | null; name: string | null }
+export interface OrgLinks { social: string[] }
 
 export interface Draft {
   org_name: string;
@@ -15,6 +17,8 @@ export interface Draft {
   domain_ids: string[];
   answers: Record<string, "yes" | "no">;
   org_meta?: OrgMeta | null;
+  respondent?: Respondent | null; // the name is shown on the report only, never sent to the AI
+  org_links?: OrgLinks | null;
 }
 
 /** Where a draft syncs to. `area` is set only for a teammate link. `dirty` = local changes not yet on the server. */
@@ -44,6 +48,8 @@ const team = () => sync()?.area ?? null;
 function normalize(d: Partial<Draft> | null): Draft | null {
   if (!d || typeof d !== "object") return null;
   const m = d.org_meta;
+  const r = d.respondent;
+  const social = d.org_links && Array.isArray(d.org_links.social) ? d.org_links.social.map(String) : [];
   return {
     org_name: String(d.org_name || ""),
     org_url: String(d.org_url || ""),
@@ -51,10 +57,15 @@ function normalize(d: Partial<Draft> | null): Draft | null {
     domain_ids: Array.isArray(d.domain_ids) ? d.domain_ids.map(String) : [],
     answers: d.answers && typeof d.answers === "object" ? d.answers : {},
     org_meta: m && typeof m === "object"
-      ? { program_models: Array.isArray(m.program_models) ? m.program_models.map(String) : [], staff_size: m.staff_size ?? null, state: m.state ?? null }
+      ? { program_models: Array.isArray(m.program_models) ? m.program_models.map(String) : [], staff_size: m.staff_size ?? null, budget: m.budget ?? null, state: m.state ?? null }
       : null,
+    respondent: r && typeof r === "object" ? { role: r.role ?? null, title: r.title ?? null, name: r.name ?? null } : null,
+    org_links: social.length ? { social } : null,
   };
 }
+
+/** For the final submit: the leader's draft token, so the server can credit areas a teammate answered. */
+export const draftToken = (): string | null => (slot === LEADER ? sync()?.token ?? null : null);
 
 /** Server copy plus local copy: unsynced local edits win; otherwise the server (which has teammates' answers) wins. */
 function combine(server: Draft, local: Draft | null, dirty: boolean): Draft {
@@ -174,7 +185,39 @@ async function copy(input: HTMLInputElement, status: HTMLElement) {
   status.textContent = "Link copied.";
 }
 
-async function fillPanel(panel: HTMLElement, kind: "save" | "share", area: string, areaName: string) {
+/** Step 1 of sharing: ask the teammate's role, so the report can say who answered this area. */
+async function askRole(panel: HTMLElement, area: string, areaName: string) {
+  panel.innerHTML = `<p class="loading">${icon("loader", "spin")}Loading</p>`;
+  let roles: string[];
+  try { roles = (await api.get<{ respondent_roles: string[] }>("/org-meta")).respondent_roles; } catch { roles = []; }
+  if (!roles.length) return fillPanel(panel, "share", area, areaName);
+  panel.innerHTML = `
+    <p class="draft-panel__title" tabindex="-1">Send ${esc(areaName)} to a teammate</p>
+    <p>Someone else may know this area best, like ${esc(ROLE[area] ?? "a teammate")}. What is their role? Your report will show who answered this area.</p>
+    <fieldset class="field" data-field="dt-role">
+      <legend>Your teammate's role</legend>
+      <p class="field-error" id="dt-role-error" hidden>${icon("alert")}<span>Choose your teammate's role.</span></p>
+      <div class="choice-row">${roles.map((r) => `
+        <label class="choice"><input type="radio" name="dt-role" value="${esc(r)}">
+          <span class="choice__text">${esc(r)}</span>${icon("check", "choice__check")}</label>`).join("")}
+      </div>
+    </fieldset>
+    <button type="button" class="btn btn-primary btn-sm" id="dt-make-share">${icon("users")}<span>Make the teammate link</span></button>`;
+  panel.querySelector("[data-field=dt-role]")!.addEventListener("change", (e) => {
+    panel.querySelector<HTMLElement>("#dt-role-error")!.hidden = true;
+    (e.currentTarget as HTMLElement).classList.remove("field--error");
+  });
+  panel.querySelector("#dt-make-share")!.addEventListener("click", () => {
+    const role = panel.querySelector<HTMLInputElement>("input[name=dt-role]:checked")?.value;
+    if (role) return fillPanel(panel, "share", area, areaName, role);
+    panel.querySelector<HTMLElement>("#dt-role-error")!.hidden = false;
+    panel.querySelector("[data-field=dt-role]")!.classList.add("field--error");
+    panel.querySelector<HTMLInputElement>("input[name=dt-role]")!.focus();
+  });
+  focusEl(panel.querySelector(".draft-panel__title"));
+}
+
+async function fillPanel(panel: HTMLElement, kind: "save" | "share", area: string, areaName: string, role?: string) {
   panel.innerHTML = `<p class="loading">${icon("loader", "spin")}Making your link</p>`;
   try {
     const token = await ensureToken();
@@ -189,10 +232,10 @@ async function fillPanel(panel: HTMLElement, kind: "save" | "share", area: strin
         <p class="hint">Keep this link private. Anyone who signs in with it can see and change these answers.</p>
         <p class="draft-panel__status" role="status"></p>`;
     } else {
-      const { token: share } = await api.post<{ token: string }>(`/drafts/${encodeURIComponent(token)}/share`, { area });
+      const { token: share } = await api.post<{ token: string }>(`/drafts/${encodeURIComponent(token)}/share`, { area, role: role ?? null });
       panel.innerHTML = `
         <p class="draft-panel__title" tabindex="-1">Send ${esc(areaName)} to a teammate</p>
-        <p>Someone else may know this area best, like ${esc(ROLE[area] ?? "a teammate")}. Send them this link. They sign in with the demo login and answer only ${esc(areaName)}. They cannot see or change your other areas. Their answers join this same assessment.</p>
+        <p>Send this link to your teammate${role ? ` (${esc(role.toLowerCase())})` : ""}. They sign in with the demo login and answer only ${esc(areaName)}. They cannot see or change your other areas. Their answers join this same assessment.</p>
         ${linkBlock("dt-share-link", `Teammate link for ${areaName}`, `${base}?d=${share}&area=${encodeURIComponent(area)}#1`)}
         <p class="draft-panel__status" role="status"></p>`;
     }
@@ -235,7 +278,7 @@ export async function mountDraftTools(el: HTMLElement) {
     const open = btn.getAttribute("aria-expanded") !== "true";
     btn.setAttribute("aria-expanded", String(open));
     panel.hidden = !open;
-    if (open) fillPanel(panel, panel.id === "dt-save" ? "save" : "share", area, areaName);
+    if (open) { if (panel.id === "dt-save") fillPanel(panel, "save", area, areaName); else askRole(panel, area, areaName); }
   }));
   if (sync() && !sync()!.dirty) setStatus(true);
 }

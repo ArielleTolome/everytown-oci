@@ -153,22 +153,23 @@ def create(sub, source, created_at=None, owner=None):
     tx = _call(_client().begin_transaction)["transactionId"]
     try:
         meta = sub.get("org_meta")  # optional start-page details; an assessment without them keeps the stored ones
-        org = query("INSERT INTO organizations (id, name, name_key, website, program_models, staff_size, state) "
-                    "VALUES (:id, :name, :key, :website, CAST(:models AS jsonb), :size, :state) "
+        org = query("INSERT INTO organizations (id, name, name_key, website, program_models, staff_size, state, budget) "
+                    "VALUES (:id, :name, :key, :website, CAST(:models AS jsonb), :size, :state, :budget) "
                     "ON CONFLICT (name_key) DO UPDATE SET name = EXCLUDED.name, website = "
                     "CASE WHEN EXCLUDED.website = '' THEN organizations.website ELSE EXCLUDED.website END, "
                     "program_models = CASE WHEN :has_meta THEN EXCLUDED.program_models ELSE organizations.program_models END, "
                     "staff_size = CASE WHEN :has_meta THEN EXCLUDED.staff_size ELSE organizations.staff_size END, "
-                    "state = CASE WHEN :has_meta THEN EXCLUDED.state ELSE organizations.state END "
+                    "state = CASE WHEN :has_meta THEN EXCLUDED.state ELSE organizations.state END, "
+                    "budget = CASE WHEN :has_meta THEN EXCLUDED.budget ELSE organizations.budget END "
                     "RETURNING id::text AS id", tx=tx, id=str(uuid.uuid4()), name=sub["org_name"],
                     key=name_key(sub["org_name"]), website=sub["org_url"],
                     models=json.dumps((meta or {}).get("program_models") or []), size=(meta or {}).get("staff_size"),
-                    state=(meta or {}).get("state"), has_meta=bool(meta))[0]["id"]
-        query("INSERT INTO assessments (id, org_id, created_at, source, language, status, doc, owner) "
+                    state=(meta or {}).get("state"), budget=(meta or {}).get("budget"), has_meta=bool(meta))[0]["id"]
+        query("INSERT INTO assessments (id, org_id, created_at, source, language, status, doc, owner, respondent_role) "
               "VALUES (:id, :org_id, COALESCE(CAST(:created_at AS timestamptz), now()), :source, :language, :status, "
-              ":doc, :owner)",
+              ":doc, :owner, :role)",
               tx=tx, id=sub["id"], org_id=org, created_at=created_at, source=source, language=sub["language"],
-              status=sub["status"], doc=sub, owner=owner)
+              status=sub["status"], doc=sub, owner=owner, role=(sub.get("respondent") or {}).get("role"))
         # Statement ids are the domain code plus a number (PL3, FR12).
         batch("INSERT INTO answers VALUES (CAST(:a AS uuid), :q, :d, :v)",
               [{"a": sub["id"], "q": q, "d": re.sub(r"\d+$", "", q), "v": v} for q, v in sub["answers"].items()], tx)
@@ -233,11 +234,12 @@ def analytics(domains, stage_names):
                      "to_char(la.created_at, 'YYYY-MM-DD') AS assessed, "
                      "(SELECT count(*) FROM gaps g WHERE g.assessment_id = la.id) AS gap_count, "
                      "(SELECT count(*) FROM gaps g WHERE g.assessment_id = la.id AND g.priority = 'High') AS high_count, "
-                     "o.program_models::text AS program_models, o.staff_size, o.state "
+                     "o.program_models::text AS program_models, o.staff_size, o.state, o.budget, "
+                     "(SELECT a.respondent_role FROM assessments a WHERE a.id = la.id) AS respondent_role "
                      "FROM latest_assessments la JOIN organizations o ON o.id = la.org_id ORDER BY o.name")
     for o in org_rows:
         o["org_meta"] = {"program_models": json.loads(o.pop("program_models") or "[]"),
-                         "staff_size": o.pop("staff_size"), "state": o.pop("state")}
+                         "staff_size": o.pop("staff_size"), "state": o.pop("state"), "budget": o.pop("budget")}
     bench = query("SELECT assessment_id::text AS assessment_id, domain_id, estimated_stage, score_pct::float AS score_pct, "
                   "percentile::int AS percentile FROM domain_benchmarks")
     per = {}
@@ -296,7 +298,7 @@ def seed():
                     answers[q["id"]] = ("no" if favorable else "yes") if q["trigger_on"] == "yes" else \
                         ("yes" if favorable else "no")
             sub = app.build_assessment({"org_name": name + " (synthetic)", "org_url": "", "language": "en",
-                                        "org_meta": _seed_meta(i)}, answers, chosen)
+                                        "org_meta": _seed_meta(i), "respondent": _seed_respondent(i)}, answers, chosen)
             sub["status"] = "done"
             sub["steps"] = [dict(s, state="done") for s in sub["steps"]]
             days_ago = 40 + rnd.randint(0, 60) if visit == 0 and i % 5 == 0 else rnd.randint(0, 45)
@@ -324,9 +326,20 @@ def _seed_meta(i):
 
     r = random.Random("meta-%d" % i)
     picked = r.sample(PROGRAM_MODELS[:5], r.choice([1, 1, 2]))
-    return {"program_models": [m for m in PROGRAM_MODELS if m in picked],
-            "staff_size": r.choice(["1-5", "6-10", "6-10", "11-20", "11-20", "21-50"]),
-            "state": r.choice(["IL", "NY", "CA", "PA", "MD", "GA"])}
+    size = r.choice(["1-5", "6-10", "6-10", "11-20", "11-20", "21-50"])
+    state = r.choice(["IL", "NY", "CA", "PA", "MD", "GA"])
+    budget = r.choice({"1-5": ["Under $250K", "Under $250K", "$250K to $1M"], "6-10": ["$250K to $1M"],
+                       "11-20": ["$250K to $1M", "$1M to $5M"], "21-50": ["$1M to $5M"]}[size])
+    return {"program_models": [m for m in PROGRAM_MODELS if m in picked], "staff_size": size, "budget": budget,
+            "state": state}
+
+
+def _seed_respondent(i):
+    """Mostly executive directors, as the CSF director expects; never a name."""
+    from features.orgmeta import RESPONDENT_ROLES
+
+    r = random.Random("role-%d" % i)
+    return {"name": None, "title": None, "role": r.choice(RESPONDENT_ROLES[:1] * 5 + RESPONDENT_ROLES[1:])}
 
 
 if __name__ == "__main__":

@@ -165,13 +165,21 @@ def create_assessment():
         errors["org_url"] = "Enter a web address like https://example.org, or leave it blank."
     if not domains:
         errors["domain_ids"] = "Choose at least one area to assess."
+    from features.orgmeta import clean_org_meta, clean_respondent, clean_social  # lazy: features import app
+    respondent, errors["respondent_role"] = clean_respondent(b.get("respondent"))
+    social, errors["social"] = clean_social((b.get("org_links") or {}).get("social")
+                                            if isinstance(b.get("org_links"), dict) else None)
+    errors = {k: v for k, v in errors.items() if v}
     # An unanswered statement would score as favorable, so every one must be answered yes or no.
     missing = [q["id"] for d in domains for q in d["questions"] if answers.get(q["id"]) not in ("yes", "no")]
     if errors or missing:
         return jsonify(errors=errors, missing=missing), 400
-    from features.orgmeta import clean_org_meta  # lazy: features import app
+    from features.drafts import answered_by
     org = {"org_name": name, "org_url": url, "language": b.get("language") if b.get("language") in LANGUAGES else "en",
-           "org_meta": clean_org_meta(b.get("org_meta"))}
+           "org_meta": clean_org_meta(b.get("org_meta")), "respondent": respondent,
+           "org_links": {"website": url, "social": social} if url or social else None,
+           "answered_by": answered_by(b.get("draft_token"), [d["id"] for d in domains],
+                                      (respondent or {}).get("role"))}
     clean = {q["id"]: answers[q["id"]] for d in domains for q in d["questions"]}
     return jsonify(id=submit(org, clean, domains, source="web")), 201
 
@@ -186,10 +194,12 @@ def demo():
     if not sample:
         return error("Unknown sample.", 400)
     domains = _domains(b.get("domain_ids")) or _domains(DEFAULT_DOMAINS)
-    from features.orgmeta import clean_org_meta
+    from features.orgmeta import clean_org_meta, clean_respondent
+    respondent = clean_respondent(sample.get("respondent"))[0]
     org = {"org_name": sample["name"], "org_url": "",
            "language": b.get("language") if b.get("language") in LANGUAGES else "en",
-           "org_meta": clean_org_meta(sample.get("org_meta"))}
+           "org_meta": clean_org_meta(sample.get("org_meta")), "respondent": respondent,
+           "answered_by": {d["id"]: respondent["role"] for d in domains} if respondent else None}
     answers = {q["id"]: sample["answers"][q["id"]] for d in domains for q in d["questions"]}
     return jsonify(id=submit(org, answers, domains, source="demo", profile=sample["profile"])), 201
 
@@ -217,6 +227,9 @@ def build_assessment(org, answers, domains, profile=None):
                   for k, label in STEPS],
         "status": "running", "error": None, "profile": profile, "progress": None, "pdf_kb": None, "report": None,
         "support": None, "org_meta": org.get("org_meta"),
+        # v1.0 intake: who answered (the name never reaches the model), links to research, per-area attribution.
+        "respondent": org.get("respondent"), "org_links": org.get("org_links"), "answered_by": org.get("answered_by"),
+        "research": None,
     }
 
 
@@ -269,8 +282,9 @@ def run_job(sid):
 
     try:
         mark("research", "running")
-        if sub["org_url"]:
-            sub["profile"] = pipeline.research_org(sub["org_name"], sub["org_url"])
+        if not sub.get("profile"):  # samples bring their own profile; a retry keeps the first research
+            sub["profile"], sub["research"] = pipeline.research(sub["org_name"], sub.get("org_links") or {
+                "website": sub["org_url"], "social": []})
         mark("research", "done")
         mark("library", "running")
         library = pipeline.gather_library(sub)

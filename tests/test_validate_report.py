@@ -2,6 +2,7 @@
 import os
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pipeline  # noqa: E402
@@ -167,11 +168,11 @@ class ModelStops(WithBedrock):
 
     def test_research_falls_back_when_the_model_fails(self):
         self.use(None)  # any Bedrock call raises
-        original, pipeline.fetch_page_text = pipeline.fetch_page_text, lambda url: "page text"
-        try:
-            self.assertIn("relies on your answers only", pipeline.research_org("Org", "https://example.org"))
-        finally:
-            pipeline.fetch_page_text = original
+        page = "<title>Org</title><p>%s</p>" % ("We run street outreach. " * 80)
+        with mock.patch.object(pipeline, "fetch", lambda url: (page, url)):
+            profile, research = pipeline.research("Org", {"website": "https://example.org", "social": []})
+        self.assertIn("relies on your answers only", profile)
+        self.assertEqual(research["strength"], "none")
 
 
 if __name__ == "__main__":

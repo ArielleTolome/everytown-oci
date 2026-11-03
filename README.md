@@ -7,7 +7,7 @@ The Organizational Capacity Index (OCI) for community violence intervention (CVI
 
 AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/vision.md), [`docs/tech.md`](docs/tech.md).
 
-**Current release:** v0.9.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+**Current release:** v1.0.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 The tool is designed to sit inside the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) Grantee Portal: CSF says new grantees "complete a self-assessment that shapes their participation in cohort-based and customized training through our Community Training Institute", and the portal is where grantees "sign up for future training opportunities and complete surveys". The look follows that site (navy and royal blue, serif headlines, pill buttons, pale-blue title bands).
 
@@ -53,16 +53,23 @@ python3 -m unittest discover -s tests       # grounding validation and re-assess
 cd frontend && npx astro check && npm run build
 ```
 
+## What it looks like (live, v1.0)
+
+| | |
+|---|---|
+| ![Start page: who is filling this out, program model, size, links](docs/screenshots/1-start.jpg) | ![Questionnaire, One at a time view](docs/screenshots/2-questionnaire-one-at-a-time.jpg) |
+| ![Report, Your plan layer](docs/screenshots/3-report-your-plan.jpg) | ![12-week roadmap after finishing week 1](docs/screenshots/5-roadmap-week-done.jpg) |
+| ![Staff dashboard, Training needs](docs/screenshots/7-staff-training-needs.jpg) | ![Staff dashboard, Peers](docs/screenshots/8-staff-peers.jpg) |
+
 ## User journey
 
 1. Sign in with the mocked credentials.
-2. Enter the organization name and, optionally, its website and a few details (program model, staff size, state). Choose the language (English or Español) and the areas to assess. The four priority areas (Planning, Fundraising, Financial Management, ML&E) are pre-selected. Or open "Try a synthetic sample organization" to submit one of the three fictional organizations from the builder package in one click (for demos and staff training).
-3. Answer one area per screen, as Yes / No for each statement or as a checklist ("tick what's true", then "Done: everything I didn't tick is a No"). Jargon has a "What does it mean?" help; the questions can be shown in Spanish. Each area must be fully answered before you move on, because an unanswered statement would count as favorable. "Save and finish later" gives a resume link for any device (`/resume/`), and "Send this area to a teammate" lets, for example, the bookkeeper answer Financial Management.
-4. The results page shows the stage ladder and scores immediately, then live progress through: reading answers, scoring, researching the website, consulting the CVI resource library, and writing recommendations. If a step fails, "Try again" reruns only the AI steps.
-5. Read "What's true about you" (with its measured reading level), then "Start here: your top priorities" (one or two, chosen by code from the engine's ranking, each showing the statements it is based on, what to do, and a vetted resource), then ask your own questions in "Ask about your report", then strengths, the 30 / 60 / 90 day plan, team conversation guide and all growth priorities. Listen to any section with Amazon Polly voices, then download the PDF.
-6. Reassess later under the same organization name, in the same sign-in session: the results page and PDF show "Progress since your last assessment", with growth priorities closed, new ones, and stage moves per area. The comparison is deterministic and covers only the areas both assessments included; the AI summary celebrates it first. Progress is scoped to the sign-in session because login is mocked; real accounts would replace this.
-7. Ask the Community Safety Fund for support: on the report, pick the areas where you want training or coaching (the areas behind your "Start here" priorities are pre-checked) and send the request.
-8. Everytown staff sign in as `staff` and open the network dashboard: totals, stage distribution per area (bars plus an equivalent table), the most common growth priorities (training and service needs), "Grantees to connect" cohorts sharing a High priority growth priority, support requests by area, and an organizations table with a staff-only peer percentile preview. Filter by area and download CSV.
+2. Say who is filling it out (role required: Executive director, Finance lead or bookkeeper, Board chair or member, Program director, Other leadership role; title and name optional). Enter the organization name, what it does (program model), its size (staff and yearly budget), its website and up to 5 social media links. Choose the language (English or Español) and the areas to assess; the four priority areas are pre-selected. Or open "Try a synthetic sample organization" for a one-click demo.
+3. Answer one area at a time. The default "One at a time" view shows one statement per card with big Yes / No buttons (Y and N keys work), and asks the 5 laddered topics (funding horizon, largest grant, planning, audits, fundraising staff) as one multiple-choice question whose recorded yes/no answers you can review and change. "Yes / No for each" and "Checklist" views are still there. Jargon help, Spanish questions, save and resume, and "Send this area to a teammate" (who is asked their role) work as before. Every statement must end up with an explicit yes or no.
+4. The results page shows the stage tracks and scores immediately, then live progress through: reading answers, scoring, researching the website, social media and news, consulting the CVI resource library, writing recommendations and checking the reading level. If a step fails, "Try again" reruns only the AI steps.
+5. **Your plan** (the default layer): what's true about you, in a coach's voice; what we learned about you online, with sources; Start here (one or two priorities chosen by code); your 12-week roadmap; Ask about your report; ask CSF for support; and "Connect me with similar groups". **Explore any area** deep-dives into any assessed area. **Your results in detail** has every number. The PDF opens with a two-to-three page letter, then "Behind the plan: your detailed results".
+6. **12-week roadmap** (`/plan/?id=`): one week at a time (the next week opens when this one is done, or after 7 days). Tick steps, download each week as a one-page PDF, and earn points, a weekly streak, a level and badges for following through. Week 12 is "Retake the OCI", and re-assessment progress then shows what changed.
+7. **Everytown staff** sign in as `staff`: tabs in the CSF director's priority order. Training needs (which organizations need which training), Gaps by area (group by program model, size, budget or who answered), Most common gaps, Change over time (including "Did support help?"), Ask the data (plain-language questions answered from pre-built analyses), and Peers (similar grantees by program model, size and shared gaps; peer requests). Each organization opens a drawer with its roadmap progress. Download the network report PDF or any table as CSV.
 
 ## Architecture
 
@@ -108,6 +115,9 @@ Why Aurora PostgreSQL Serverless v2: the Everytown interview asked for network a
 | `domain_benchmarks` (view) | Peer percentile per organization and domain. Staff only; future benchmarking. |
 | `support_requests` | Areas an organization asked CSF for training or coaching in, per assessment. The staff dashboard counts each organization's latest request. |
 | `coach_messages` (`features/coach.sql`) | "Ask about your report" questions and validated answers, per assessment. |
+| `roadmap_tasks` (`features/milestones.sql`) | Ticked roadmap steps per assessment, with time; points, streaks and badges are computed in code from it. |
+| `peer_requests` (`features/peers_request.sql`) | Organizations that asked CSF to connect them with similar groups. |
+| `assessments.respondent_role`, `organizations.budget`, `draft_shares.role` (`features/respondent.sql`) | Who filled it out, yearly budget band, and the role of each teammate who answered a shared area. |
 | `drafts`, `draft_shares` (`features/drafts.sql`) | Server-side questionnaire drafts and per-area teammate share links. |
 | `organizations.program_models`, `staff_size`, `state` (`features/orgmeta.sql`) | Optional organization details for grouping; never scored. |
 
@@ -149,7 +159,7 @@ Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Know
 |---|---|
 | `app.py` | Flask JSON API: auth (mocked roles), validation, scoring, progress comparison, job dispatch (thread or async Lambda), staff analytics. |
 | `db.py`, `schema.sql` | Aurora Data API layer, analytics queries, `migrate` (schema.sql plus `features/*.sql`) and `seed` CLI. |
-| `features/` | Feature modules, each a Flask Blueprint auto-registered by `app.py`: `coach.py` (Ask about your report), `tts.py` (Polly audio), `drafts.py` (save, resume, share an area), `orgmeta.py` (organization details), `staff_ai.py` (training briefs). |
+| `features/` | Feature modules, each a Flask Blueprint auto-registered by `app.py`: `coach.py` (Ask about your report), `tts.py` (Polly audio), `drafts.py` (save, resume, share an area), `orgmeta.py` (organization details, respondent roles, budgets), `staff_ai.py` (training briefs), `milestones.py` (12-week roadmap, gamification, weekly PDF), `bi.py` (staff BI, Ask the data, network report PDF), `peers.py` (similarity and peer groups), `peers_request.py` (connect requests). |
 | `frontend/public/content/` | `glossary.json` and `questions_es.json`, generated once offline by `scripts/gen_content.py` and reviewed (re-running it overwrites the manual fixes). |
 | `pipeline.py` | Website research, Knowledge Base retrieval, structured report generation and its validation. |
 | `lambda_handler.py` | Lambda entry point: web requests to Flask, `{"oci_sid": ...}` events to the pipeline. |

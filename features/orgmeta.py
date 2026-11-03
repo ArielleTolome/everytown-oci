@@ -1,5 +1,5 @@
-"""Optional organization details (program model, staff size, state) for grouping grantees on the staff dashboard.
-Fixed lists only, so the values can be counted; nothing here is scored."""
+"""Organization details (program model, staff size, budget, state), who filled out the assessment, and public links
+for personalization. Fixed lists only, so the values can be counted; nothing here is scored."""
 from flask import Blueprint, jsonify, session
 
 bp = Blueprint("orgmeta", __name__)
@@ -7,6 +7,10 @@ bp = Blueprint("orgmeta", __name__)
 PROGRAM_MODELS = ["Street outreach", "Hospital-based violence intervention", "Mentoring/youth development",
                   "Therapy/CBT", "Re-entry support", "Other"]
 STAFF_SIZES = ["1-5", "6-10", "11-20", "21-50", "51+"]
+BUDGETS = ["Under $250K", "$250K to $1M", "$1M to $5M", "Over $5M"]
+RESPONDENT_ROLES = ["Executive director", "Finance lead or bookkeeper", "Board chair or member", "Program director",
+                    "Other leadership role"]
+MAX_SOCIAL = 5
 STATES = {
     "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California", "CO": "Colorado",
     "CT": "Connecticut", "DE": "Delaware", "DC": "District of Columbia", "FL": "Florida", "GA": "Georgia",
@@ -28,9 +32,44 @@ def clean_org_meta(raw):
     meta = {
         "program_models": [m for m in PROGRAM_MODELS if isinstance(models, list) and m in models],
         "staff_size": raw.get("staff_size") if raw.get("staff_size") in STAFF_SIZES else None,
+        "budget": raw.get("budget") if raw.get("budget") in BUDGETS else None,
         "state": raw.get("state") if isinstance(raw.get("state"), str) and raw["state"] in STATES else None,
     }
-    return meta if meta["program_models"] or meta["staff_size"] or meta["state"] else None
+    return meta if meta["program_models"] or meta["staff_size"] or meta["budget"] or meta["state"] else None
+
+
+def clean_respondent(raw):
+    """(respondent or None, error or None). The role comes from a fixed list; name and title are free text, trimmed.
+    The name is stored for the organization's own report only and is never sent to the AI model."""
+    if not isinstance(raw, dict):
+        return None, None
+    text = {k: " ".join(str(raw.get(k) or "").split())[:100] or None for k in ("name", "title")}
+    role = raw.get("role")
+    if role in (None, ""):
+        return (dict(text, role=None), None) if any(text.values()) else (None, None)
+    if role not in RESPONDENT_ROLES:
+        return None, "Choose the role that fits you best."
+    return dict(text, role=role), None
+
+
+def clean_social(raw):
+    """(up to 5 unique http(s) links, error or None). A bare domain gets https:// like the website field."""
+    from pipeline import looks_like_web_url
+
+    links = []
+    for item in raw if isinstance(raw, list) else []:
+        url = str(item or "").strip()[:500]
+        if not url:
+            continue
+        if "://" not in url:
+            url = "https://" + url
+        if not looks_like_web_url(url):
+            return [], "Enter each social media link as a full web address, like https://instagram.com/yourgroup."
+        if url not in links:
+            links.append(url)
+    if len(links) > MAX_SOCIAL:
+        return [], "Add up to %d social media links." % MAX_SOCIAL
+    return links, None
 
 
 @bp.route("/api/org-meta")
@@ -39,5 +78,6 @@ def options():
 
     if not session.get("user"):
         return error("Please sign in.", 401)
-    return jsonify(program_models=PROGRAM_MODELS, staff_sizes=STAFF_SIZES,
+    return jsonify(program_models=PROGRAM_MODELS, staff_sizes=STAFF_SIZES, budgets=BUDGETS,
+                   respondent_roles=RESPONDENT_ROLES,
                    states=[{"code": k, "name": v} for k, v in sorted(STATES.items(), key=lambda s: s[1])])

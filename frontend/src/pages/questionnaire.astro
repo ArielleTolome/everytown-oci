@@ -12,7 +12,8 @@ import Icon from "../components/Icon.astro";
   import { api, ApiError, getMeta, requireUser, type Domain, type Question, type Stage } from "../lib/api";
   import { $, $$, esc, focusEl, plural } from "../lib/dom";
   import { icon } from "../lib/icons";
-  import { clearDraft, loadDraft, saveDraft, type Draft } from "../lib/draft";
+  import { clearDraft, draftToken, loadDraft, saveDraft, type Draft } from "../lib/draft";
+  import { mountQuick, scopeLadders, type Ladder } from "../lib/quick";
 
   const root = $("#q-root")!;
   let draft: Draft;
@@ -21,10 +22,18 @@ import Icon from "../components/Icon.astro";
   let missing = new Set<string>();
   let submitting = false;
   let barObserver: ResizeObserver | null = null;
-  type View = "yn" | "check";
+  type View = "quick" | "yn" | "check";
   const VIEW_KEY = "oci-q-view";
-  let view: View = "yn";
-  try { if (localStorage.getItem(VIEW_KEY) === "check") view = "check"; } catch { /* storage disabled */ }
+  const DEMO_KEY = "oci-demo-preload";
+  // One at a time is the default on a first visit; a chosen view is remembered.
+  let view: View = "quick";
+  try { const v = localStorage.getItem(VIEW_KEY); if (v === "yn" || v === "check") view = v; } catch { /* storage disabled */ }
+  let ladders: Ladder[] = [];
+  let byId = new Map<string, { q: Question; area: string }>();
+  let quick: { goTo(id: string): void } | null = null;
+  let current: Domain | null = null; // area on screen, for the time-left line
+  let demo = false; // demo preload button: demo user plus ?demo=1 (remembered on this device)
+  let sampleAnswers: Promise<Record<string, "yes" | "no"> | null> | null = null;
   // shortcut: question language is not saved; a reload falls back to the report language. Persist it if people ask.
   let qlang: "en" | "es" = "en";
   let glossary: { term: string; plain: string; example: string; re: RegExp }[] = [];
@@ -42,6 +51,7 @@ import Icon from "../components/Icon.astro";
     CE: "Community Engagement done. Your ties to the community are what make this work possible.",
     TI: "Technology done. Thank you. Even small tools can save your team real time.",
   };
+  const cheerFor = (d: Domain) => CHEER[d.id] ?? `${d.name} done. Thank you for your honest answers.`;
 
   const spanish = () => qlang === "es";
   const textOf = (q: Question) => (spanish() && es[q.id]?.text) || q.text;
@@ -133,11 +143,35 @@ import Icon from "../components/Icon.astro";
 
   function render(n: number, moveFocus: boolean) {
     const d = domains[n - 1];
+    current = d;
     const last = n === domains.length;
     const here = d.questions.filter((q) => missing.has(q.id));
     const nextName = last ? "" : domains[n].name;
     document.title = `${here.length ? "Check your answers: " : ""}${d.name} (${n} of ${domains.length}) · OCI Capacity Coach`;
 
+    // One at a time: the card comes right after the progress line; area info and tips move below it.
+    const quickView = view === "quick";
+    const context = `
+      <details class="about-card">
+        <summary>${icon("info")}<span>About this area: why ${esc(d.name)} matters</span>${icon("chevron-down", "about-card__chevron")}</summary>
+        <div class="about-card__body" id="about-body"></div>
+      </details>
+      <div class="callout">
+        <span class="callout__icon" aria-hidden="true">${icon("shield")}</span>
+        <div><p class="callout__title">There are no wrong answers</p>
+        <p id="callout-text"></p></div>
+      </div>`;
+    const tips = `
+      <details class="about-card kbd-tips">
+        <summary>${icon("type")}<span>Keyboard tips</span>${icon("chevron-down", "about-card__chevron")}</summary>
+        <div class="about-card__body"><ul>
+          <li>In One at a time view, press Y for Yes or N for No. The next statement comes up by itself. Press the left arrow to go back one.</li>
+          <li>Press Tab to move from one statement to the next.</li>
+          <li>In Yes / No view, press Y for Yes or N for No while you are on a statement. The arrow keys also move between Yes and No.</li>
+          <li>In the checklist, press Space to tick or untick a statement.</li>
+        </ul></div>
+      </details>
+      <p class="hint">All ${d.questions.length} statements are required. Your answers are saved on this device as you go.</p>`;
     root.innerHTML = `
       <div class="title-band">
         <span class="eyebrow">Step 2 of 3: Questionnaire</span>
@@ -149,16 +183,9 @@ import Icon from "../components/Icon.astro";
         <p class="q-progress__where"><span class="dot" aria-hidden="true"></span>Area ${n} of ${domains.length}${last ? " · Last area" : ` · Next: ${esc(nextName)}`}</p>
         <label for="overall-progress" class="q-progress__label" id="progress-text"></label>
         <progress id="overall-progress" max="${totalQuestions()}" value="0"></progress>
+        <p class="q-progress__meta"><span class="q-progress__time" id="time-left"></span><span class="q-streak" id="area-streak" hidden></span></p>
       </div>
-      <details class="about-card">
-        <summary>${icon("info")}<span>About this area: why ${esc(d.name)} matters</span>${icon("chevron-down", "about-card__chevron")}</summary>
-        <div class="about-card__body" id="about-body"></div>
-      </details>
-      <div class="callout">
-        <span class="callout__icon" aria-hidden="true">${icon("shield")}</span>
-        <div><p class="callout__title">There are no wrong answers</p>
-        <p id="callout-text"></p></div>
-      </div>
+      ${quickView ? "" : context}
       ${here.length ? `
       <div class="error-summary" id="error-summary" role="alert" tabindex="-1" aria-labelledby="error-summary-title">
         <h2 id="error-summary-title">${icon("alert")}Please answer ${plural(here.length, "more statement", "more statements")}</h2>
@@ -166,28 +193,22 @@ import Icon from "../components/Icon.astro";
       </div>` : ""}
       <div class="q-tools">
         <fieldset class="seg"><legend>How to answer</legend><div class="seg__opts">
-          ${seg("q-view", "yn", "Yes / No for each", view === "yn")}${seg("q-view", "check", "Checklist: tick what's true", view === "check")}
+          ${seg("q-view", "quick", "One at a time", view === "quick")}${seg("q-view", "yn", "Yes / No for each", view === "yn")}${seg("q-view", "check", "Checklist: tick what's true", view === "check")}
         </div></fieldset>
         ${es[d.questions[0].id] ? `<fieldset class="seg"><legend>Questions in</legend><div class="seg__opts">
           ${seg("q-lang", "en", "English", !spanish())}${seg("q-lang", "es", '<span lang="es">Español</span>', spanish())}
         </div></fieldset>` : ""}
       </div>
-      <details class="about-card kbd-tips">
-        <summary>${icon("type")}<span>Keyboard tips</span>${icon("chevron-down", "about-card__chevron")}</summary>
-        <div class="about-card__body"><ul>
-          <li>Press Tab to move from one statement to the next.</li>
-          <li>In Yes / No view, press Y for Yes or N for No while you are on a statement. The arrow keys also move between Yes and No.</li>
-          <li>In the checklist, press Space to tick or untick a statement.</li>
-        </ul></div>
-      </details>
-      <p class="hint">All ${d.questions.length} statements are required. Your answers are saved on this device as you go.</p>
+      ${demo ? `<p class="q-demo"><button type="button" class="q-demo__btn" id="demo-fill">${icon("clipboard")}<span>Demo: fill this area with sample answers</span></button></p>` : ""}
+      ${quickView ? "" : tips}
       <form id="area-form" novalidate>
         <div class="questions" id="questions"></div>
+        ${quickView ? context + tips : ""}
         <p class="field-error" id="submit-error" role="alert" hidden></p>
         <div class="q-bar" id="q-bar">
           <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span class="q-bar__back-label">Back${n === 1 ? '<span class="visually-hidden"> to your organization</span>' : ""}</span></button>
           <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span>Saved on this device</span></p>
-          <button type="submit" class="btn btn-primary" id="next-btn"><span>${last ? "See my results" : `Next: ${esc(nextName)}`}</span>${icon("arrow-right")}</button>
+          <button type="submit" class="btn btn-primary" id="next-btn"><span>${last ? "Review and finish" : `Next: ${esc(nextName)}`}</span>${icon("arrow-right")}</button>
         </div>
       </form>`;
     root.removeAttribute("aria-busy");
@@ -198,9 +219,14 @@ import Icon from "../components/Icon.astro";
     $(".q-tools")!.addEventListener("change", (e) => {
       const input = e.target as HTMLInputElement;
       if (input.name === "q-view") {
-        view = input.value === "check" ? "check" : "yn";
+        view = input.value as View;
         try { localStorage.setItem(VIEW_KEY, view); } catch { /* storage disabled */ }
-      } else qlang = input.value === "es" ? "es" : "en";
+        // The layout depends on the view: re-render, then put focus back on the chosen option.
+        render(n, false);
+        $<HTMLInputElement>('input[name="q-view"]:checked')?.focus();
+        return;
+      }
+      qlang = input.value === "es" ? "es" : "en";
       fillQuestions(d);
     });
     const form = $<HTMLFormElement>("#area-form")!;
@@ -262,9 +288,21 @@ import Icon from "../components/Icon.astro";
     $$<HTMLAnchorElement>("[data-jump]").forEach((a) => a.addEventListener("click", (e) => {
       e.preventDefault();
       const id = a.dataset.jump!;
+      if (quick) { quick.goTo(id); return; }
       document.getElementById(`q-${id}`)?.scrollIntoView({ block: "center" });
       (document.getElementById(`${id}-yes`) ?? document.getElementById(`${id}-check`))?.focus({ preventScroll: true });
     }));
+    // Presenter shortcut: answers from the synthetic sample B, so a demo can click through an area in seconds.
+    $("#demo-fill")?.addEventListener("click", async () => {
+      sampleAnswers ??= fetch("/content/sample_answers.json").then((r) => (r.ok ? r.json() : null)).then((j) => j?.answers ?? null).catch(() => null);
+      const sample = await sampleAnswers;
+      if (!sample) return;
+      const wasComplete = isComplete(d);
+      d.questions.forEach((q) => { if (sample[q.id]) { draft.answers[q.id] = sample[q.id]; missing.delete(q.id); } });
+      saveDraft(draft);
+      fillQuestions(d);
+      saved(d, wasComplete, `Demo: filled ${plural(d.questions.length, "statement", "statements")} with sample answers. `);
+    });
 
     if (here.length) focusEl($("#error-summary"));
     else if (moveFocus) { window.scrollTo(0, 0); focusEl($("#area-title")); }
@@ -278,19 +316,34 @@ import Icon from "../components/Icon.astro";
     const check = view === "check";
     $("#questions")!.innerHTML = `
       ${spanish() ? `<p class="q-es-note" lang="es">${icon("info")}<span>Traducción automática revisada por el equipo; la versión oficial en inglés está disponible.</span></p>` : ""}
-      ${groupedStatements(d)}
+      ${view === "quick" ? '<div id="quick-host"></div>' : groupedStatements(d)}
       ${check ? `<div class="check-done">
         <p>Anything you did not tick will be saved as No. That is fine: every No is simply a place to grow.</p>
         <p class="field-error" id="done-error" hidden>${icon("alert")}<span>Please press the button below to confirm, then go on.</span></p>
         <button type="button" class="btn btn-secondary" id="done-btn">${icon("list-checks")}<span>Done: everything I didn't tick is a No</span></button>
       </div>` : ""}`;
+    const i = domains.indexOf(d);
+    quick = view === "quick" ? mountQuick($("#quick-host")!, {
+      domain: d, answers: draft.answers, ladders, byId, spanish, stmt, helpFor,
+      change: (apply, prefix) => {
+        const wasComplete = isComplete(d);
+        apply();
+        missing.forEach((id) => { if (draft.answers[id]) missing.delete(id); });
+        saveDraft(draft);
+        saved(d, wasComplete, prefix);
+      },
+      cheer: cheerFor(d),
+      // Teammate links (?area=) send the area back instead of moving on (draft.ts relabels the bar button the same way).
+      nextLabel: new URLSearchParams(location.search).has("area") ? "Send my answers back"
+        : i === domains.length - 1 ? "Review and finish" : `Next: ${domains[i + 1].name}`,
+    }) : null;
     const t = spanish() ? es[d.id] : undefined;
     const about = $("#about-body")!;
     about.innerHTML = `<p>${esc(t?.about ?? d.about)}</p>${d.connects ? `<p>${esc(t?.connects ?? d.connects)}</p>` : ""}`;
     if (t) about.setAttribute("lang", "es"); else about.removeAttribute("lang");
     $("#callout-text")!.textContent = check
       ? "Tick each statement that describes how your organization works today. Leave the rest unticked. Every No is simply a place to grow."
-      : "Choose Yes if the statement describes how your organization works today, and No if it does not yet. Every No is simply a place to grow.";
+      : `Choose Yes if the statement describes how your organization works today, and No if it does not yet.${view === "quick" ? " The next one comes up by itself." : ""} Every No is simply a place to grow.`;
   }
 
   /** Update progress and the bar's polite status (the only live region for answer changes). */
@@ -298,7 +351,7 @@ import Icon from "../components/Icon.astro";
     updateProgress();
     const done = d.questions.filter((q) => draft.answers[q.id]).length;
     const msg = !wasComplete && done === d.questions.length
-      ? CHEER[d.id] ?? `${d.name} done. Thank you for your honest answers.`
+      ? cheerFor(d)
       : `Saved on this device. ${done} of ${d.questions.length} answered in this area.`;
     $("#save-status span")!.textContent = prefix + msg;
   }
@@ -331,6 +384,21 @@ import Icon from "../components/Icon.astro";
     if (bar) { bar.value = a; bar.textContent = `${pct}%`; }
     const txt = $("#progress-text");
     if (txt) txt.textContent = `${a} of ${t} statements answered (${pct}%)`;
+    const time = $("#time-left");
+    if (time && current) {
+      const left = current.questions.filter((q) => !draft.answers[q.id]).length;
+      // shortcut: about 8 s per statement (the brief: 72 statements in roughly 10 minutes); measure real timings if people ask.
+      const min = Math.ceil((left * 8) / 60);
+      time.innerHTML = `${icon("clock")}<span>${left ? `About ${plural(min, "minute", "minutes")} left in ${esc(current.name)}` : `${esc(current.name)} is done`}</span>`;
+    }
+    // Streak: areas finished in a row from the first one. It rewards finishing, never the answers given.
+    const streak = $("#area-streak");
+    if (streak) {
+      const open = domains.findIndex((x) => !isComplete(x));
+      const k = open < 0 ? domains.length : open;
+      streak.hidden = k === 0;
+      streak.innerHTML = `${icon("flag")}<span>Streak: ${plural(k, "area", "areas")} done in a row</span>`;
+    }
   }
 
   async function next(n: number) {
@@ -349,6 +417,51 @@ import Icon from "../components/Icon.astro";
       return;
     }
     if (n < domains.length) { location.hash = String(n + 1); return; }
+    // All answered: the finish screen first. Otherwise submit, and the server lists what is missing.
+    if (answeredTotal() === totalQuestions()) { location.hash = "done"; return; }
+    await submitAll();
+  }
+
+  /** "You answered all 72 statements": a pause before submit, with the areas covered. */
+  function renderFinish() {
+    const open = domains.findIndex((x) => !isComplete(x));
+    if (open >= 0) { history.replaceState(null, "", `#${open + 1}`); render(open + 1, true); return; }
+    current = null;
+    quick = null;
+    const t = totalQuestions();
+    const lastName = domains[domains.length - 1].name;
+    document.title = "Ready for your results · OCI Capacity Coach";
+    root.innerHTML = `
+      <div class="title-band">
+        <span class="eyebrow">Step 2 of 3: Questionnaire</span>
+        <h1 id="finish-title" tabindex="-1">You answered all ${t} statements</h1>
+      </div>
+      <div class="finish">
+        <span class="quick-done__badge" aria-hidden="true">${icon("circle-check")}</span>
+        <p class="finish__lead">That's the hard part. Your plan is next.</p>
+        <h2 class="finish__h">What you covered</h2>
+        <ul class="finish__areas" role="list">${domains.map((x) => `
+          <li>${icon("circle-check")}<span><strong>${esc(x.name)}</strong> <span class="finish__count">${plural(x.questions.length, "statement", "statements")} answered</span></span></li>`).join("")}
+        </ul>
+        <p>When you choose See my results, we build your report and your plan. It takes a minute or two. You can still go back and change any answer first.</p>
+      </div>
+      <form id="area-form" novalidate>
+        <p class="field-error" id="submit-error" role="alert" hidden></p>
+        <div class="q-bar" id="q-bar">
+          <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span class="q-bar__back-label">Back<span class="visually-hidden"> to ${esc(lastName)}</span></span></button>
+          <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span>Saved on this device. All ${t} statements answered.</span></p>
+          <button type="submit" class="btn btn-primary" id="next-btn"><span>See my results</span>${icon("arrow-right")}</button>
+        </div>
+      </form>`;
+    root.removeAttribute("aria-busy");
+    watchBar();
+    $("#area-form")!.addEventListener("submit", (e) => { e.preventDefault(); submitAll(); });
+    $("#back-btn")!.addEventListener("click", () => { location.hash = String(domains.length); });
+    window.scrollTo(0, 0);
+    focusEl($("#finish-title"));
+  }
+
+  async function submitAll() {
     if (submitting) return;
     submitting = true;
     const btn = $<HTMLButtonElement>("#next-btn")!;
@@ -359,6 +472,8 @@ import Icon from "../components/Icon.astro";
         org_name: draft.org_name, org_url: draft.org_url, language: draft.language,
         domain_ids: draft.domain_ids, answers: draft.answers,
         org_meta: draft.org_meta ?? null, // W4: optional start-page details (program model, staff size, state)
+        // W1 v1.0: who answered, social links to research, and the draft token for teammate "Answered by" roles.
+        respondent: draft.respondent ?? null, org_links: draft.org_links ?? null, draft_token: draftToken(),
       });
       // Keep the organization details for next time; answers start fresh.
       clearDraft();
@@ -372,7 +487,7 @@ import Icon from "../components/Icon.astro";
         saveDraft(draft);
         const first = domains.findIndex((x) => x.questions.some((q) => missing.has(q.id))) + 1;
         if (first >= 1 && String(first) !== location.hash.slice(1)) location.hash = String(first);
-        else render(first || n, false);
+        else render(first || domains.length, false);
         return;
       }
       if (ex instanceof ApiError && ex.status === 400 && ex.body.errors) {
@@ -390,24 +505,34 @@ import Icon from "../components/Icon.astro";
 
   async function init() {
     const json = (url: string) => fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-    const content = Promise.all([json("/content/glossary.json"), json("/content/questions_es.json")]);
-    await requireUser();
+    const content = Promise.all([json("/content/glossary.json"), json("/content/questions_es.json"), json("/content/ladders.json")]);
+    const user = await requireUser();
+    const asked = new URLSearchParams(location.search).get("demo") === "1";
+    try {
+      if (asked) localStorage.setItem(DEMO_KEY, "1");
+      demo = user.name === "demo" && (asked || localStorage.getItem(DEMO_KEY) === "1");
+    } catch { demo = user.name === "demo" && asked; }
     const meta = await getMeta();
     const d = await loadDraft();
     if (!d || !d.org_name || !d.domain_ids.length) { location.replace("/"); return; }
     draft = d;
     stages = meta.stages;
-    const [terms, spanishText] = await content;
+    const [terms, spanishText, ladderFile] = await content;
     glossary = (terms ?? []).map((g: { term: string; plain: string; example: string }) =>
       ({ ...g, re: new RegExp(`\\b${g.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i") }));
     es = spanishText ?? {};
     if (draft.language === "es" && Object.keys(es).length) qlang = "es";
     domains = d.domain_ids.map((id) => meta.domains.find((x) => x.id === id)).filter((x): x is Domain => !!x);
     if (!domains.length) { location.replace("/"); return; }
+    byId = new Map(domains.flatMap((x) => x.questions.map((q) => [q.id, { q, area: x.name }] as const)));
+    ladders = scopeLadders(ladderFile?.ladders ?? [], new Set(byId.keys()));
     if (!location.hash) history.replaceState(null, "", "#1");
-    render(stepFromHash(), false);
-    // Only numeric hashes are steps; the skip link (#main) must not re-render the page.
-    window.addEventListener("hashchange", () => { if (/^#\d+$/.test(location.hash)) render(stepFromHash(), true); });
+    if (location.hash === "#done") renderFinish(); else render(stepFromHash(), false);
+    // Only numeric hashes (and #done) are steps; the skip link (#main) must not re-render the page.
+    window.addEventListener("hashchange", () => {
+      if (location.hash === "#done") renderFinish();
+      else if (/^#\d+$/.test(location.hash)) render(stepFromHash(), true);
+    });
   }
 
   init().catch(() => {

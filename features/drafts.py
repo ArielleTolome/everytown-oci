@@ -43,16 +43,19 @@ def _answers(raw, domain_ids):
 
 def clean(raw):
     from app import LANGUAGES
-    from features.orgmeta import clean_org_meta
+    from features.orgmeta import clean_org_meta, clean_respondent, clean_social
 
     raw = raw if isinstance(raw, dict) else {}
     chosen = raw.get("domain_ids") if isinstance(raw.get("domain_ids"), list) else []
+    links = raw.get("org_links") if isinstance(raw.get("org_links"), dict) else {}
     return {"org_name": str(raw.get("org_name") or "").strip()[:200],
             "org_url": str(raw.get("org_url") or "").strip()[:500],
             "language": raw.get("language") if raw.get("language") in LANGUAGES else "en",
             "domain_ids": [d["id"] for d in _bank() if d["id"] in chosen],
             "answers": _answers(raw.get("answers"), [d["id"] for d in _bank()]),
-            "org_meta": clean_org_meta(raw.get("org_meta"))}
+            "org_meta": clean_org_meta(raw.get("org_meta")),
+            "respondent": clean_respondent(raw.get("respondent"))[0],
+            "org_links": {"social": clean_social(links.get("social"))[0]}}
 
 
 def _find(token):
@@ -73,7 +76,22 @@ def _view(data, area):
     if not area:
         return data
     return {"org_name": data.get("org_name", ""), "org_url": "", "language": data.get("language", "en"),
-            "domain_ids": [area], "answers": _answers(data.get("answers"), [area]), "org_meta": None}
+            "domain_ids": [area], "answers": _answers(data.get("answers"), [area]), "org_meta": None,
+            "respondent": None, "org_links": None}
+
+
+def answered_by(token, domain_ids, leader_role):
+    """{area: role} at submit: the teammate's role for areas sent to a teammate, the leader's role for the rest.
+    Only the leader's full draft token counts; a share token or no token attributes every area to the leader."""
+    import db
+
+    roles = {}
+    if isinstance(token, str) and TOKEN.fullmatch(token):
+        roles = {r["domain_id"]: r["role"] for r in db.query(
+            "SELECT s.domain_id, s.role FROM draft_shares s JOIN drafts d ON d.id = s.draft_id "
+            "WHERE d.token = :token AND s.role IS NOT NULL", token=token)}
+    out = {d: roles.get(d) or leader_role for d in domain_ids if roles.get(d) or leader_role}
+    return out or None
 
 
 def _merge(draft_id, data=None, answers=None):
@@ -138,17 +156,22 @@ def save(token):
 
 @bp.route("/api/drafts/<token>/share", methods=["POST"])
 def share(token):
-    """A link that answers only one area (for example Financial Management, for the bookkeeper)."""
+    """A link that answers only one area (for example Financial Management, for the bookkeeper), with the
+    teammate's role for "Answered by" on the report."""
     import db
     from app import body, error
+    from features.orgmeta import RESPONDENT_ROLES
 
     draft_id, shared_area = _find(token)
     if not draft_id or shared_area:
         return error("We could not find that saved assessment.", 404)
-    area = body().get("area")
+    area, role = body().get("area"), body().get("role")
     if area not in {d["id"] for d in _bank()}:
         return error("Unknown area.", 400)
-    rows = db.query("INSERT INTO draft_shares (token, draft_id, domain_id) VALUES (:token, :draft_id, :area) "
-                    "ON CONFLICT (draft_id, domain_id) DO UPDATE SET domain_id = EXCLUDED.domain_id "
-                    "RETURNING token", token=secrets.token_urlsafe(18), draft_id=draft_id, area=area)
-    return jsonify(token=rows[0]["token"])
+    if role is not None and role not in RESPONDENT_ROLES:
+        return error("Choose your teammate's role.", 400)
+    rows = db.query("INSERT INTO draft_shares (token, draft_id, domain_id, role) VALUES (:token, :draft_id, :area, "
+                    ":role) ON CONFLICT (draft_id, domain_id) DO UPDATE SET role = COALESCE(EXCLUDED.role, "
+                    "draft_shares.role) RETURNING token, role", token=secrets.token_urlsafe(18), draft_id=draft_id,
+                    area=area, role=role)
+    return jsonify(token=rows[0]["token"], role=rows[0]["role"])

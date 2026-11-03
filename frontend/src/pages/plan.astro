@@ -1,0 +1,35 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+---
+<Base title="Your roadmap" width="report">
+  <div id="plan-root" aria-busy="true">
+    <p class="loading"><Icon name="loader" class="spin" />Loading your roadmap</p>
+  </div>
+</Base>
+
+<script>
+  import { ApiError, requireUser } from "../lib/api";
+  import { $, esc } from "../lib/dom";
+  import { icon } from "../lib/icons";
+  import { mountPlan } from "../lib/roadmap";
+
+  const root = $("#plan-root")!;
+  const id = new URLSearchParams(location.search).get("id") || "";
+
+  function fail(title: string, text: string) {
+    root.removeAttribute("aria-busy");
+    root.innerHTML = `<h1>${esc(title)}</h1><p class="notice">${icon("alert")}<span>${esc(text)}</span></p>
+      <p>${id ? `<a href="/results/?id=${encodeURIComponent(id)}">Go to the report</a> · ` : ""}<a href="/">Go to the start page</a></p>`;
+  }
+
+  requireUser().then(async () => {
+    if (!id) return fail("Roadmap not found", "This link is missing the report id.");
+    try {
+      await mountPlan(root, id);
+    } catch (ex) {
+      if (ex instanceof ApiError && [403, 404, 409].includes(ex.status)) return fail("Roadmap not available", ex.message);
+      fail("Something went wrong", "We could not load your roadmap. Please reload the page.");
+    }
+  });
+</script>

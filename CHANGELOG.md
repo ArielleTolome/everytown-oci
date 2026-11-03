@@ -2,6 +2,34 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.0.0 — What Everytown asked for: roles, program models, a 12-week roadmap, staff BI, peer matching
+
+Built from three Nov 3 conversations: the Community Safety Fund director and program lead, an Everytown representative reviewing the sample report, and the AWS tech lead. Five Herdr-orchestrated worker agents built it in parallel.
+
+**Intake and personalization**
+- **Who is filling this out?** Role is required (Executive director, Finance lead or bookkeeper, Board chair or member, Program director, Other leadership role); job title and name are optional, and the name is never sent to the AI. The director's guidance is shown: someone in a leadership role should complete it. Teammates who answer a shared area are asked their role, recorded as per-area "Answered by".
+- **Program model and size:** a clear "What does your organization do?" question, plus staff size and yearly budget (size can mean either, per the director). The AI tailors advice to program model, size and budget, and writes the summary in a coach's voice ("Here's what I've learned about you ... If I were you, I would start with ...").
+- **Website, social media and news:** the research step reads the website (homepage plus up to 2 about or program pages), up to 5 social media links (title and description only) and Google News headlines that name the organization, with the SSRF guard on every fetch. Code rates the research as rich, some, limited or none; with nothing found, the report relies on answers only. Research never affects scores.
+
+**Questionnaire: quick, easy and fun**
+- **One at a time** is the new default view: one statement per card with big Yes / No buttons, auto-advance, Y / N / Left-arrow keys, area progress, code-written encouragement and an "<Area> complete" badge card.
+- **Merged ladder questions:** the 5 laddered groups from the team brief (funding horizon, largest grant, planning, audits, fundraising staff) are asked as one multiple-choice question; a fixed cumulative rule records an explicit yes or no for each statement, and a "Based on your choice, we recorded" card lets people change any of them. Scoring is unchanged.
+- Time-left estimate, area streak chip, a finish screen before submit, and a demo-only "fill this area with sample answers" button for presentations.
+
+**A report in layers**
+- The results page opens on **Your plan**: what's true about you, what we learned about you online (with sources), Start here, your 12-week roadmap, Ask about your report, support and peer connect. **Explore any area** lets a leader deep dive into any assessed area. **Your results in detail** keeps every number. No spider chart.
+- **The PDF starts with a letter:** what we learned, strengths, "If I were you, I would start with", the first weeks of the roadmap and how CSF can help; then "Behind the plan: your detailed results".
+- **Connect me with similar groups** (`POST /api/assessments/<id>/peer-request`): CSF introduces organizations with consent; organizations never see other organizations' data.
+
+**12-week roadmap with progress tracking and gamification** (`/plan/?id=`)
+- Fixed code turns the checked report into 12 weekly milestones: weeks 1 to 4 are the Start here priorities, then the 30 / 60 / 90 day plan, ending with "Retake the OCI". Weeks open one at a time, when the last one is finished or after 7 days. Leaders tick steps (`roadmap_tasks` table), download a one-page PDF for each week, and see a progress bar, points (10 per step, 25 per week), a weekly streak, a level and 7 badges. All of it rewards follow-through, never answers or scores, and there is no cross-organization leaderboard.
+
+**CSF staff BI dashboard** (tabs in the director's priority order)
+- **Training needs:** which organizations need which training (organizations × areas: High priority growth priorities or a support request), with "Draft a training brief" per area and CSV. Then **Gaps by area** (group by program model, staff size, budget or who answered), **Most common gaps**, **Change over time** (including "Did support help? Early signal"), **Ask the data** and **Peers**. An organization drawer shows stages, top growth priorities, support request, roadmap progress and similar grantees.
+- **Ask the data:** staff ask in plain words (`POST /api/staff/ask`). Claude only picks one of 8 pre-built analyses and filters from fixed lists (never SQL); code computes the table; a second short call summarizes it, and any number not in the table falls back to a code-written sentence.
+- **Peer matching** in code: program model 40%, size by staff or budget 30%, shared growth priorities 30%, with plain reasons. Peer groups by program model and size; peer benchmarking only within the same program model, as the director asked.
+- **Network report PDF** (`GET /api/staff/network-report.pdf`): a year-end summary; organization names only in a staff-only appendix.
+
 ## v0.9.0 — Modern AI features and a smoother questionnaire (from the team brief)
 
 Built in parallel by four Herdr-orchestrated worker agents on new feature modules (`features/*.py` blueprints auto-registered by `app.py`, `features/*.sql` applied by `python3 -m db migrate`).

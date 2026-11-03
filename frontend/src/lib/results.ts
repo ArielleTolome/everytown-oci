@@ -2,7 +2,26 @@
 import { api, ApiError, type Assessment, type Focus, type Gap, type Meta, type PlanItem, type Step, type Support } from "./api";
 import { $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
 import { coachBody } from "./coach";
-import { icon } from "./icons";
+import { icon, type IconName } from "./icons";
+import { roadmapTeaser } from "./roadmap";
+
+/** v1.0 document fields (all optional; older documents lack them). Kept local so api.ts stays conflict-free. */
+export interface ResearchSource { kind: "website" | "social" | "news"; url: string; title: string; used: boolean }
+export interface V10 {
+  respondent?: { name?: string | null; title?: string | null; role?: string | null } | null;
+  research?: { strength: "rich" | "some" | "limited" | "none"; sources: ResearchSource[] } | null;
+  answered_by?: Record<string, string> | null;
+  peer_request?: { requested_at: string } | null;
+}
+export const v10 = (sub: Assessment) => sub as Assessment & V10;
+
+/** "Executive director (Founder and executive director)": role and title only; the name stays off screen too. */
+export function respondentLine(sub: Assessment): string {
+  const r = v10(sub).respondent;
+  const role = (r?.role ?? "").trim(), title = (r?.title ?? "").trim();
+  if (role && title && role.toLowerCase() !== title.toLowerCase()) return `${role} (${title})`;
+  return role || title;
+}
 
 export const STATE_TEXT: Record<Step["state"], string> = { pending: "Waiting", running: "In progress", done: "Done", error: "Did not finish" };
 const STATE_ICON: Record<Step["state"], string> = {
@@ -62,23 +81,28 @@ export function statusPanel(sub: Assessment): string {
 
 /* ---------- Where you are today: stage tracks (Stitch) + accessible table ---------- */
 
+/** Five-segment stage track for one area (filled + bold current label, so not color alone). */
+function track(d: Assessment["domains"][number], names: string[]): string {
+  const cur = names.indexOf(d.estimated_stage);
+  return `<ol class="track" role="list" aria-label="${esc(d.domain_name)}: five stages">${names.map((st, i) => `
+        <li class="track__step${i <= cur ? " is-filled" : ""}${i === cur ? " is-current" : ""}"${i === cur ? ' aria-current="step"' : ""}>
+          <span class="track__bar" aria-hidden="true"></span>
+          <span class="track__label"><span class="track__full">${esc(st)}</span><span class="track__short" aria-hidden="true">${i + 1}</span>${i === cur ? '<span class="visually-hidden"> (current stage)</span>' : ""}</span>
+        </li>`).join("")}
+      </ol>`;
+}
+
 export function stagesSection(sub: Assessment, meta: Meta): string {
   const stages = [...meta.stages].sort((a, b) => a.n - b.n);
   const names = stages.map((s) => s.name);
   const tracks = sub.domains.map((d) => {
-    const cur = names.indexOf(d.estimated_stage);
-    const desc = stages[cur]?.description;
+    const desc = stages[names.indexOf(d.estimated_stage)]?.description;
     return `<li class="card track-card">
       <div class="track-card__head">
         <h3>${esc(d.domain_name)}</h3>
         <span class="stage-pill">Current stage: ${esc(d.estimated_stage)}</span>
       </div>
-      <ol class="track" role="list" aria-label="${esc(d.domain_name)}: five stages">${names.map((st, i) => `
-        <li class="track__step${i <= cur ? " is-filled" : ""}${i === cur ? " is-current" : ""}"${i === cur ? ' aria-current="step"' : ""}>
-          <span class="track__bar" aria-hidden="true"></span>
-          <span class="track__label"><span class="track__full">${esc(st)}</span><span class="track__short" aria-hidden="true">${i + 1}</span>${i === cur ? '<span class="visually-hidden"> (current stage)</span>' : ""}</span>
-        </li>`).join("")}
-      </ol>
+      ${track(d, names)}
       ${desc ? `<p class="track-card__desc"><strong>${esc(d.estimated_stage)}:</strong> ${esc(desc)}</p>` : ""}
     </li>`;
   }).join("");
@@ -215,19 +239,16 @@ function planSection(plan: PlanItem[], gaps: Map<string, Gap>, lang: string): st
   }).join("");
   if (!cards) return "";
   return `<section class="section" aria-labelledby="plan-title">
-    ${sectionHead("plan-title", "30 / 60 / 90 day plan", "Your plan", "plan", lang, "A realistic order for a small team over the next three months.")}
+    ${sectionHead("plan-title", "30 / 60 / 90 day plan", "Your next 90 days", "plan", lang, "A realistic order for a small team over the next three months.")}
     <ol class="horizons" id="plan-body" role="list">${cards}</ol>
   </section>`;
 }
 
-function gapsSection(sub: Assessment, meta: Meta): string {
-  const body = sub.domains.map((d) => {
-    const dg = sub.gaps.filter((g) => g.domain_id === d.domain_id);
-    const info = meta.domains.find((m) => m.id === d.domain_id);
-    const list = dg.length ? `<ul class="gaps" role="list">${dg.map((g) => {
-      const steps = g.next_steps.flatMap((s) => s.split("\n")).map((s) => s.trim().replace(/^[-•*]\s*/, "").trim()).filter(Boolean);
-      const pr = g.priority.toLowerCase();
-      return `<li class="gap gap--${esc(pr)}">
+/** One growth priority: priority and stage badges, statement, the engine's next steps. */
+function gapItem(g: Gap): string {
+  const steps = g.next_steps.flatMap((s) => s.split("\n")).map((s) => s.trim().replace(/^[-•*]\s*/, "").trim()).filter(Boolean);
+  const pr = g.priority.toLowerCase();
+  return `<li class="gap gap--${esc(pr)}">
         <div class="gap__meta">
           <span class="badge badge--${esc(pr)}">${pr === "high" ? icon("flag") : ""}${esc(g.priority)} priority</span>
           <span class="badge badge--stage">Stage ${g.stage}: ${esc(g.stage_name)}</span>
@@ -236,7 +257,13 @@ function gapsSection(sub: Assessment, meta: Meta): string {
         <p class="gap__text">${esc(g.question_text)}</p>
         ${steps.length ? `<p class="label">Next steps</p><ul class="steps-list">${steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
       </li>`;
-    }).join("")}</ul>`
+}
+
+function gapsSection(sub: Assessment, meta: Meta): string {
+  const body = sub.domains.map((d) => {
+    const dg = sub.gaps.filter((g) => g.domain_id === d.domain_id);
+    const info = meta.domains.find((m) => m.id === d.domain_id);
+    const list = dg.length ? `<ul class="gaps" role="list">${dg.map((g) => gapItem(g)).join("")}</ul>`
       : `<p class="notice">${icon("circle-check")}<span>No growth priorities in this area. Your answers show these practices are in place.</span></p>`;
     return `<section class="gap-domain" aria-labelledby="gaps-${esc(d.domain_id)}">
       <h3 id="gaps-${esc(d.domain_id)}">${esc(d.domain_name)} <span class="count">${plural(dg.length, "growth priority", "growth priorities")}</span></h3>
@@ -347,57 +374,284 @@ export function wireSupport(sub: Assessment, root: ParentNode) {
   });
 }
 
-/** Everything below the status panel, in the order the Everytown rep asked for. */
-export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolean; support: boolean }): string {
+/* ---------- What we learned about you (v1.0 research sources) ---------- */
+
+const KIND: Record<ResearchSource["kind"], [string, IconName]> = { website: ["Website", "globe"], social: ["Social media", "share"], news: ["News", "newspaper"] };
+
+/** Same rule as report.research_line: how much the online research could personalize the plan. */
+export function researchHeadline(research: NonNullable<V10["research"]>): string {
+  const used = research.sources.filter((s) => s.used);
+  const n = (k: ResearchSource["kind"]) => used.filter((s) => s.kind === k).length;
+  const parts = [
+    n("website") ? "your website" : "",
+    n("social") ? plural(n("social"), "social page", "social pages") : "",
+    n("news") ? plural(n("news"), "news story", "news stories") : "",
+  ].filter(Boolean);
+  if (!parts.length || research.strength === "none") return "We did not find much online, so this plan is based on your answers.";
+  const list = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  return research.strength === "limited" ? `We found a little online (${list}). Most of this plan comes from your answers.` : `Personalized from ${list}.`;
+}
+
+function researchSection(sub: Assessment): string {
+  const res = v10(sub).research;
+  if (!res || !Array.isArray(res.sources)) return "";
+  const found = res.strength !== "none" && res.sources.some((s) => s.used);
+  return `<section class="section" aria-labelledby="learned-title">
+    ${sectionHead("learned-title", "What we learned about you", "Personalized for you")}
+    <div class="card learned">
+      <p class="learned__headline">${icon(found ? "sprout" : "info")}<span>${esc(researchHeadline(res))}</span></p>
+      ${res.sources.length ? `<ul class="learned__sources" role="list">${res.sources.map((s) => `
+        <li class="learned__source${s.used ? "" : " is-unused"}">
+          ${icon(KIND[s.kind]?.[1] ?? "globe")}
+          <span><span class="learned__kind">${esc(KIND[s.kind]?.[0] ?? s.kind)}</span>
+            <a href="${esc(safeUrl(s.url))}" rel="noopener">${esc(s.title || hostOf(s.url))}</a> <span class="url-domain">(${esc(hostOf(s.url))})</span>
+            <span class="learned__status">${s.used ? "Used for your plan" : "We could not read this one"}</span></span>
+        </li>`).join("")}
+      </ul>` : ""}
+      <p class="hint">We read public pages only to tailor your plan. What we find online never changes your scores.</p>
+    </div>
+  </section>`;
+}
+
+/* ---------- Connect me with similar groups (v1.0 peer connect, organization side) ---------- */
+
+function peersBody(sub: Assessment, staff: boolean): string {
+  const req = v10(sub).peer_request;
+  if (req) {
+    return `<p class="support__sent" id="peers-status" tabindex="-1">${icon("circle-check")}<span>${staff ? "This organization asked to be connected" : "Request sent"} on ${esc(req.requested_at)}. ${staff ? "" : "Community Safety Fund staff will reach out when they find a good match."}</span></p>`;
+  }
+  return `<p class="field-error" id="peers-error" role="alert" hidden></p>
+    <button type="button" class="btn btn-primary" id="peers-btn">${icon("users")}<span>Ask CSF to connect me</span></button>`;
+}
+
+function peersSection(sub: Assessment, staff: boolean): string {
+  return `<section class="section peers" aria-labelledby="peers-title" data-no-print>
+    ${sectionHead("peers-title", "Connect me with similar groups", "Learn from peers")}
+    <div class="card peers__card">
+      <div class="peers__intro">${icon("users", "peers__icon")}
+        <div><p>The Community Safety Fund can introduce you to organizations like yours: a similar program model, a similar size, and the same growth priorities.</p>
+        <p class="hint">Community Safety Fund staff make the match. They share names only with consent, from both groups. You will never see other organizations' results here.</p></div>
+      </div>
+      <div id="peers-body">${peersBody(sub, staff)}</div>
+    </div>
+  </section>`;
+}
+
+/** POST /api/assessments/<id>/peer-request (owner session only); shows "Request sent on <date>". */
+export function wirePeers(sub: Assessment, root: ParentNode) {
+  const body = root.querySelector<HTMLElement>("#peers-body");
+  body?.addEventListener("click", async (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("#peers-btn");
+    if (!btn || btn.getAttribute("aria-disabled") === "true") return;
+    btn.setAttribute("aria-disabled", "true");
+    try {
+      const res = await api.post<{ peer_request: NonNullable<V10["peer_request"]> }>(`/assessments/${encodeURIComponent(sub.id)}/peer-request`);
+      v10(sub).peer_request = res.peer_request;
+      body.innerHTML = peersBody(sub, false);
+      focusEl(body.querySelector("#peers-status"));
+      announce("Request sent. The Community Safety Fund will reach out when they find a good match.");
+    } catch (ex) {
+      btn.removeAttribute("aria-disabled");
+      const err = body.querySelector<HTMLElement>("#peers-error")!;
+      err.innerHTML = `${icon("alert")}<span>${esc(ex instanceof ApiError && ex.status === 403
+        ? "Only the person who submitted this assessment can ask to be connected."
+        : "We could not send your request. Please try again.")}</span>`;
+      err.hidden = false;
+    }
+  });
+}
+
+/* ---------- Explore any area (deep dive on every assessed area) ---------- */
+
+const HORIZON_LABEL: Record<number, string> = { 30: "Days 1 to 30", 60: "Days 31 to 60", 90: "Days 61 to 90" };
+const IN_PLACE_SHOWN = 6;
+
+/** One area: stage, what's in place (favorable statements), growth priorities with next steps, plan items that touch it. */
+export function areaDetail(sub: Assessment, meta: Meta, id: string): string {
+  const d = sub.domains.find((x) => x.domain_id === id);
+  if (!d) return "";
+  const lang = sub.language || "en";
+  const info = meta.domains.find((m) => m.id === id);
+  const names = [...meta.stages].sort((a, b) => a.n - b.n).map((s) => s.name);
+  const dg = sub.gaps.filter((g) => g.domain_id === id);
+  const gapIds = new Set(dg.map((g) => g.question_id));
+  // Favorable = every statement of the area that is not a growth priority (the engine's own definition).
+  const inPlace = (info?.questions ?? []).filter((q) => !gapIds.has(q.id));
+  const r = sub.report;
+  const items = [
+    ...(r?.focus ?? []).map((f, i) => [`Start here, priority ${i + 1}`, f] as const),
+    ...(r?.plan ?? []).map((p) => [HORIZON_LABEL[p.horizon] ?? "Plan", p] as const),
+  ].filter(([, f]) => f.gap_ids.some((g) => gapIds.has(g)));
+  const by = v10(sub).answered_by?.[id];
+  const tick = (q: { text: string }) => `<li>${icon("circle-check")}<span>${esc(q.text)}</span></li>`;
+  return `<div class="explore-area__head">
+      <h3 id="explore-area-title" tabindex="-1">${esc(d.domain_name)}</h3>
+      <span class="stage-pill">Current stage: ${esc(d.estimated_stage)}</span>
+    </div>
+    ${track(d, names)}
+    <ul class="explore-facts" role="list">
+      <li>${icon("circle-check")}<span><strong>${inPlace.length} of ${d.total_questions}</strong> statements in place</span></li>
+      <li>${icon("flag")}<span><strong>${plural(dg.length, "growth priority", "growth priorities")}</strong>${d.high_count ? `, ${d.high_count} high` : ""}</span></li>
+      ${by ? `<li>${icon("user")}<span>Answered by: <strong>${esc(by)}</strong></span></li>` : ""}
+    </ul>
+    ${info ? `<details class="about"><summary>About ${esc(d.domain_name)}</summary><p>${esc(info.about)}</p>${info.connects ? `<p>${esc(info.connects)}</p>` : ""}</details>` : ""}
+    <h4 class="explore-area__sub">What's already in place</h4>
+    ${inPlace.length
+      ? `<ul class="check-list explore-inplace" role="list" lang="en">${inPlace.slice(0, IN_PLACE_SHOWN).map(tick).join("")}</ul>
+        ${inPlace.length > IN_PLACE_SHOWN ? `<details class="about"><summary>Show ${inPlace.length - IN_PLACE_SHOWN} more in place</summary><ul class="check-list explore-inplace" role="list" lang="en">${inPlace.slice(IN_PLACE_SHOWN).map(tick).join("")}</ul></details>` : ""}`
+      : `<p class="hint">Nothing here is in place yet. That is a normal place to start, and every step from here counts.</p>`}
+    <h4 class="explore-area__sub">Growth priorities and next steps</h4>
+    ${dg.length
+      ? `<ul class="gaps" role="list">${dg.slice(0, 3).map(gapItem).join("")}</ul>
+        ${dg.length > 3 ? `<details class="about"><summary>Show ${plural(dg.length - 3, "more growth priority", "more growth priorities")}</summary><ul class="gaps" role="list">${dg.slice(3).map(gapItem).join("")}</ul></details>` : ""}`
+      : `<p class="notice">${icon("circle-check")}<span>No growth priorities in this area. Your answers show these practices are in place.</span></p>`}
+    ${r ? `<h4 class="explore-area__sub">In your plan</h4>
+    ${items.length
+      ? `<ul class="explore-plan" role="list">${items.map(([label, f]) => `<li><span class="mini-label mini-label--blue">${esc(label)}</span><span lang="${esc(lang)}">${esc(f.title)}</span></li>`).join("")}</ul>`
+      : `<p>Your plan does not cover this area yet. That is on purpose: the plan starts with what unlocks the most. You can ask about it in "Ask about your report"${sub.status === "done" ? ", or ask the Community Safety Fund for support" : ""}.</p>`}` : ""}`;
+}
+
+function exploreSection(sub: Assessment, meta: Meta): string {
+  if (!sub.domains.length) return "";
+  const start = focusAreas(sub);
+  const first = sub.domains.find((d) => !start.includes(d.domain_id)) ?? sub.domains[0];
+  return `<section class="section" aria-labelledby="explore-title">
+    ${sectionHead("explore-title", "Explore any area", "Deep dive", undefined, "en",
+      "Pick any area you assessed, not just the ones we pulled out for you. See your stage, what is already in place, and what to work on next.")}
+    <fieldset class="area-picker">
+      <legend class="mini-label">Choose an area</legend>
+      <ul class="area-picker__list" role="list">${sub.domains.map((d) => `
+        <li><label class="area-chip">
+          <input type="radio" name="explore-area" value="${esc(d.domain_id)}"${d.domain_id === first.domain_id ? " checked" : ""}>
+          <span class="area-chip__text"><span class="area-chip__name">${esc(d.domain_name)}</span>
+          <span class="area-chip__meta">${esc(d.estimated_stage)}${start.includes(d.domain_id) ? " · In Start here" : ""}</span></span>
+        </label></li>`).join("")}
+      </ul>
+    </fieldset>
+    <div class="card explore-area" id="explore-body" aria-labelledby="explore-area-title" role="region">${areaDetail(sub, meta, first.domain_id)}</div>
+  </section>`;
+}
+
+/** Area picker: native radios (arrow keys move and select); the detail re-renders and the change is announced. */
+export function wireExplore(sub: Assessment, meta: Meta, root: ParentNode) {
+  const body = root.querySelector<HTMLElement>("#explore-body");
+  root.querySelector(".area-picker")?.addEventListener("change", (e) => {
+    const input = e.target as HTMLInputElement;
+    if (!body || input.name !== "explore-area") return;
+    body.innerHTML = areaDetail(sub, meta, input.value);
+    announce(`Showing ${sub.domains.find((d) => d.domain_id === input.value)?.domain_name ?? "area"}.`);
+  });
+}
+
+/* ---------- Layers: "Your plan" first, then any area, then all the numbers ---------- */
+
+export const LAYERS = [
+  ["plan", "Your plan", "Where to start", "target"],
+  ["explore", "Explore any area", "Deep dive on one area", "search"],
+  ["details", "Your results in detail", "Stages, scores, full plan", "layers"],
+] as const satisfies readonly (readonly [string, string, string, IconName])[];
+export type Layer = (typeof LAYERS)[number][0];
+
+function layered(panels: Record<Layer, string>, current: Layer): string {
+  return `<div class="layers">
+    <div class="layer-tabs" role="tablist" aria-label="Report views" data-no-print>${LAYERS.map(([key, label, hint, ic]) => `
+      <button type="button" role="tab" class="layer-tab" id="tab-${key}" aria-controls="layer-${key}" aria-selected="${key === current}" tabindex="${key === current ? 0 : -1}">
+        ${icon(ic, "layer-tab__icon")}<span class="layer-tab__text"><span class="layer-tab__label">${label}</span><span class="layer-tab__hint">${hint}</span></span>
+      </button>`).join("")}
+    </div>${LAYERS.map(([key, label]) => `
+    <div class="layer" role="tabpanel" id="layer-${key}" aria-labelledby="tab-${key}" data-layer-title="${label}"${key === current ? "" : " hidden"}>${panels[key]}</div>`).join("")}
+  </div>`;
+}
+
+/** ARIA tabs (automatic activation): arrows, Home, End; the URL hash (#plan, #explore, #details) keeps the layer on reload. */
+export function wireLayers(root: ParentNode) {
+  const tabs = $$<HTMLButtonElement>('[role="tab"]', root as HTMLElement);
+  const select = (tab: HTMLButtonElement, focus: boolean) => {
+    for (const t of tabs) {
+      const on = t === tab;
+      t.setAttribute("aria-selected", String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")!)!.hidden = !on;
+    }
+    if (focus) tab.focus();
+    history.replaceState(null, "", `#${tab.id.slice(4)}`);
+    tab.dispatchEvent(new CustomEvent("oci:layer", { bubbles: true }));
+  };
+  tabs.forEach((tab, i) => {
+    tab.addEventListener("click", () => select(tab, false));
+    tab.addEventListener("keydown", (e) => {
+      const next = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (next === undefined) return;
+      e.preventDefault();
+      select(tabs[(next + tabs.length) % tabs.length], true);
+    });
+  });
+}
+
+/** Everything below the status panel: three layers, in the order the Everytown rep asked for. */
+export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolean; support: boolean; staff: boolean }): string {
   const lang = sub.language || "en";
   const gaps = new Map(sub.gaps.map((g) => [g.question_id, g]));
   const r = sub.report;
-  const parts: string[] = [];
+  const top: string[] = [];
   if (lang === "es") {
-    parts.push(`<p class="notice section-gap" lang="es">${icon("info")}<span>Las preguntas están en inglés; este informe se escribió en español.</span></p>`);
+    top.push(`<p class="notice section-gap" lang="es">${icon("info")}<span>Las preguntas están en inglés; este informe se escribió en español.</span></p>`);
   }
+  if (r) top.push(`<p class="notice section-gap">${icon("info")}<span>Recommendations generated with AI from your answers and the CVI resource library. Scores are calculated by a fixed scoring method. Please review them with your team before acting.</span></p>`);
+
+  // Layer 1: the short, conversational version.
+  const plan: string[] = [];
   if (r) {
-    parts.push(`<p class="notice section-gap">${icon("info")}<span>Recommendations generated with AI from your answers and the CVI resource library. Scores are calculated by a fixed scoring method. Please review them with your team before acting.</span></p>`);
-    parts.push(`<section class="section" aria-labelledby="truth-title">
+    plan.push(`<section class="section" aria-labelledby="truth-title">
       ${sectionHead("truth-title", "What's true about you", "In plain words", "summary", lang)}
       <div class="card truth"><div class="prose" id="truth-body" lang="${esc(lang)}">${r.summary.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join("")}</div>
         ${r.reading_grade != null ? `<details class="about reading-level"><summary>Reading level: about grade ${Math.round(r.reading_grade)}</summary><p>Measured by a fixed formula (Flesch-Kincaid). We aim for grade 8 or lower.</p></details>` : ""}</div>
     </section>`);
-    parts.push(focusSection(r.focus ?? [], gaps, lang));
-    parts.push(`<section class="section coach" aria-labelledby="coach-title" data-no-print>
+    plan.push(researchSection(sub), focusSection(r.focus ?? [], gaps, lang));
+    const teaser = roadmapTeaser(sub);
+    if (teaser) plan.push(`<section class="section" aria-labelledby="roadmap-title" id="roadmap-section">${sectionHead("roadmap-title", "Your 12-week roadmap", "A little each week")}${teaser}</section>`);
+    plan.push(`<section class="section coach" aria-labelledby="coach-title" data-no-print>
       ${sectionHead("coach-title", "Ask about your report", "Questions and answers", undefined, "en", "Ask a question in your own words, like you would ask a coach. Answers are written with AI, so check them with your team.")}
       ${coachBody(sub)}
     </section>`);
+    if (opts.support) plan.push(supportSection(sub));
+    if (!opts.staff || v10(sub).peer_request) plan.push(peersSection(sub, opts.staff));
   } else if (sub.status === "done") {
-    parts.push(`<p class="notice section-gap">${icon("info")}<span>AI recommendations were not generated for this synthetic seed record.</span></p>`);
+    plan.push(`<p class="notice section-gap">${icon("info")}<span>AI recommendations were not generated for this synthetic seed record. Open "Explore any area" or "Your results in detail" for the stages and growth priorities.</span></p>`);
+  } else {
+    plan.push(`<p class="notice section-gap">${icon("clock")}<span>Your plan appears here when your recommendations are ready. Your stages are ready now in "Your results in detail".</span></p>`);
   }
-  parts.push(stagesSection(sub, meta), progressSection(sub));
+  if (sub.status === "done" && opts.reminder) plan.push(reassessCallout());
+
+  // Layer 3: every number behind the plan.
+  const details: string[] = [stagesSection(sub, meta), progressSection(sub)];
   if (r) {
-    parts.push(planSection(r.plan ?? [], gaps, lang));
+    details.push(planSection(r.plan ?? [], gaps, lang));
     if (r.strengths?.length) {
-      parts.push(`<section class="section" aria-labelledby="strengths-title">
+      details.push(`<section class="section" aria-labelledby="strengths-title">
         ${sectionHead("strengths-title", "What you already do well", "Your strengths", "strengths", lang)}
         <ul class="check-list prose" id="strengths-body" lang="${esc(lang)}" role="list">${r.strengths.map((s) => `<li>${icon("circle-check")}<span>${esc(s)}</span></li>`).join("")}</ul>
       </section>`);
     }
     if (r.conversation?.length) {
-      parts.push(`<section class="section" aria-labelledby="conversation-title">
+      details.push(`<section class="section" aria-labelledby="conversation-title">
         ${sectionHead("conversation-title", "Team conversation guide", "Talk it through", "conversation", lang, "Use these questions at your next team or board meeting.")}
         <ol class="prose conversation" id="conversation-body" lang="${esc(lang)}">${r.conversation.map((q) => `<li>${esc(q)}</li>`).join("")}</ol>
       </section>`);
     }
   }
-  parts.push(gapsSection(sub, meta));
-  if (opts.support) parts.push(supportSection(sub));
+  details.push(gapsSection(sub, meta));
   if (r?.sources?.length) {
-    parts.push(`<section class="section" aria-labelledby="sources-title">
+    details.push(`<section class="section" aria-labelledby="sources-title">
       ${sectionHead("sources-title", "Sources consulted", "Where this comes from")}
       <ul class="sources" lang="${esc(lang)}">${r.sources.map((s) => `<li><a href="${esc(safeUrl(s.url))}" rel="noopener">${esc(s.title)}</a> <span class="url-domain">(${esc(hostOf(s.url))})</span></li>`).join("")}</ul>
     </section>`);
   }
-  if (sub.status === "done" && opts.reminder) parts.push(reassessCallout());
-  if (sub.status === "done") parts.push(`<div class="actions section-gap">${pdfButton(sub)}</div>`);
-  return parts.join("");
+
+  const hash = location.hash.slice(1);
+  const current: Layer = LAYERS.some(([k]) => k === hash) ? (hash as Layer) : r ? "plan" : "details";
+  const out = top.join("") + layered({ plan: plan.join(""), explore: exploreSection(sub, meta), details: details.join("") }, current);
+  return sub.status === "done" ? `${out}<div class="actions section-gap">${pdfButton(sub)}</div>` : out;
 }
 
 /* ---------- Behaviors ---------- */
