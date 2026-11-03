@@ -12,7 +12,8 @@ import Icon from "../components/Icon.astro";
   import { api, ApiError, getMeta, requireUser, type Assessment, type Meta, type StatusResponse, type User } from "../lib/api";
   import { $, announce, esc, focusEl, wireListen } from "../lib/dom";
   import { icon } from "../lib/icons";
-  import { pdfButton, reportBody, statusPanel, STATE_TEXT, stepItems, wireChecklists, wireReminder } from "../lib/results";
+  import { pdfButton, reportBody, statusPanel, STATE_TEXT, stepItems, wireChecklists, wireReminder, wireSupport } from "../lib/results";
+  import { wireToc } from "../lib/toc";
 
   const root = $("#results-root")!;
   const id = new URLSearchParams(location.search).get("id") || "";
@@ -26,23 +27,32 @@ import Icon from "../components/Icon.astro";
     // Fresh container per render so listeners never stack up across re-renders.
     const view = document.createElement("div");
     view.innerHTML = `
-      ${staff ? `<p><a href="/staff/">${icon("arrow-left")} Back to staff dashboard</a></p>` : ""}
-      <span class="eyebrow">${staff ? "Organization report (staff view)" : "Step 3 of 3: Your report"}</span>
-      <div class="report-head">
-        <div>
-          <h1>${esc(sub.org_name)}: capacity report</h1>
-          <p class="meta">Created ${esc(sub.created)} · ${sub.domains.length} capacity area${sub.domains.length === 1 ? "" : "s"}${sub.org_url ? ` · ${esc(sub.org_url)}` : ""}</p>
+      <div class="title-band">
+        ${staff ? `<p><a href="/staff/">${icon("arrow-left")} Back to staff dashboard</a></p>` : ""}
+        <span class="eyebrow">${staff ? "Organization report (staff view)" : "Step 3 of 3: Your report"}</span>
+        <div class="report-head">
+          <div>
+            <h1>${esc(sub.org_name)}: capacity report</h1>
+            <p class="meta">Created ${esc(sub.created)} · ${sub.domains.length} capacity area${sub.domains.length === 1 ? "" : "s"}${sub.org_url ? ` · ${esc(sub.org_url)}` : ""}</p>
+          </div>
+          ${sub.status === "done" ? `<div class="actions">${pdfButton(sub)}</div>` : ""}
         </div>
-        ${sub.status === "done" ? `<div class="actions">${pdfButton(sub)}</div>` : ""}
       </div>
-      ${statusPanel(sub)}
-      ${reportBody(sub, meta, { reminder: !staff })}
-      ${staff ? "" : `<p class="section-gap"><a href="/">${icon("refresh")} Start a new assessment</a></p>`}`;
+      <div class="report-layout">
+        <nav class="toc" aria-label="On this page" id="toc"></nav>
+        <div class="report-main" id="report-main">
+          ${statusPanel(sub)}
+          ${reportBody(sub, meta, { reminder: !staff, support: !staff && !!sub.report })}
+          ${staff ? "" : `<p class="section-gap"><a href="/">${icon("refresh")} Start a new assessment</a></p>`}
+        </div>
+      </div>`;
     root.replaceChildren(view);
     root.removeAttribute("aria-busy");
     wireListen(view);
     wireChecklists(sub, view);
     wireReminder(sub, view);
+    wireSupport(sub, view);
+    wireToc($("#toc")!, $("#report-main")!);
 
     $<HTMLButtonElement>("#retry-btn")?.addEventListener("click", retry);
     if (focus === "ready") focusEl($("#ready"));

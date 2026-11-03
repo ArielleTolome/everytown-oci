@@ -89,14 +89,16 @@ import Icon from "../components/Icon.astro";
     document.title = `${here.length ? "Check your answers: " : ""}${d.name} (${n} of ${domains.length}) · OCI Capacity Coach`;
 
     root.innerHTML = `
+      <div class="title-band">
+        <span class="eyebrow">Step 2 of 3: Questionnaire</span>
+        <h1 id="area-title" tabindex="-1">${esc(d.name)}</h1>
+      </div>
       <nav aria-label="Capacity areas" class="area-stepper"><ol role="list">${stepper(n)}</ol></nav>
       <div class="q-progress">
         <p class="q-progress__where"><span class="dot" aria-hidden="true"></span>Area ${n} of ${domains.length}${last ? " · Last area" : ` · Next: ${esc(nextName)}`}</p>
         <label for="overall-progress" class="q-progress__label" id="progress-text"></label>
         <progress id="overall-progress" max="${totalQuestions()}" value="0"></progress>
       </div>
-      <span class="eyebrow">Step 2 of 3: Questionnaire</span>
-      <h1 id="area-title" tabindex="-1">${esc(d.name)}</h1>
       <details class="about-card">
         <summary>${icon("info")}<span>About this area: why ${esc(d.name)} matters</span>${icon("chevron-down", "about-card__chevron")}</summary>
         <div class="about-card__body"><p>${esc(d.about)}</p>${d.connects ? `<p>${esc(d.connects)}</p>` : ""}</div>

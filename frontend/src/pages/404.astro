@@ -3,8 +3,10 @@ import Base from "../layouts/Base.astro";
 import Icon from "../components/Icon.astro";
 ---
 <Base title="Page not found" public>
-  <span class="eyebrow">Page not found</span>
-  <h1>We could not find that page</h1>
+  <div class="title-band">
+    <span class="eyebrow">Page not found</span>
+    <h1>We could not find that page</h1>
+  </div>
   <p class="notice"><Icon name="info" /><span>The link may be incomplete, or the page may have moved. Your saved answers on this device are safe.</span></p>
   <div class="actions actions--start">
     <a class="btn btn-primary" href="/">Go to the start page</a>

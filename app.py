@@ -211,6 +211,7 @@ def build_assessment(org, answers, domains, profile=None):
         "steps": [{"key": k, "label": label, "state": "done" if k in ("read", "score") else "pending"}
                   for k, label in STEPS],
         "status": "running", "error": None, "profile": profile, "progress": None, "pdf_kb": None, "report": None,
+        "support": None,
     }
 
 
@@ -299,6 +300,22 @@ def status(sid):
     if not sub:
         return error("Report not found.", 404)
     return jsonify(status=sub["status"], steps=sub["steps"], error=sub["error"])
+
+
+@app.route("/api/assessments/<sid>/support", methods=["POST"])
+@login_required()
+def request_support(sid):
+    """Ask the Community Safety Fund for training or coaching in chosen areas (feeds staff planning)."""
+    sub = load(sid)
+    if not sub:
+        return error("Report not found.", 404)
+    if not session.get("owner") or db.owner_of(sub["id"]) != session["owner"]:
+        return error("Only the person who submitted this assessment can send a request.", 403)
+    chosen = body().get("domain_ids")
+    domain_ids = [d for d in sub["domain_ids"] if isinstance(chosen, list) and d in chosen]
+    if not domain_ids:
+        return error("Choose at least one area you would like support with.", 400)
+    return jsonify(support=db.set_support(sub, domain_ids))
 
 
 @app.route("/api/assessments/<sid>/retry", methods=["POST"])

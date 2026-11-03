@@ -1,6 +1,6 @@
 // HTML builders and small behaviors for the results page. Every API string goes through esc(); URLs through safeUrl().
-import type { Assessment, Focus, Gap, Meta, PlanItem, Step } from "./api";
-import { $$, announce, esc, hostOf, plural, safeUrl } from "./dom";
+import { api, ApiError, type Assessment, type Focus, type Gap, type Meta, type PlanItem, type Step, type Support } from "./api";
+import { $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
 import { icon } from "./icons";
 
 export const STATE_TEXT: Record<Step["state"], string> = { pending: "Waiting", running: "In progress", done: "Done", error: "Did not finish" };
@@ -261,8 +261,92 @@ function reassessCallout(): string {
   </section>`;
 }
 
+/* ---------- Ask the Community Safety Fund for support (v0.8) ---------- */
+
+const areaNames = (sub: Assessment, ids: string[]) =>
+  ids.map((id) => sub.domains.find((d) => d.domain_id === id)?.domain_name ?? id);
+
+/** Areas behind the "Start here" priorities: the domain of each focus gap id. */
+function focusAreas(sub: Assessment): string[] {
+  const byId = new Map(sub.gaps.map((g) => [g.question_id, g.domain_id]));
+  const ids = (sub.report?.focus ?? []).flatMap((f) => f.gap_ids).map((id) => byId.get(id) ?? id.replace(/\d+$/, ""));
+  return [...new Set(ids)];
+}
+
+function supportBody(sub: Assessment, editing: boolean): string {
+  const s = sub.support;
+  if (s && !editing) {
+    return `<p class="support__sent" id="support-status" tabindex="-1">${icon("circle-check")}<span>Request sent on ${esc(s.requested_at)} for: ${esc(areaNames(sub, s.domain_ids).join(", "))}.</span></p>
+      <button type="button" class="btn btn-secondary" id="support-edit">${icon("pencil")}<span>Update my request</span></button>`;
+  }
+  const chosen = s?.domain_ids ?? focusAreas(sub);
+  return `<form id="support-form" novalidate>
+    <fieldset id="support-fieldset" aria-describedby="support-hint">
+      <legend class="mini-label">Which areas would you like help with?</legend>
+      <p class="hint" id="support-hint">${s ? "Change the areas and send again. Your newest request replaces the old one." : "We checked the areas of your top priorities. Change them if you like."}</p>
+      <p class="field-error" id="support-error" role="alert" hidden></p>
+      <ul class="area-options" role="list">${sub.domains.map((d) => `
+        <li><label class="choice">
+          <input type="checkbox" name="support-area" value="${esc(d.domain_id)}" id="support-${esc(d.domain_id)}" ${chosen.includes(d.domain_id) ? "checked" : ""}>
+          <span class="choice__text">${esc(d.domain_name)}</span>${icon("check", "choice__check")}
+        </label></li>`).join("")}
+      </ul>
+    </fieldset>
+    <div class="actions actions--start">
+      <button type="submit" class="btn btn-primary">${icon("message")}<span>Send my request</span></button>
+      ${s ? '<button type="button" class="btn btn-secondary" id="support-cancel">Cancel</button>' : ""}
+    </div>
+  </form>`;
+}
+
+function supportSection(sub: Assessment): string {
+  return `<section class="section support" aria-labelledby="support-title" data-no-print>
+    ${sectionHead("support-title", "Ask the Community Safety Fund for support", "Training and coaching", undefined, "en",
+      "The Everytown Community Safety Fund plans its Community Training Institute trainings and coaching around what grantees ask for. Choose the areas where your team would like help. We share only the areas you choose and your organization's name with Community Safety Fund staff.")}
+    <div class="card support__card" id="support-body">${supportBody(sub, !sub.support)}</div>
+  </section>`;
+}
+
+/** Support request form: POST /api/assessments/<id>/support {domain_ids}; 403 when this sign-in session did not submit it. */
+export function wireSupport(sub: Assessment, root: ParentNode) {
+  const body = root.querySelector<HTMLElement>("#support-body");
+  if (!body) return;
+  const show = (editing: boolean) => { body.innerHTML = supportBody(sub, editing); };
+  const fail = (msg: string) => {
+    const err = body.querySelector<HTMLElement>("#support-error")!;
+    err.innerHTML = `${icon("alert")}<span>${esc(msg)}</span>`;
+    err.hidden = false;
+    body.querySelector("#support-fieldset")?.setAttribute("aria-describedby", "support-hint support-error");
+  };
+  body.addEventListener("click", (e) => {
+    const t = e.target as HTMLElement;
+    if (t.closest("#support-edit")) { show(true); body.querySelector<HTMLInputElement>("input[name=support-area]")?.focus(); }
+    if (t.closest("#support-cancel")) { show(false); focusEl(body.querySelector("#support-status")); }
+  });
+  body.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const ids = $$<HTMLInputElement>("input[name=support-area]:checked", form).map((b) => b.value);
+    if (!ids.length) { fail("Choose at least one area."); form.querySelector<HTMLInputElement>("input[name=support-area]")?.focus(); return; }
+    const btn = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+    btn.setAttribute("aria-disabled", "true");
+    try {
+      const res = await api.post<{ support: Support }>(`/assessments/${encodeURIComponent(sub.id)}/support`, { domain_ids: ids });
+      sub.support = res.support;
+      show(false);
+      focusEl(body.querySelector("#support-status"));
+      announce(`Request sent. Thank you. The Community Safety Fund will see your request for ${areaNames(sub, res.support.domain_ids).join(", ")}.`);
+    } catch (ex) {
+      btn.removeAttribute("aria-disabled");
+      if (ex instanceof ApiError && ex.status === 403) fail("Only the person who submitted this assessment can send a request.");
+      else if (ex instanceof ApiError && ex.status === 400) fail("Choose at least one area.");
+      else fail("We could not send your request. Please try again.");
+    }
+  });
+}
+
 /** Everything below the status panel, in the order the Everytown rep asked for. */
-export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolean }): string {
+export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolean; support: boolean }): string {
   const lang = sub.language || "en";
   const gaps = new Map(sub.gaps.map((g) => [g.question_id, g]));
   const r = sub.report;
@@ -297,6 +381,7 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
     }
   }
   parts.push(gapsSection(sub, meta));
+  if (opts.support) parts.push(supportSection(sub));
   if (r?.sources?.length) {
     parts.push(`<section class="section" aria-labelledby="sources-title">
       ${sectionHead("sources-title", "Sources consulted", "Where this comes from")}

@@ -23,6 +23,7 @@ const wrapClass = { default: "wrap", narrow: "wrap wrap--narrow", report: "wrap 
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/fonts/AtkinsonHyperlegible-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="/fonts/AtkinsonHyperlegible-Bold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/fonts/SourceSerif4-latin-var.woff2" as="font" type="font/woff2" crossorigin>
   <script is:inline>
     // Apply saved display preferences before first paint (no flash).
     try {
@@ -37,10 +38,14 @@ const wrapClass = { default: "wrap", narrow: "wrap wrap--narrow", report: "wrap 
   <header class="site-header">
     <div class="site-header__inner">
       <a class="brand" href="/">
-        <span class="brand__mark"><Icon name="sprout" /></span>
+        <svg class="brand__bars" viewBox="0 0 28 30" width="28" height="30" aria-hidden="true" focusable="false">
+          <rect x="0" y="2" width="28" height="6" rx="1" />
+          <rect x="0" y="12" width="21" height="6" rx="1" />
+          <rect x="0" y="22" width="14" height="6" rx="1" />
+        </svg>
         <span class="brand__text">
+          <span class="brand__org">Everytown Community Safety Fund</span>
           <span class="brand__name">OCI Capacity Coach</span>
-          <span class="brand__sub">Organizational Capacity Index · Community Safety Fund</span>
         </span>
       </a>
       <div class="site-header__tools">
@@ -55,7 +60,7 @@ const wrapClass = { default: "wrap", narrow: "wrap wrap--narrow", report: "wrap 
               </label>
               <label class="switch">
                 <input type="checkbox" data-display="contrast">
-                <span class="switch__label"><Icon name="contrast" /> High contrast</span>
+                <span class="switch__label"><Icon name="contrast" /> Use accessible colors (high contrast)</span>
               </label>
             </div>
             <p class="hint">Saved on this device.</p>
@@ -76,7 +81,11 @@ const wrapClass = { default: "wrap", narrow: "wrap wrap--narrow", report: "wrap 
   <footer class="site-footer">
     <div class="site-footer__inner">
       <p><strong>A learning tool, not an evaluation.</strong> Stages describe maturity, not performance.</p>
-      <p>Everytown Community Safety Fund · Organizational Capacity Index prototype.</p>
+      <ul class="site-footer__links" role="list">
+        <li><a href="https://everytownsupportfund.org/everytown-community-safety-fund/">Everytown Community Safety Fund</a></li>
+        <li><a href="https://everytownsupportfund.org/everytown-community-safety-fund/everytown-community-safety-fund-grantee-network/">CSF Grantee Portal</a></li>
+      </ul>
+      <p>Organizational Capacity Index prototype.</p>
     </div>
   </footer>
   <div id="live-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>

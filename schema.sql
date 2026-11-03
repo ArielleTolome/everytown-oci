@@ -24,6 +24,15 @@ CREATE INDEX IF NOT EXISTS assessments_org_created ON assessments (org_id, creat
 -- (login is mocked, so this stands in for an organization account).
 ALTER TABLE assessments ADD COLUMN IF NOT EXISTS owner text;
 
+-- Areas an organization asked the Community Safety Fund for training or coaching in, from its report.
+-- Feeds Community Training Institute planning on the staff dashboard. Latest request per assessment wins.
+CREATE TABLE IF NOT EXISTS support_requests (
+  assessment_id uuid NOT NULL REFERENCES assessments (id) ON DELETE CASCADE,
+  domain_id text NOT NULL,
+  requested_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (assessment_id, domain_id)
+);
+
 CREATE TABLE IF NOT EXISTS answers (
   assessment_id uuid NOT NULL REFERENCES assessments (id) ON DELETE CASCADE,
   question_id text NOT NULL,

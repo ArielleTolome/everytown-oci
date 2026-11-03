@@ -115,6 +115,31 @@ def recent_reports(hours=1):
                  "AND created_at > now() - make_interval(hours => CAST(:h AS int))", h=hours)[0]["n"]
 
 
+def owner_of(sid):
+    rows = query("SELECT owner FROM assessments WHERE id = :id", id=sid)
+    return rows[0]["owner"] if rows else None
+
+
+def set_support(sub, domain_ids):
+    """Replace this assessment's support request and mirror it into the document, atomically."""
+    tx = _call(_client().begin_transaction)["transactionId"]
+    try:
+        query("DELETE FROM support_requests WHERE assessment_id = :id", tx=tx, id=sub["id"])
+        batch("INSERT INTO support_requests (assessment_id, domain_id) VALUES (CAST(:a AS uuid), :d)",
+              [{"a": sub["id"], "d": d} for d in domain_ids], tx)
+        when = query("SELECT to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') || ' UTC' AS t", tx=tx)[0]["t"]
+        sub["support"] = {"domain_ids": domain_ids, "requested_at": when}
+        query("UPDATE assessments SET doc = :doc WHERE id = :id", tx=tx, doc=sub, id=sub["id"])
+        _call(_client().commit_transaction, transactionId=tx)
+    except Exception:
+        try:
+            _call(_client().rollback_transaction, transactionId=tx)
+        except ClientError:
+            pass  # the Data API already aborted it; keep the original error
+        raise
+    return sub["support"]
+
+
 def update(sub):
     query("UPDATE assessments SET doc = :doc, status = :status WHERE id = :id",
           doc=sub, status=sub["status"], id=sub["id"])
@@ -208,8 +233,20 @@ def analytics(domains, stage_names):
     order = {d["id"]: i for i, d in enumerate(domains)}
     for o in org_rows:
         o["domains"] = sorted(per.get(o["assessment_id"], []), key=lambda x: order[x["domain_id"]])
+    # Each organization's most recent support request (from any of its assessments), grouped by area.
+    req_rows = query("WITH last AS (SELECT DISTINCT ON (a.org_id) a.org_id, sr.assessment_id FROM support_requests sr "
+                     "JOIN assessments a ON a.id = sr.assessment_id ORDER BY a.org_id, sr.requested_at DESC) "
+                     "SELECT o.id::text AS id, o.name, sr.domain_id, sr.assessment_id::text AS assessment_id, "
+                     "to_char(sr.requested_at, 'YYYY-MM-DD') AS requested_at FROM last "
+                     "JOIN support_requests sr ON sr.assessment_id = last.assessment_id "
+                     "JOIN organizations o ON o.id = last.org_id ORDER BY o.name")
+    requests = {}
+    for r in req_rows:
+        requests.setdefault(r.pop("domain_id"), []).append(r)
+    support = sorted(({"domain_id": d, "domain_name": names[d], "orgs": len(m), "organizations": m}
+                      for d, m in requests.items() if d in names), key=lambda s: (-s["orgs"], order[s["domain_id"]]))
     return {"totals": totals, "domains": out_domains, "top_gaps": top_gaps, "cohorts": cohorts,
-            "organizations": org_rows}
+            "organizations": org_rows, "support_requests": support}
 
 
 # ---------- synthetic seed data ----------
@@ -252,6 +289,9 @@ def seed():
             sub["created"] = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(time.time() - days_ago * 86400))
             create(sub, "seed", created_at=time.strftime("%Y-%m-%dT%H:%M:%SZ",
                                                          time.gmtime(time.time() - days_ago * 86400)))
+            if rnd.random() < 0.6:  # most organizations ask for help in the areas of their top growth priorities
+                areas = list(dict.fromkeys(g["domain_id"] for g in sub["gaps"][:3]))
+                set_support(sub, areas)
     print("seeded", len(SEED_NAMES), "synthetic organizations")
 
 

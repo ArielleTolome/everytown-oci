@@ -297,17 +297,24 @@ Resources:
       Name: !Sub ${AWS::StackName}-dir-index
       AutoPublish: true
       FunctionConfig:
-        Comment: Directory index and trailing-slash redirect for the static site
+        Comment: Directory index, trailing-slash redirect and 404 page for the static site (default behavior only)
         Runtime: cloudfront-js-2.0
+      # Pages are listed here instead of using distribution-wide CustomErrorResponses, which would also rewrite
+      # the API's own 403/404 JSON on /api/*. Keep this list in sync with frontend/src/pages.
       FunctionCode: |
+        var PAGES = { '/': 1, '/login/': 1, '/questionnaire/': 1, '/results/': 1, '/staff/': 1 };
         function handler(event) {
           var request = event.request;
           var uri = request.uri;
           if (uri.endsWith('/')) {
-            request.uri = uri + 'index.html';
+            request.uri = PAGES[uri] ? uri + 'index.html' : '/404.html';
             return request;
           }
           if (uri.substring(uri.lastIndexOf('/') + 1).indexOf('.') !== -1) {
+            return request;
+          }
+          if (!PAGES[uri + '/']) {
+            request.uri = '/404.html';
             return request;
           }
           var parts = [];
@@ -366,15 +373,8 @@ Resources:
             CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
             OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
             ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # SecurityHeadersPolicy
-        # Custom error responses apply to every behavior, /api/* included. The site bucket grants no
-        # s3:ListBucket, so a missing page is a 403 from S3; only 403 is mapped, so API 404 JSON passes through.
-        # The API should therefore avoid relying on 403 bodies (the frontend checks the role via /api/me first).
-        # A rejected OAC signature (for example a POST without a correct x-amz-content-sha256) also shows up as this 404.
-        CustomErrorResponses:
-          - ErrorCode: 403
-            ResponseCode: 404
-            ResponsePagePath: /404.html
-            ErrorCachingMinTTL: 0
+        # No CustomErrorResponses: they apply to every behavior and would replace the API's JSON errors.
+        # Unknown site paths get /404.html from DirectoryIndexFunction instead.
 
   # Cost tracking only. To get email alerts, add under Properties:
   #   NotificationsWithSubscribers:

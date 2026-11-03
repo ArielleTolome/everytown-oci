@@ -29,9 +29,11 @@ import Icon from "../components/Icon.astro";
   function shell() {
     const options = data.domains.map((d) => `<option value="${esc(d.domain_id)}">${esc(d.domain_name)}</option>`).join("");
     root.innerHTML = `
-      <span class="eyebrow">Everytown staff</span>
-      <h1>Network capacity dashboard</h1>
-      <p class="lead">See where grantees are across the network, which training and services are needed most, and which organizations share the same growth priorities so you can connect them.</p>
+      <div class="title-band">
+        <span class="eyebrow">Everytown staff</span>
+        <h1>Network capacity dashboard</h1>
+        <p class="lead">See where grantees are across the network, which training and services are needed most, and which organizations share the same growth priorities so you can connect them.</p>
+      </div>
       <ul class="kpi-grid" role="list">
         <li class="card kpi"><span class="kpi__label">${icon("building")}Organizations</span><span class="kpi__num">${data.totals.organizations}</span><span class="kpi__context">with at least one assessment</span></li>
         <li class="card kpi"><span class="kpi__label">${icon("clipboard")}Assessments</span><span class="kpi__num">${data.totals.assessments}</span><span class="kpi__context">including re-assessments</span></li>
@@ -45,6 +47,7 @@ import Icon from "../components/Icon.astro";
             <li><strong>Stage</strong> is the highest stage where every statement in that area is already in place.</li>
             <li><strong>Network numbers</strong> use each organization's latest assessment, so re-assessments do not count twice.</li>
             <li><strong>Peer percentile</strong> is a staff-only benchmarking preview. Grantees never see it.</li>
+            <li><strong>Support requests</strong> count the latest request per organization: the areas a grantee asked the Community Safety Fund to help with.</li>
           </ul>
         </div>
       </section>
@@ -110,6 +113,22 @@ import Icon from "../components/Icon.astro";
 
   const orgList = (orgs: Analytics["cohorts"][number]["organizations"]) =>
     `<ul>${orgs.map((o) => `<li><a href="/results/?id=${encodeURIComponent(o.assessment_id)}">${esc(o.name)}<span class="visually-hidden"> report</span></a></li>`).join("")}</ul>`;
+
+  function supportSection(rows: NonNullable<Analytics["support_requests"]>) {
+    return `<section class="section" aria-labelledby="support-title">
+      ${head("support-title", "Training and coaching requests", "Support requests")}
+      <p>Areas where grantees asked the Community Safety Fund for training or coaching, from the results page. Use this to plan Community Training Institute sessions.</p>
+      ${rows.length ? `<div class="table-wrap" role="region" aria-labelledby="support-caption" tabindex="0"><table>
+        <caption id="support-caption">Support requests by area, latest request per organization, most requested first</caption>
+        <thead><tr><th scope="col">Area</th><th scope="col" class="num">Organizations requesting</th><th scope="col">Organizations</th></tr></thead>
+        <tbody>${rows.map((r) => `<tr>
+          <th scope="row">${esc(r.domain_name)}</th>
+          <td class="num">${r.orgs}</td>
+          <td><ul class="plain-list">${r.organizations.map((o) => `<li><a href="/results/?id=${encodeURIComponent(o.assessment_id)}">${esc(o.name)}<span class="visually-hidden"> report</span></a> <span class="meta">(${esc(o.requested_at)})</span></li>`).join("")}</ul></td>
+        </tr>`).join("")}</tbody>
+      </table></div>` : `<p class="notice">${icon("info")}<span>No requests yet.</span></p>`}
+    </section>`;
+  }
 
   function cohortsSection(cohorts: Analytics["cohorts"]) {
     return `<section class="section" aria-labelledby="cohorts-title">
@@ -190,8 +209,9 @@ import Icon from "../components/Icon.astro";
     const domains = domain ? data.domains.filter((d) => d.domain_id === domain) : data.domains;
     const gaps = domain ? data.top_gaps.filter((g) => g.domain_id === domain) : data.top_gaps;
     const cohorts = domain ? data.cohorts.filter((c) => c.domain_name === name) : data.cohorts;
+    const requests = [...(data.support_requests ?? [])].filter((r) => !domain || r.domain_id === domain).sort((a, b) => b.orgs - a.orgs);
     const orgs = domain ? data.organizations.filter((o) => o.domains.some((d) => d.domain_id === domain)) : data.organizations;
-    $("#dash")!.innerHTML = stagesSection(domains) + gapsSection(gaps) + cohortsSection(cohorts) + orgsSection(orgs, domain);
+    $("#dash")!.innerHTML = stagesSection(domains) + gapsSection(gaps) + cohortsSection(cohorts) + supportSection(requests) + orgsSection(orgs, domain);
     $("#csv-btn")!.addEventListener("click", () => csv(orgs, domain));
   }
 

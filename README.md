@@ -7,7 +7,9 @@ The Organizational Capacity Index (OCI) for community violence intervention (CVI
 
 AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/vision.md), [`docs/tech.md`](docs/tech.md).
 
-**Current release:** v0.7.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+**Current release:** v0.8.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+
+The tool is designed to sit inside the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) Grantee Portal: CSF says new grantees "complete a self-assessment that shapes their participation in cohort-based and customized training through our Community Training Institute", and the portal is where grantees "sign up for future training opportunities and complete surveys". The look follows that site (navy and royal blue, serif headlines, pill buttons, pale-blue title bands).
 
 ## Vision
 
@@ -59,7 +61,8 @@ cd frontend && npx astro check && npm run build
 4. The results page shows the stage ladder and scores immediately, then live progress through: reading answers, scoring, researching the website, consulting the CVI resource library, and writing recommendations. If a step fails, "Try again" reruns only the AI steps.
 5. Read "What's true about you", then "Start here: your top priorities" (one or two, each showing the statements it is based on, what to do, and a vetted resource), then strengths, the 30 / 60 / 90 day plan, team conversation guide and all growth priorities. Listen to any section aloud, then download the PDF.
 6. Reassess later under the same organization name, in the same sign-in session: the results page and PDF show "Progress since your last assessment", with growth priorities closed, new ones, and stage moves per area. The comparison is deterministic and covers only the areas both assessments included; the AI summary celebrates it first. Progress is scoped to the sign-in session because login is mocked; real accounts would replace this.
-7. Everytown staff sign in as `staff` and open the network dashboard: totals, stage distribution per area (bars plus an equivalent table), the most common growth priorities (training and service needs), "Grantees to connect" cohorts sharing a High priority growth priority, and an organizations table with a staff-only peer percentile preview. Filter by area and download CSV.
+7. Ask the Community Safety Fund for support: on the report, pick the areas where you want training or coaching (the areas behind your "Start here" priorities are pre-checked) and send the request.
+8. Everytown staff sign in as `staff` and open the network dashboard: totals, stage distribution per area (bars plus an equivalent table), the most common growth priorities (training and service needs), "Grantees to connect" cohorts sharing a High priority growth priority, support requests by area, and an organizations table with a staff-only peer percentile preview. Filter by area and download CSV.
 
 ## Architecture
 
@@ -101,6 +104,7 @@ Why Aurora PostgreSQL Serverless v2: the Everytown interview asked for network a
 | `answers`, `domain_results`, `gaps` | Normalized deterministic results for analytics. Written once at submit, never by the model. |
 | `latest_assessments` (view) | Each organization's most recent assessment: the unit for network analytics. |
 | `domain_benchmarks` (view) | Peer percentile per organization and domain. Staff only; future benchmarking. |
+| `support_requests` | Areas an organization asked CSF for training or coaching in, per assessment. The staff dashboard counts each organization's latest request. |
 
 ## Deploying to AWS
 

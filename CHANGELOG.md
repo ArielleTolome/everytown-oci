@@ -2,6 +2,17 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v0.8.0 — Community Safety Fund alignment and support requests
+
+Modeled on the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) site and its Grantee Portal, where grantees "sign up for future training opportunities and complete surveys, which inform our program development".
+
+- **Ask the Community Safety Fund for support.** From the report, a grantee picks the capacity areas where they want training or coaching; the areas behind their "Start here" priorities are pre-checked. `POST /api/assessments/<id>/support` (only from the sign-in session that submitted it) stores the request in the new `support_requests` table and on the report. No free text, so no personal data.
+- **Staff dashboard: Support requests** by area, counting each organization's latest request, with links to the reports. This feeds Community Training Institute planning. Seed data includes synthetic requests.
+- **CSF look:** Source Serif 4 headlines (a free stand-in for CSF's GT Super), navy pill buttons, a pale-blue title band on every page, an "Everytown Community Safety Fund" header lockup with an orange three-bar mark (our own SVG), a "Use accessible colors" option, and footer links to the CSF page and the CSF Grantee Portal. Red is now only the header stripe and error text.
+- **"On this page" navigation** on the long report: a sticky left column on wide screens and a collapsible panel on phones, with the current section marked `aria-current`.
+- **CloudFront:** the distribution-wide 403-to-404 page mapping is gone, because it also replaced the API's own error responses on `/api/*`. Unknown site paths now get the 404 page from the viewer-request function.
+- axe-core: no WCAG 2.2 A/AA violations on any page at 1280 and 375 px.
+
 ## v0.7.0 — Hardening from the AWS review
 
 - **API locked behind CloudFront.** The Lambda Function URL now uses `AWS_IAM` auth with CloudFront Origin Access Control, so it can't be called directly; the `FunctionUrl` output is removed. The frontend signs request bodies with `x-amz-content-sha256`, as OAC requires for Lambda.
