@@ -332,6 +332,27 @@ tfoot th, tfoot td { font-weight: 700; border-top: 2px solid var(--color-border-
 .conversation li { margin-bottom: var(--space-sm); padding-left: var(--space-xs); }
 .sources li { margin-bottom: var(--space-xs); }
 
+/* Sample organizations (start page) */
+.samples__summary { display: flex; align-items: center; gap: var(--space-sm); min-height: var(--target); font-weight: 700; color: var(--color-link); }
+.samples[open] .samples__summary { margin-bottom: var(--space-sm); }
+.samples__list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-sm); }
+.sample-btn { width: 100%; flex-direction: column; align-items: flex-start; text-align: left; gap: var(--space-xs); padding: var(--space-md); }
+.sample-btn__summary { font-weight: 400; font-size: var(--text-sm); color: var(--color-muted-foreground); }
+
+/* Progress since last assessment (results page) */
+.progress-stats { list-style: none; padding: 0; margin: var(--space-md) 0; display: grid; gap: var(--space-md); grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+.progress-stat { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md) var(--space-lg); }
+.progress-stat .icon { color: var(--color-primary); }
+.progress-stat__num { font-size: var(--text-xl); }
+.stage-moves { list-style: none; padding: 0; margin: 0 0 var(--space-md); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-card); }
+.stage-move { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-xs) var(--space-md); padding: var(--space-sm) var(--space-md); }
+.stage-move + .stage-move { border-top: 1px solid var(--color-muted); }
+.stage-move__name { font-weight: 700; }
+.stage-move__change { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); }
+.stage-move.is-same .stage-move__change { color: var(--color-muted-foreground); }
+.progress-items { padding-left: 1.25rem; }
+.progress-items li + li { margin-top: var(--space-xs); }
+
 .gap-domain { margin-top: var(--space-xl); }
 .gap-domain h3 { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: baseline; }
 .count { font-size: var(--text-sm); font-weight: 400; color: var(--color-muted-foreground); }

@@ -7,7 +7,7 @@ The Organizational Capacity Index (OCI) for community violence intervention (CVI
 
 AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/vision.md), [`docs/tech.md`](docs/tech.md).
 
-**Current release:** v0.3.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page.
+**Current release:** v0.4.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 ## Vision
 
@@ -46,10 +46,11 @@ python3 -m unittest discover -s tests       # grounding validation of the model'
 ## User journey
 
 1. Sign in with the mocked credentials.
-2. Enter the organization name and, optionally, its website. Choose the report language (English or Español) and the areas to assess. The four priority areas (Planning, Fundraising, Financial Management, ML&E) are pre-selected.
+2. Enter the organization name and, optionally, its website. Choose the report language (English or Español) and the areas to assess. The four priority areas (Planning, Fundraising, Financial Management, ML&E) are pre-selected. Or open "Try a synthetic sample organization" to submit one of the three fictional organizations from the builder package in one click (for demos and staff training).
 3. Answer one area per screen. Each area must be fully answered before you move on, because an unanswered statement would count as favorable. Back keeps your answers.
 4. The results page shows the stage ladder and scores immediately, then live progress through: reading answers, scoring, researching the website, consulting the CVI resource library, and writing recommendations. If a step fails, "Try again" reruns only the AI steps.
 5. Read the summary, strengths, 30 / 60 / 90 day plan (each action shows the statements it is based on and a vetted resource), team conversation guide and all growth priorities. Listen to any section aloud, then download the PDF.
+6. Reassess later under the same organization name: the results page and PDF show "Progress since your last assessment", with growth priorities closed, new ones, and stage moves per area. The comparison is deterministic and covers only the areas both assessments included; the AI summary celebrates it first.
 
 ## Architecture
 
@@ -118,9 +119,11 @@ STACK=oci-demo AWS_REGION=us-west-2 EXTRA_DOCS=/path/to/public/docs scripts/depl
 | `resources/library/*.md` | Field guides per OCI domain, ingested into the Knowledge Base. |
 | `data/questions.json` | 143 statements across 8 domains, plus stage and domain weights. |
 | `data/domain_info.json` | Domain descriptions and stage definitions from the questionnaires. |
+| `data/samples.json` | Metadata for the three synthetic sample organizations (answers come from `benchmark/`). |
 | `engine/`, `utils/`, `benchmark/`, `verify_benchmark.py` | Reference scoring engine, loader, synthetic answer key and checker. |
 | `infra/template.yaml`, `scripts/` | CloudFormation and build/deploy scripts. |
-| `tests/` | Unit test for the model-output grounding rules. |
+| `tests/` | Unit tests for the model-output grounding rules and the re-assessment comparison. |
+| `docs/pitch/` | Hackathon pitch deck (open `index.html`, arrow keys, `n` for notes) and demo script. |
 
 ## Scoring
 

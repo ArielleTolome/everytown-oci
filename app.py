@@ -5,6 +5,7 @@ chosen by the OCI_BUCKET / OCI_WORKER_FN environment variables.
 """
 import json
 import os
+import re
 import threading
 import uuid
 from dataclasses import asdict
@@ -30,8 +31,14 @@ STEPS = [("read", "Reading your answers"), ("score", "Scoring capacity domains")
 BUCKET = os.environ.get("OCI_BUCKET")
 WORKER_FN = os.environ.get("OCI_WORKER_FN")
 
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "domain_info.json")) as _f:
+ROOT = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(ROOT, "data", "domain_info.json")) as _f:
     INFO = json.load(_f)
+with open(os.path.join(ROOT, "data", "samples.json")) as _f:
+    SAMPLES = json.load(_f)
+for _s in SAMPLES.values():
+    with open(os.path.join(ROOT, _s["file"])) as _f:
+        _s["answers"] = json.load(_f)["answers"]
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("OCI_SECRET_KEY") or os.urandom(32)
@@ -40,8 +47,7 @@ app.config.update(SESSION_COOKIE_SAMESITE="Lax", SESSION_COOKIE_SECURE=bool(BUCK
 if BUCKET:
     _s3 = boto3.client("s3")
 else:
-    STORE = os.path.join(app.instance_path, "submissions")
-    os.makedirs(STORE, exist_ok=True)
+    os.makedirs(os.path.join(app.instance_path, "submissions", "by-org"), exist_ok=True)
     _lock = threading.Lock()
 
 
@@ -52,32 +58,62 @@ def _sid(sid):
         abort(404)
 
 
-def load(sid):
-    sid = _sid(sid)
+def _get(key):
+    """Read a JSON object from the store (S3 or instance/), or None when absent."""
     if BUCKET:
         try:
-            body = _s3.get_object(Bucket=BUCKET, Key="submissions/%s.json" % sid)["Body"].read()
+            return json.loads(_s3.get_object(Bucket=BUCKET, Key=key)["Body"].read())
         except _s3.exceptions.NoSuchKey:
-            abort(404)
-        return json.loads(body)
-    path = os.path.join(STORE, sid + ".json")
+            return None
+    path = os.path.join(app.instance_path, key)
     if not os.path.exists(path):
-        abort(404)
+        return None
     with open(path) as f:
         return json.load(f)
 
 
-def save(sub):
-    body = json.dumps(sub, indent=1, ensure_ascii=False)
+def _put(key, obj):
+    body = json.dumps(obj, indent=1, ensure_ascii=False)
     if BUCKET:
-        _s3.put_object(Bucket=BUCKET, Key="submissions/%s.json" % sub["id"], Body=body.encode(),
-                       ContentType="application/json")
+        _s3.put_object(Bucket=BUCKET, Key=key, Body=body.encode(), ContentType="application/json")
         return
-    path = os.path.join(STORE, sub["id"] + ".json")
+    path = os.path.join(app.instance_path, key)
     with _lock:
         with open(path + ".tmp", "w") as f:
             f.write(body)
         os.replace(path + ".tmp", path)
+
+
+def load(sid):
+    return _get("submissions/%s.json" % _sid(sid)) or abort(404)
+
+
+def save(sub):
+    _put("submissions/%s.json" % sub["id"], sub)
+
+
+def _org_pointer(name):
+    # shortcut: organizations are matched by name because login is mocked; key on the org account once real auth exists.
+    return "submissions/by-org/%s.json" % (re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:80] or "org")
+
+
+def compare(prev, sub):
+    """Deterministic progress since the organization's previous assessment, over the areas both covered."""
+    shared = [d for d in sub["domain_ids"] if d in prev["domain_ids"]]
+    if not shared:
+        return None
+    before = [g for g in prev["gaps"] if g["domain_id"] in shared]
+    now = [g for g in sub["gaps"] if g["domain_id"] in shared]
+    before_ids, now_ids = {g["question_id"] for g in before}, {g["question_id"] for g in now}
+    stages = {d["domain_id"]: d["estimated_stage"] for d in prev["domains"]}
+    return {"previous_id": prev["id"], "previous_created": prev["created"],
+            "closed": [{"id": g["question_id"], "text": g["question_text"]} for g in before
+                       if g["question_id"] not in now_ids],
+            "new": [{"id": g["question_id"], "text": g["question_text"]} for g in now
+                    if g["question_id"] not in before_ids],
+            "stages": [{"domain_id": d["domain_id"], "domain_name": d["domain_name"],
+                        "from": stages[d["domain_id"]], "to": d["estimated_stage"]}
+                       for d in sub["domains"] if d["domain_id"] in shared]}
 
 
 def chosen_domains(ids):
@@ -144,7 +180,8 @@ def start():
     all_domains = [{"id": d["id"], "name": d["name"], "count": len(d["questions"]),
                     "about": INFO["domains"][d["id"]]["about"], "priority": d["id"] in PRIORITY_DOMAINS}
                    for d in get_domains()]
-    return render_template("start.html", errors=errors, form=form, all_domains=all_domains)
+    samples = [{"id": k, "name": s["name"], "summary": s["summary"]} for k, s in SAMPLES.items()]
+    return render_template("start.html", errors=errors, form=form, all_domains=all_domains, samples=samples)
 
 
 @app.route("/questionnaire/<int:n>", methods=["GET", "POST"])
@@ -191,7 +228,22 @@ def questionnaire(n):
                            domain_names=[d["name"] for d in domains])
 
 
-def submit(org, answers, domains):
+@app.route("/demo", methods=["POST"])
+@login_required
+def demo():
+    """Submit a synthetic sample organization from the builder package, for demos and staff training."""
+    sample = SAMPLES.get(request.form.get("sample", ""))
+    if not sample:
+        abort(400)
+    ids = [d for d in request.form.getlist("domains") if d in {x["id"] for x in get_domains()}] or DEFAULT_DOMAINS
+    language = request.form.get("language") if request.form.get("language") in LANGUAGES else "en"
+    domains = chosen_domains(ids)
+    answers = {q["id"]: sample["answers"][q["id"]] for d in domains for q in d["questions"]}
+    org = {"org_name": sample["name"], "org_url": "", "language": language}
+    return redirect(url_for("results", sid=submit(org, answers, domains, profile=sample["profile"])))
+
+
+def submit(org, answers, domains, profile=None):
     gaps, summaries = calculate_recommendations(answers, domains, get_stage_weights(), get_stage_names())
     total = sum(s.total_questions for s in summaries)
     favorable = sum(s.favorable_count for s in summaries)
@@ -211,9 +263,14 @@ def submit(org, answers, domains):
         "gaps": [asdict(g) for g in gaps],
         "steps": [{"key": k, "label": label, "state": "done" if k in ("read", "score") else "pending"}
                   for k, label in STEPS],
-        "status": "running", "error": None, "profile": None, "report": None,
+        "status": "running", "error": None, "profile": profile, "report": None,
     }
+    pointer = _org_pointer(sub["org_name"])
+    prev_sid = (_get(pointer) or {}).get("sid")
+    prev = _get("submissions/%s.json" % prev_sid) if prev_sid else None
+    sub["progress"] = compare(prev, sub) if prev else None
     save(sub)
+    _put(pointer, {"sid": sub["id"]})
     start_job(sub["id"])
     return sub["id"]
 
@@ -237,7 +294,8 @@ def run_job(sid):
 
     try:
         mark("research", "running")
-        sub["profile"] = pipeline.research_org(sub["org_name"], sub["org_url"]) if sub["org_url"] else None
+        if sub["org_url"]:
+            sub["profile"] = pipeline.research_org(sub["org_name"], sub["org_url"])
         mark("research", "done")
         mark("library", "running")
         library = pipeline.gather_library(sub)

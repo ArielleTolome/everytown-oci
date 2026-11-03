@@ -87,5 +87,24 @@
   <div class="actions">
     <button type="submit" class="btn btn-primary"><span>Start questionnaire</span>{{ icon('arrow-right') }}</button>
   </div>
+
+  {% if samples %}
+  {# After the primary button so Enter still submits the main form (first submit button in DOM order). #}
+  <details class="card samples">
+    <summary class="samples__summary">{{ icon('sprout') }}<span>Try a synthetic sample organization</span></summary>
+    <p class="hint" id="samples-hint">For demos and staff training. Fictional organizations from the OCI builder package; answers are filled in for you. Your report language and chosen areas above are used.</p>
+    <ul class="samples__list" role="list">
+      {% for s in samples %}
+      <li>
+        <button type="submit" name="sample" value="{{ s.id }}" formaction="/demo" formnovalidate
+                class="btn btn-secondary sample-btn" aria-describedby="samples-hint">
+          <span class="sample-btn__name">{{ s.name }}</span>
+          <span class="sample-btn__summary">{{ s.summary }}</span>
+        </button>
+      </li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
 </form>
 {% endblock %}

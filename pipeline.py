@@ -174,7 +174,9 @@ SYSTEM = (
     "4. Use the field guidance excerpts to ground advice and say which source an idea comes from in plain words. "
     "Only use resource_id values from the catalog. Never invent statistics, funders, laws or links.\n"
     "5. Owners are roles (for example executive director, board chair, bookkeeper, program manager).\n"
-    "6. Strengths come from statements the organization answered favorably.")
+    "6. Strengths come from statements the organization answered favorably.\n"
+    "7. If progress since the last assessment is given, celebrate closed growth priorities and stage moves "
+    "first in the summary.")
 
 
 def _facts(sub):
@@ -191,6 +193,7 @@ def _facts(sub):
                                       "priority": g["priority"], "statement": g["question_text"],
                                       "engine_next_steps": g["next_steps"]} for g in sub["gaps"]],
         "favorable_statements_sample": favorable,
+        "progress_since_last_assessment": sub.get("progress"),  # deterministic, from app.compare
     }
 
 

@@ -2,6 +2,15 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v0.4.0 — Re-assessment progress, sample organizations, pitch deck
+
+- **Progress since your last assessment.** Submitting again under the same organization name compares the new answers with the previous assessment over the areas both covered: growth priorities closed, new ones, and stage moves per area. The comparison is deterministic (`app.compare`), shown on the results page and in the PDF, and passed to Claude so the summary celebrates progress first.
+- **Try a synthetic sample organization.** One-click submission of the three fictional organizations from the builder package (grassroots, mid-size, mature), with their profiles, in the chosen language and areas. For demos and CSF staff training.
+- Stage-move arrows use an SVG icon, since Atkinson Hyperlegible has no arrow glyph.
+- Store refactor: one `_get`/`_put` path for S3 and local JSON; organization pointers live under `submissions/by-org/`.
+- Pitch deck (`docs/pitch/index.html`) and a 3-minute demo script mapped to the judging criteria.
+- Unit test for the progress comparison.
+
 ## v0.3.0 — OCI Capacity Coach: grounded 30/60/90 plans, accessible UI, AWS deployment
 
 - **Hosted on AWS** with plain CloudFormation (`infra/template.yaml`): CloudFront → Lambda Function URL → one Python 3.12 Lambda (Flask via apig-wsgi). The AI pipeline runs as an async self-invoke; submissions are stored in S3. No VPC, NAT, load balancer or database; about $0 to $1 a month at demo traffic. `scripts/deploy.sh` builds, deploys and ingests the library in one command.

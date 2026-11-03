@@ -128,6 +128,56 @@
   </div>
 </section>
 
+{% set prog = sub.progress %}
+{% if prog %}
+{% set closed = prog.closed or [] %}
+{% set new_gaps = prog.new or [] %}
+{% set moves = prog.stages or [] %}
+{% set changed = [] %}{% for m in moves if m['from'] != m['to'] %}{% set _ = changed.append(m) %}{% endfor %}
+<section class="section" aria-labelledby="progress-title">
+  <h2 id="progress-title">Progress since your last assessment ({{ prog.previous_created }})</h2>
+  {% if not closed and not new_gaps and not changed %}
+  <p class="notice notice--info">{{ icon('info') }}<span>Your answers match your assessment on {{ prog.previous_created }}.</span></p>
+  {% else %}
+  <ul class="progress-stats" role="list">
+    <li class="card progress-stat">{{ icon('circle-check') }}<span><strong class="progress-stat__num">{{ closed | length }}</strong> growth priorit{{ 'y' if closed | length == 1 else 'ies' }} closed</span></li>
+    <li class="card progress-stat">{{ icon('flag') }}<span><strong class="progress-stat__num">{{ new_gaps | length }}</strong> new</span></li>
+  </ul>
+  {% if moves %}
+  <h3>Stage changes by area</h3>
+  <ul class="stage-moves" role="list">
+    {% for m in moves %}
+    {% set fi = stage_names.index(m['from']) if m['from'] in stage_names else -1 %}
+    {% set ti = stage_names.index(m['to']) if m['to'] in stage_names else -1 %}
+    <li class="stage-move{% if m['from'] == m['to'] %} is-same{% endif %}">
+      <span class="stage-move__name">{{ m.domain_name }}</span>
+      {% if m['from'] == m['to'] %}
+      <span class="stage-move__change">{{ m['to'] }}: No change</span>
+      {% else %}
+      <span class="stage-move__change">{{ m['from'] }} {{ icon('arrow-right') }}<span class="visually-hidden"> to </span> {{ m['to'] }}
+        {% if fi >= 0 and ti >= 0 %}<span class="badge badge--stage">{{ 'Moved up' if ti > fi else 'Moved back' }}</span>{% endif %}</span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if closed %}
+  <details class="about">
+    <summary>Show closed growth priorities ({{ closed | length }})</summary>
+    <ul class="progress-items">{% for g in closed %}<li><span class="chip">{{ g.id }}</span> {{ g.text }}</li>{% endfor %}</ul>
+  </details>
+  {% endif %}
+  {% if new_gaps %}
+  <details class="about">
+    <summary>Show new growth priorities ({{ new_gaps | length }})</summary>
+    <ul class="progress-items">{% for g in new_gaps %}<li><span class="chip">{{ g.id }}</span> {{ g.text }}</li>{% endfor %}</ul>
+  </details>
+  {% endif %}
+  {% endif %}
+  {% if prog.previous_id %}<p><a href="/results/{{ prog.previous_id }}">View previous report</a></p>{% endif %}
+</section>
+{% endif %}
+
 {% if report %}
 <p class="notice notice--ai">{{ icon('info') }}<span>Recommendations generated with AI from your answers and the CVI resource library. Scores are calculated by a fixed scoring method. Please review them with your team before acting.</span></p>
 

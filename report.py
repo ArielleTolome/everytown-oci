@@ -196,6 +196,30 @@ def build_pdf(sub, stage_descriptions):
         for s in report["strengths"]:
             pdf.bullet(s)
 
+    # 2b. Progress since the previous assessment
+    prog = sub.get("progress")
+    if prog:
+        pdf.h2("Progress since your last assessment")
+        closed, new, stages = prog.get("closed") or [], prog.get("new") or [], prog.get("stages") or []
+        if not (closed or new or stages):
+            pdf.para("Your answers match your assessment on %s." % prog.get("previous_created", ""))
+        else:
+            pdf.para("Compared with your assessment on %s, over the areas both assessments covered."
+                     % prog.get("previous_created", ""))
+            pdf.para("Closed growth priorities: %d  |  New growth priorities: %d" % (len(closed), len(new)), style="B")
+            pdf.ln(2)
+            if stages:
+                name = lambda s: STAGE_NAMES[s - 1] if isinstance(s, int) and 1 <= s <= 5 else str(s or "")
+                pdf.grid(["Area", "Then", "Now"],
+                         [["%s · %s" % (s["domain_id"], s["domain_name"]), name(s.get("from")), name(s.get("to"))]
+                          for s in stages], (80, 44, 44))
+            for title, items in (("Closed growth priorities", closed), ("New growth priorities", new)):
+                if items:
+                    pdf.para(title, style="B")
+                    for it in items:
+                        pdf.bullet("%s: %s" % (it["id"], it["text"]))
+                    pdf.ln(2)
+
     # 3. Organization profile
     if sub.get("profile"):
         pdf.h2("Organization profile")
