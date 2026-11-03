@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>Results: {{ sub.org_name }}</h2>
+<table>
+  <thead><tr><th>Domain</th><th>Capacity</th><th>Estimated stage</th><th>Gaps</th></tr></thead>
+  <tbody>
+  {% for d in sub.domains %}
+    <tr><td>{{ d.domain_name }}</td><td>{{ d.score_pct }}%</td><td>{{ d.estimated_stage }}</td><td>{{ d.gap_count }} / {{ d.total_questions }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h3>Preparing your recommendations</h3>
+<ul class="steps" id="steps" aria-live="polite">
+  {% for s in sub.steps %}<li class="{{ s.state }}">{{ s.label }}</li>{% endfor %}
+</ul>
+<p class="error" id="error" role="alert">{{ sub.error or '' }}</p>
+<a class="button" id="download" href="{{ url_for('pdf', sid=sub.id) }}" {% if sub.status != 'done' %}hidden{% endif %}>Download PDF report</a>
+
+<script>
+(function poll() {
+  fetch("{{ url_for('status', sid=sub.id) }}").then(r => r.json()).then(s => {
+    const ul = document.getElementById("steps");
+    ul.innerHTML = "";
+    s.steps.forEach(st => { const li = document.createElement("li"); li.className = st.state; li.textContent = st.label; ul.appendChild(li); });
+    document.getElementById("error").textContent = s.error || "";
+    if (s.status === "done") document.getElementById("download").hidden = false;
+    else if (s.status === "running") setTimeout(poll, 1500);
+  });
+})();
+</script>
+{% endblock %}

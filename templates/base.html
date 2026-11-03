@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Everytown OCI</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; line-height: 1.5; }
+  header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #c8102e; margin-bottom: 1.5rem; }
+  h1 { font-size: 1.4rem; margin: 0 0 .5rem; }
+  label { display: block; margin: .75rem 0 .25rem; font-weight: 600; }
+  input[type=text], input[type=password], input[type=url] { width: 100%; max-width: 420px; padding: .5rem; font-size: 1rem; }
+  button, .button { background: #c8102e; color: #fff; border: 0; padding: .6rem 1.2rem; font-size: 1rem; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; margin-top: 1rem; }
+  .error { color: #a00; font-weight: 600; }
+  fieldset { border: 1px solid #ddd; margin: .5rem 0; padding: .5rem .75rem; }
+  fieldset.missing { border-color: #a00; background: #fff4f4; }
+  fieldset legend { font-weight: 400; }
+  fieldset label { display: inline; font-weight: 400; margin-right: 1.5rem; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #ddd; }
+  .steps li { list-style: none; margin: .3rem 0; }
+  .steps li::before { display: inline-block; width: 1.5rem; }
+  .steps .pending::before { content: "\25CB"; }
+  .steps .running::before { content: "\25D4"; }
+  .steps .done::before { content: "\2713"; color: #087f23; }
+  .steps .error::before { content: "\2717"; color: #a00; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Organizational Capacity Index</h1>
+  {% if session.user %}<a href="{{ url_for('logout') }}">Log out</a>{% endif %}
+</header>
+<main>{% block body %}{% endblock %}</main>
+</body>
+</html>
