@@ -2,6 +2,18 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v0.3.0 — OCI Capacity Coach: grounded 30/60/90 plans, accessible UI, AWS deployment
+
+- **Hosted on AWS** with plain CloudFormation (`infra/template.yaml`): CloudFront → Lambda Function URL → one Python 3.12 Lambda (Flask via apig-wsgi). The AI pipeline runs as an async self-invoke; submissions are stored in S3. No VPC, NAT, load balancer or database; about $0 to $1 a month at demo traffic. `scripts/deploy.sh` builds, deploys and ingests the library in one command.
+- **Bedrock Knowledge Base on S3 Vectors** (Titan Text Embeddings v2) over a new CVI field-guide library (`resources/library/`, 9 guides distilled from the BJA checklist, HVIP brief, Dr. Roman and Dr. Tillmon decks). Retrieval runs once per assessed area with its top growth priorities. Without a KB, the library is injected into the prompt.
+- **Structured, validated recommendations.** Claude writes the report through Converse tool use with a JSON schema: summary, strengths, a 30 / 60 / 90 day action plan with role owners and steps, and a team conversation guide. `validate_report` keeps only actions that cite real growth priorities from the submission, and only links from the vetted 19-entry `resources/catalog.json`. Website profiles use Claude Haiku; reports use Claude Sonnet.
+- **Strength-based framing** from the OCI handoff deck: results lead with a stage ladder (Seeding to Transformational), gaps are "growth priorities", no em dashes in copy.
+- **Accessible UI rebuilt** to the project design system: one area per screen, Atkinson Hyperlegible, Display menu (larger text, high contrast), focusable error summaries, live processing status, read-aloud buttons, `lang`-tagged AI text, print stylesheet. axe-core reports no WCAG 2.2 A/AA violations on any page.
+- **Choose what to assess**: the four priority areas are pre-selected and any of the eight can be added. Website is optional. Reports in English or Spanish.
+- **PDF report** mirrors the sample reports (cover, executive summary, overview, domain results, priority action plan, recommendations by domain, full response record) and adds the AI plan, conversation guide and sources. Unicode fonts, bookmarks, document language.
+- Website fetch now re-checks every redirect hop against the public-IP guard. "Try again" reruns only the AI steps after a failure.
+- `resources/cvi_resources.md` is replaced by `resources/catalog.json`.
+
 ## v0.2.0 — End-to-end MVP web app
 
 - Flask web app (`app.py`) with a mocked login (`demo` / `demo`), organization form, and a questionnaire for the four priority domains: Planning, Fundraising, Financial Management, and ML&E (72 statements). The domain list can be changed with `OCI_DOMAINS`.

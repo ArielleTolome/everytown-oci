@@ -6,3 +6,5 @@ api.md
 *.zip
 *.HEIC
 instance/
+build/
+infra/.secret

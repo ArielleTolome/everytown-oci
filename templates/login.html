@@ -1,13 +1,33 @@
 {% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% block title %}Sign in{% endblock %}
+{% block main_class %}wrap wrap--narrow{% endblock %}
 {% block body %}
-<h2>Sign in</h2>
-<p>Demo build: sign in with <strong>demo</strong> / <strong>demo</strong>.</p>
-{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-<form method="post">
-  <label for="username">Username</label>
-  <input id="username" name="username" type="text" autocomplete="username" required>
-  <label for="password">Password</label>
-  <input id="password" name="password" type="password" autocomplete="current-password" required>
-  <br><button type="submit">Sign in</button>
-</form>
+<div class="card card--auth">
+  <h1>Sign in to OCI Capacity Coach</h1>
+  <p class="notice notice--info">{{ icon('info') }}<span>Demo environment: use the provided test credentials.</span></p>
+  <form method="post" action="/login" class="stack">
+    <div class="field">
+      <label for="username">Username</label>
+      <input class="input" type="text" id="username" name="username" value="{{ username or '' }}"
+             autocomplete="username" autocapitalize="none" spellcheck="false" required
+             {% if error %}aria-describedby="login-error" aria-invalid="true"{% endif %}>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <div class="input-group">
+        <input class="input" type="password" id="password" name="password" autocomplete="current-password" required
+               {% if error %}aria-describedby="login-error" aria-invalid="true"{% endif %}>
+        <button type="button" class="btn btn-secondary btn-icon" data-toggle-password="password"
+                aria-label="Show password" aria-pressed="false" data-js-only hidden>{{ icon('eye') }}</button>
+      </div>
+    </div>
+    {% if error %}
+    <p class="field-error" id="login-error" role="alert">{{ icon('alert') }}<span>{{ error }}</span></p>
+    {% endif %}
+    <div class="actions">
+      <button type="submit" class="btn btn-primary">{{ icon('lock') }}<span>Sign in</span></button>
+    </div>
+  </form>
+</div>
 {% endblock %}

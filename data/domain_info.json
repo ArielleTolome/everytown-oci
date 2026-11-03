@@ -1,0 +1,43 @@
+{
+ "stage_descriptions": {
+  "Seeding": "Early formation. Activity is reactive and largely informal; systems are not yet written down.",
+  "Emerging": "First structures appear. Basic documents and routines exist but are applied unevenly.",
+  "Developing": "Systems are in place and used consistently across the organization.",
+  "Strengthening": "Systems are mature, integrated with one another, and actively managed.",
+  "Transformational": "The organization operates as a sector model and supports the growth of peer organizations."
+ },
+ "domains": {
+  "PL": {
+   "about": "Planning assesses an organization's capability in strategic vision and long-term direction, operational planning and work plans, decision-making frameworks, and funding forecasting. Organizations progress from short-term, informal planning (Seeding) to becoming model organizations with multi-cycle strategic plans (Transformational). This domain is foundational because planning capacity drives effectiveness across all other domains.",
+   "connects": "Planning is a primary driver of the \"Strategic Planning & Organizational Development\" priority area. It directly supports Monitoring/Learning/Evaluation (what you plan to achieve shapes what you measure) and Governance (the board should be involved in strategic planning)."
+  },
+  "FR": {
+   "about": "Fundraising evaluates an organization's effectiveness in securing and diversifying financial resources. It covers revenue diversification and donor base, funding stability and predictability, grant size and type (restricted vs. unrestricted), and fundraising planning and strategy. Organizations progress from relying on a few small donors and in-kind resources (Seeding) to achieving long-term financial sustainability through endowments and investment income (Transformational).",
+   "connects": "Fundraising is a primary driver of the \"Financial Sustainability Systems\" priority area. It connects directly to Financial Management (you need systems to manage what you raise), Planning (fundraising strategy should align with strategic plan), and Community Engagement (visibility and reputation support donor cultivation)."
+  },
+  "GV": {
+   "about": "Governance assesses the structure, composition, and effectiveness of an organization's governing body (board of directors or advisory board). It covers board structure and composition, board engagement and meeting frequency, fiduciary oversight and accountability, board diversity and skill sets, and leadership succession planning. Organizations progress from having no governing group or founder-driven decisions (Seeding) to having a diversified, committee-driven board that serves as a model for others (Transformational).",
+   "connects": "Governance is a primary driver of the \"Governance Strengthening\" priority area. It directly connects to Financial Management (the board must approve budgets and audits), Planning (the board sets strategic direction), and Human Resources (the board evaluates the ED and ensures succession planning)."
+  },
+  "HR": {
+   "about": "Human Resource Development assesses staff compensation and benefits, recruitment and retention practices, job descriptions and role clarity, professional development and training, staff supervision and support, and organizational culture and trauma-informed practices. Organizations progress from mostly unpaid staff with no formal structure (Seeding) to being known as one of the best places to work with comprehensive benefits and low turnover (Transformational).",
+   "connects": "HR supports the \"Strategic Planning & Organizational Development\" and \"Governance Strengthening\" priority areas. It connects to Governance (board evaluates ED, succession planning), Planning (staffing plan aligns with strategic plan), and Financial Management (compensation is typically the largest budget line item)."
+  },
+  "FM": {
+   "about": "Financial Management assesses accounting systems and controls, budget development and accuracy, financial reporting and analysis, audit practices, cash flow management, and separation of financial duties. Organizations progress from small budgets with manual systems and no audits (Seeding) to having excellent multi-year audits with budgets that match actuals and are transparent to stakeholders (Transformational).",
+   "connects": "Financial Management is a primary driver of both the \"Governance Strengthening\" and \"Financial Sustainability Systems\" priority areas. It connects to Governance (board must approve and review financials), Fundraising (financial credibility attracts funders), and Planning (budgets must align with strategic plans)."
+  },
+  "ML": {
+   "about": "ML&E assesses data collection and record-keeping, outcome tracking and impact measurement, analysis and learning from data, feedback mechanisms, organizational learning culture, and sharing lessons learned. Organizations progress from informal monitoring with no documentation (Seeding) to evaluating community-level impact with community participation and being sought by others for guidance (Transformational).",
+   "connects": "ML&E is a primary driver of the \"Strategic Planning & Organizational Development\" priority area. It connects to Planning (what you measure should align with your strategic goals), Community Engagement (community feedback is part of evaluation), and Fundraising (demonstrating impact supports fundraising)."
+  },
+  "CE": {
+   "about": "Community Engagement assesses community awareness and reputation, network participation and partnerships, media presence and visibility, stakeholder relationships, advocacy and policy influence, and external recognition and awards. Organizations progress from being unknown outside their immediate community (Seeding) to having international recognition and direct policy influence (Transformational).",
+   "connects": "Community Engagement supports the \"Financial Sustainability Systems\" priority area. It connects to Fundraising (visibility attracts donors), ML&E (community feedback loops), and Planning (community input shapes strategy)."
+  },
+  "TI": {
+   "about": "Information Technology assesses hardware and equipment, internet connectivity and reliability, software systems and databases, website and online presence, IT support and maintenance, and data security and management. Organizations progress from having a couple of old shared computers with unreliable internet and no website (Seeding) to having full-time IT support, staff cell phones, database-driven reporting, and fast reliable connectivity (Transformational).",
+   "connects": "IT is a primary driver of the \"Financial Sustainability Systems\" priority area. It connects to Financial Management (accounting software), ML&E (data collection and databases), Community Engagement (website and communications), and Fundraising (donor management systems)."
+  }
+ }
+}
