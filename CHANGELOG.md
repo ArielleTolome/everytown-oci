@@ -2,6 +2,11 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.2.0 — Container package on GitHub Packages, and a "Try it live" link for judges
+
+- **Container image** `ghcr.io/arielletolome/everytown-oci` on GitHub Packages, published by `.github/workflows/package.yml` on every release tag (`latest`, the version and the commit). `Dockerfile` builds the Astro site and runs the Flask API plus the site on one port (`serve.py` under gunicorn, non-root), as CloudFront and S3 do on AWS. It needs AWS credentials with Bedrock access and the `everytown-oci-db` Aurora stack; `python -m db migrate` and `seed` run from the same image. `.dockerignore` keeps secrets, `infra/` and `instance/` out.
+- **Try it live:** the README opens with the live URL, the `demo` / `demo` and `staff` / `staff` logins and a three-step tour; the GitHub repository's website link and description point to the live app.
+
 ## v1.1.1 — Pitch deck for judging (PDF, Everytown Community Safety Fund look)
 
 - New 15-page pitch deck, `docs/pitch/OCI-Capacity-Coach-pitch.pdf`: 10 slides for an 8-minute pitch with a live demo (the need, what Everytown told us, the leader's and staff views, how it works, the Phoenix audit trail and evals, accessibility, impact and cost, the ask) and 5 appendix slides for questions (responsible AI, security and privacy, eval results, cost, roadmap).

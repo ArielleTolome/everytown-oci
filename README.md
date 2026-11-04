@@ -7,7 +7,21 @@ The Organizational Capacity Index (OCI) for community violence intervention (CVI
 
 AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/vision.md), [`docs/tech.md`](docs/tech.md).
 
-**Current release:** v1.1.1. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf) (built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`); 8-minute run of show and demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+## Try it live (for judges)
+
+| | |
+|---|---|
+| **Web app** | **https://d2mi2h3eu8y69s.cloudfront.net** |
+| Sign in as an organization leader | `demo` / `demo` |
+| Sign in as Everytown staff | `staff` / `staff` |
+
+1. Sign in as `demo`, open **Try a synthetic sample organization** and pick one: the answers are filled in, the stages appear at once and the AI report is ready in about 40 seconds. Or answer the questionnaire yourself (choose fewer areas to go faster).
+2. On the report: **Start here**, **Your 12-week roadmap**, **Ask about your report**, **Listen**, and **Download PDF report**.
+3. Sign out, sign in as `staff`: **Training needs**, **Ask the data**, **Peers**; click an organization for its drawer and its **View AI trace (staff)** link (the trace server asks for a login; we can share one on request).
+
+Everything in the app is synthetic, the login is mocked, and the URL is temporary: it is torn down after judging. New reports are capped per hour across all visitors, so if one is refused, try again later or open an existing report. Pitch deck: [`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf).
+
+**Current release:** v1.2.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 8-minute run of show and demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 The tool is designed to sit inside the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) Grantee Portal: CSF says new grantees "complete a self-assessment that shapes their participation in cohort-based and customized training through our Community Training Institute", and the portal is where grantees "sign up for future training opportunities and complete surveys". The look follows that site (navy and royal blue, serif headlines, pill buttons, pale-blue title bands).
 
@@ -138,6 +152,21 @@ scripts/teardown.sh                    # after judging: empty the buckets, delet
 
 Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Knowledge Base documents), `RESERVED_CONCURRENCY` (default 5), `MONTHLY_BUDGET_USD` (default 100, 0 skips the budget). The script is idempotent: the Lambda zip is uploaded under a content-hash key to `oci-artifacts-<account>-<region>`, the Flask session secret is generated once into `infra/.secret` (git-ignored), and fingerprinted `_astro/*` assets get a one-year cache while HTML is always revalidated. Cost: about $45 a month at the 0.5 ACU Aurora minimum (kept warm for the hackathon), about $1 to $3 a month with auto-pause, plus roughly $0.05 to $0.10 of Bedrock tokens per report (the static prompt is cached). `scripts/teardown.sh` also deletes the artifact bucket and keeps a final Aurora snapshot.
 
+## Container (GitHub Packages)
+
+Every release tag publishes `ghcr.io/arielletolome/everytown-oci` (`latest`, the version, and the commit) through `.github/workflows/package.yml`. The image runs the Flask API and the built Astro site on one port (`serve.py` under gunicorn), as CloudFront and S3 do on AWS. It is not standalone: it needs AWS credentials with Bedrock access to Claude and the `everytown-oci-db` stack (Aurora through the RDS Data API), because there is no local database.
+
+```
+docker pull ghcr.io/arielletolome/everytown-oci:latest
+# oci.env: AWS_DEFAULT_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (and AWS_SESSION_TOKEN),
+#          OCI_DB_CLUSTER_ARN, OCI_DB_SECRET_ARN, optional OCI_KB_ID and OCI_SECRET_KEY (see Configuration)
+docker run --rm --env-file oci.env ghcr.io/arielletolome/everytown-oci:latest python -m db migrate   # once
+docker run --rm --env-file oci.env ghcr.io/arielletolome/everytown-oci:latest python -m db seed      # optional: 20 synthetic organizations
+docker run --rm -p 8000:8000 --env-file oci.env ghcr.io/arielletolome/everytown-oci:latest
+```
+
+Open http://127.0.0.1:8000 and sign in with `demo` / `demo` or `staff` / `staff`. The AI steps run in a background thread of the one gunicorn worker. Build it yourself with `docker build -t oci-coach .`; secrets, `infra/` and `instance/` are excluded by `.dockerignore`.
+
 ## Configuration
 
 | Variable | Default | Purpose |
@@ -158,6 +187,7 @@ Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Know
 | Path | Purpose |
 |---|---|
 | `app.py` | Flask JSON API: auth (mocked roles), validation, scoring, progress comparison, job dispatch (thread or async Lambda), staff analytics. |
+| `serve.py`, `Dockerfile`, `.github/workflows/package.yml` | Container image: the API plus the built site on one port, published to GitHub Packages on each release tag. |
 | `db.py`, `schema.sql` | Aurora Data API layer, analytics queries, `migrate` (schema.sql plus `features/*.sql`) and `seed` CLI. |
 | `features/` | Feature modules, each a Flask Blueprint auto-registered by `app.py`: `coach.py` (Ask about your report), `tts.py` (Polly audio), `drafts.py` (save, resume, share an area), `orgmeta.py` (organization details, respondent roles, budgets), `staff_ai.py` (training briefs), `milestones.py` (12-week roadmap, gamification, weekly PDF), `bi.py` (staff BI, Ask the data, network report PDF), `peers.py` (similarity and peer groups), `peers_request.py` (connect requests). |
 | `frontend/public/content/` | `glossary.json` and `questions_es.json`, generated once offline by `scripts/gen_content.py` and reviewed (re-running it overwrites the manual fixes). |

@@ -1,0 +1,13 @@
+.git
+**/__pycache__
+**/node_modules
+frontend/dist
+build
+instance
+infra
+docs
+evals/results
+tests
+.env*
+api.md
+*.zip
