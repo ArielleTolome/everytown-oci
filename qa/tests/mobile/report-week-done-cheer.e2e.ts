@@ -28,11 +28,22 @@ test('the week-done message is on screen after the last step of a week', { sessi
     box.click();
     return box.dataset.week;
   });
-  await expect(screen.getByText(new RegExp(`^Week ${week} done! \\+35 points`))).toBeVisible();
-  const cheer = await browser.evaluate(() => {
-    const r = document.querySelector('#rm-cheer')!.getBoundingClientRect();
-    return { top: Math.round(r.top), bottom: Math.round(r.bottom), vh: innerHeight };
-  });
+  // The same words also go to the hidden screen-reader announcement a moment later, so read the visible message itself.
+  const cheer = await browser.evaluate(async (w: string) => {
+    for (let i = 0; i < 50; i++) {
+      const el = document.querySelector<HTMLElement>('#rm-cheer');
+      if (el && !el.hidden && el.textContent!.trim().startsWith(`Week ${w} done! +35 points`)) {
+        const r = el.getBoundingClientRect();
+        return { top: Math.round(r.top), bottom: Math.round(r.bottom), vh: innerHeight };
+      }
+      const { promise, resolve } = Promise.withResolvers<void>();
+      setTimeout(resolve, 100);
+      await promise;
+    }
+    return null;
+  }, week!);
+  expect(cheer).not.toBeNull();
+  if (!cheer) return;
   expect(cheer.top).toBeGreaterThanOrEqual(0);
   expect(cheer.bottom).toBeLessThanOrEqual(cheer.vh);
 });
