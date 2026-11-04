@@ -29,7 +29,7 @@ function start(cmd, args, opts) {
 
 if (!process.env.OCI_A11Y_BASE) {
   start(process.env.PYTHON || "python3", ["a11y/stub_api.py"]);
-  start("npx", ["astro", "dev", "--port", "4321"]);
+  start("npx", ["astro", "dev", "--host", "127.0.0.1", "--port", "4321"]);
   await up("http://127.0.0.1:8000/api/healthz");
   await up(BASE + "/login/");
 }
@@ -61,6 +61,7 @@ try {
     for (const [mode, prefs] of Object.entries(MODES)) {
       for (const width of WIDTHS) {
         await p.setViewportSize({ width, height: 900 });
+        if (!p.url().startsWith(BASE)) await p.goto(BASE + "/login/");
         await p.evaluate(([prefs, draft]) => {
           localStorage.setItem("oci-display", JSON.stringify(prefs));
           localStorage.setItem("oci-draft", JSON.stringify(draft));
@@ -99,22 +100,28 @@ try {
     if (!target || !skip.href?.endsWith(target.replace(/^#/, ""))) fail("keyboard", `skip link did not move focus to ${skip.href} (focus on ${target})`);
   }
 
-  // Keyboard: Y / N answer the focused statement only, and do nothing when focus is in a text field.
-  await page.evaluate((d) => { localStorage.setItem("oci-draft", JSON.stringify(d)); localStorage.removeItem("oci-q-view"); }, draft);
-  await page.goto(BASE + "/questionnaire/#1", { waitUntil: "networkidle" });
-  const first = page.locator("fieldset").first();
-  await first.locator("input, button").first().focus();
-  await page.keyboard.press("y");
-  const answered = await page.evaluate(() => JSON.parse(localStorage.getItem("oci-draft") || "{}").answers || {});
-  if (!Object.values(answered).includes("yes")) fail("keyboard", "pressing Y in a statement did not record a yes");
-  const text = page.locator("input[type=search], input[type=text], textarea").first();
-  if (await text.count()) {
-    const before = JSON.stringify(await page.evaluate(() => JSON.parse(localStorage.getItem("oci-draft") || "{}").answers));
-    await text.focus();
-    await page.keyboard.press("n");
-    const after = JSON.stringify(await page.evaluate(() => JSON.parse(localStorage.getItem("oci-draft") || "{}").answers));
-    if (before !== after) fail("keyboard", "pressing N while typing in a text field changed an answer");
+  // Keyboard: Y / N answer the focused statement only (WCAG 2.1.4), in both the one-at-a-time and the Yes/No views,
+  // and do nothing when focus is in a text field.
+  const answers = () => page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem("oci-draft") || "{}").answers || {}));
+  for (const [view, statement] of [["quick", "#quick-card .quick__btn"], ["yn", "fieldset.question input"]]) {
+    await page.evaluate(([d, v]) => { localStorage.setItem("oci-draft", JSON.stringify(d)); localStorage.setItem("oci-q-view", v); }, [draft, view]);
+    await page.goto(`${BASE}/questionnaire/?view=${view}#1`, { waitUntil: "networkidle" }); // a new URL forces a reload
+    const target = page.locator(statement).first();
+    if (!(await target.count())) { fail("keyboard", `${view} view: no statement control found (${statement})`); continue; }
+    await target.focus();
+    await page.keyboard.press("y");
+    await sleep(200);
+    if (!(await answers()).includes('"yes"')) fail("keyboard", `${view} view: pressing Y in a statement did not record a yes`);
+    const text = page.locator("input[type=search], input[type=text], textarea").first();
+    if (await text.count() && await text.isVisible()) {
+      const before = await answers();
+      await text.focus();
+      await page.keyboard.press("n");
+      await sleep(200);
+      if (before !== (await answers())) fail("keyboard", `${view} view: pressing N while typing in a text field changed an answer`);
+    }
   }
+  await page.evaluate(() => localStorage.removeItem("oci-q-view"));
 
   // Keyboard: the Display menu opens from the keyboard and Escape closes it, returning focus to its button.
   await page.goto(BASE + "/", { waitUntil: "networkidle" });

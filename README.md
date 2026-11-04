@@ -199,7 +199,7 @@ priority_score    = stage_weight * domain_weight * gap_density_bonus
 - The questionnaire offers a checklist view, Y/N keyboard shortcuts (only when focus is in a statement), plain-language jargon help and a Spanish translation.
 - The PDF uses real text, bookmarks per section, a document language and title.
 - The sticky questionnaire action bar reserves its height with `scroll-padding-bottom`, so it never hides the focused control (WCAG 2.4.11).
-- Checked with axe-core (WCAG 2.0/2.1/2.2 A and AA rules) at 1280 and 375 px: no violations on login, organization, questionnaire, processing, report and staff pages.
+- Checked with axe-core (WCAG 2.0/2.1/2.2 A and AA rules) at 1280 and 375 px, in the default and the larger-text + high-contrast modes: no violations on login, organization, questionnaire, report, roadmap, resume, 404 and staff pages. Rerun it with `cd frontend && npm run a11y` (`PYTHON=../.venv/bin/python` if Flask is in a venv). It needs no AWS: `frontend/a11y/stub_api.py` serves the real API from memory with a canned, validated report. It also checks the skip link, the Y/N shortcuts in both questionnaire views (and that they are ignored while typing), and that Escape closes the Display menu.
 
 ## Design process
 
