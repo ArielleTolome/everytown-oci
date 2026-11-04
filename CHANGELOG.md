@@ -2,6 +2,14 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.1.1 — Pitch deck for judging (PDF, Everytown Community Safety Fund look)
+
+- New 15-page pitch deck, `docs/pitch/OCI-Capacity-Coach-pitch.pdf`: 10 slides for an 8-minute pitch with a live demo (the need, what Everytown told us, the leader's and staff views, how it works, the Phoenix audit trail and evals, accessibility, impact and cost, the ask) and 5 appendix slides for questions (responsible AI, security and privacy, eval results, cost, roadmap).
+- Styled after the Community Safety Fund site: navy header with the orange three-bar mark and red stripe, pale title bands, Source Serif 4 headlines, orange only as decoration or as text on navy (7.3:1). Rules in `design-system/everytown-oci/pages/pitch.md`. axe-core finds no violations on any slide.
+- Fresh screenshots from the live v1.1 app (synthetic sample organizations) and Phoenix; `sample-report.pdf` replaced with a live v1.1 report.
+- `docs/pitch/index.html` is the source (arrows to present, `N` for timed speaker notes); `scripts/build_pitch_pdf.py` renders it to the PDF, one 1920x1080 page per slide.
+- `docs/pitch/demo-script.md` rewritten for v1.1: a 7:40 run of show by slide, the 2:30 live demo click by click (ending on the staff "View AI trace" link), setup steps and numbers for questions.
+
 ## v1.1.0 — Observability, audit trail and evals (Arize Phoenix on its own server)
 
 **Hosted observability**
