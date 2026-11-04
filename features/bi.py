@@ -49,7 +49,8 @@ def load():
         "count(*) FILTER (WHERE created_at > now() - interval '30 days') OVER (PARTITION BY org_id) AS recent "
         "FROM assessments) "
         "SELECT r.org_id::text AS id, r.id::text AS assessment_id, r.n, r.total, r.recent, o.name, a.source, "
-        "to_char(r.created_at, 'YYYY-MM-DD') AS created, o.program_models::text AS models, o.staff_size, o.state, "
+        "to_char(r.created_at, 'YYYY-MM-DD') AS created, o.program_models::text AS models, o.staff_size, "
+        "o.states::text AS states, "
         "COALESCE(to_jsonb(o)->>'budget', a.doc->'org_meta'->>'budget') AS budget, "
         "COALESCE(to_jsonb(a)->>'respondent_role', a.doc->'respondent'->>'role') AS role, "
         "(a.doc->'answered_by')::text AS answered_by, a.doc->'trace'->>'url' AS trace_url, "
@@ -73,7 +74,8 @@ def load():
             answered_by = json.loads(r["answered_by"] or "null")
             orgs[r["id"]] = dict(snap, id=r["id"], name=r["name"], source=r["source"], assessments=r["total"],
                                  recent=r["recent"], program_models=json.loads(r["models"] or "[]"),
-                                 staff_size=r["staff_size"], budget=r["budget"], state=r["state"], role=r["role"],
+                                 staff_size=r["staff_size"], budget=r["budget"],
+                                 states=json.loads(r["states"] or "[]"), role=r["role"],
                                  answered_by=answered_by if isinstance(answered_by, dict) else {}, prev=None,
                                  trace_url=r["trace_url"], trace_cloudwatch_url=r["trace_cloudwatch_url"])
         elif r["id"] in orgs:
@@ -125,10 +127,12 @@ def clean_filters(raw, ctx):
 
 
 def apply_filters(orgs, filters):
+    """Program model and state match when the organization lists the value among others (issue #23)."""
     f = filters
     return [o for o in orgs
             if (not f.get("program_model") or f["program_model"] in o["program_models"])
-            and all(not f.get(k) or o.get(k) == f[k] for k in ("staff_size", "budget", "state", "role"))]
+            and (not f.get("state") or f["state"] in o["states"])
+            and all(not f.get(k) or o.get(k) == f[k] for k in ("staff_size", "budget", "role"))]
 
 
 def _high(o, d):
@@ -290,7 +294,7 @@ def org_detail(o, ctx):
     """What the staff drawer shows for one organization (stages carry the within-model percentile)."""
     return {"id": o["id"], "name": o["name"], "assessment_id": o["assessment_id"], "assessed": o["created"],
             "source": o["source"], "assessments": o["assessments"], "program_models": o["program_models"],
-            "staff_size": o["staff_size"], "budget": o["budget"], "state": o["state"], "role": o["role"],
+            "staff_size": o["staff_size"], "budget": o["budget"], "states": o["states"], "role": o["role"],
             "asked": o["asked"], "asked_at": o["asked_at"], "trace_url": o.get("trace_url"),
             "trace_cloudwatch_url": o.get("trace_cloudwatch_url"),
             "stages": [dict(o["stages"][d], domain_id=d, domain_name=ctx["names"][d], high=_high(o, d))

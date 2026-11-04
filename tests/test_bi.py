@@ -11,11 +11,11 @@ from features import bi, peers  # noqa: E402
 CTX = bi.context()
 
 
-def org(name, stages=None, gaps=(), asked=(), models=(), size=None, budget=None, prev=None):
+def org(name, stages=None, gaps=(), asked=(), models=(), size=None, budget=None, prev=None, states=()):
     stages = stages or {"PL": ("Seeding", 40.0), "FR": ("Emerging", 50.0)}
     return {"id": name, "name": name, "assessment_id": "a-" + name, "created": "2026-10-01", "source": "seed",
             "assessments": 2 if prev else 1, "recent": 1, "program_models": list(models), "staff_size": size,
-            "budget": budget, "state": None, "role": None, "answered_by": {}, "support": list(asked),
+            "budget": budget, "states": list(states), "role": None, "answered_by": {}, "support": list(asked),
             "asked": list(asked), "asked_at": "2026-10-02" if asked else None, "prev": prev,
             "stages": {d: {"stage": s, "score": p} for d, (s, p) in stages.items()}, "gaps": list(gaps)}
 
@@ -127,6 +127,13 @@ class AskRouter(unittest.TestCase):
         orgs = [org("A", gaps=[("FR3", "High"), ("FR4", "High")]), org("B", asked=["FR"]), org("C")]
         t = bi.run("training_needs", "FR", {}, None, orgs, CTX)
         self.assertEqual(t["rows"], [["A", 2, "No"], ["B", 0, "Yes"]])
+
+    def test_state_filter_matches_any_of_an_organizations_states(self):
+        # issue #23: an organization in Illinois and Indiana counts for both, in the dashboard and in Ask the data
+        orgs = [org("A", states=["IL", "IN"]), org("B", states=["IN"]), org("C")]
+        self.assertEqual([o["name"] for o in bi.apply_filters(orgs, {"state": "IL"})], ["A"])
+        self.assertEqual([o["name"] for o in bi.apply_filters(orgs, {"state": "IN"})], ["A", "B"])
+        self.assertEqual(bi.route({"analysis": "training_needs", "filters": {"state": "IN"}}, CTX)[2], {"state": "IN"})
 
 
 class StaffOnly(unittest.TestCase):

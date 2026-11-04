@@ -11,7 +11,7 @@
    ],
    "staff_size": "1-5",
    "budget": "$250K to $1M",
-   "state": "IL"
+   "states": ["IL"]
   },
   "respondent": {"name": null, "title": "Founder and executive director", "role": "Executive director"}
  },
@@ -27,7 +27,7 @@
    ],
    "staff_size": "11-20",
    "budget": "$1M to $5M",
-   "state": "OH"
+   "states": ["OH"]
   },
   "respondent": {"name": null, "title": "Executive director", "role": "Executive director"}
  },
@@ -44,7 +44,7 @@
    ],
    "staff_size": "21-50",
    "budget": "Over $5M",
-   "state": "CA"
+   "states": ["CA"]
   },
   "respondent": {"name": null, "title": "Chief operating officer", "role": "Other leadership role"}
  }

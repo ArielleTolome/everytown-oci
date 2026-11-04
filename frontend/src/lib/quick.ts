@@ -75,6 +75,11 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
   let since = 0; // answers since the last encouragement line
   let shown = 0;
   let cheer = "";
+  // Cards in the order they were shown: Previous pops `seen`; Next after Previous walks `ahead` again before the next
+  // unanswered card. An area opened part way starts as if its answered cards before this one had just been walked.
+  const seen: number[] = steps.slice(0, pos).map((_, i) => i);
+  const ahead: number[] = [];
+  let reviewing = false; // "Look over this area": Next walks every card in order
   // Spanish questions get Spanish controls; `sp` is trusted HTML (escape any data put in it).
   const tr = (en: string, sp: string) => (ctx.spanish() ? `<span lang="es">${sp}</span>` : en);
   const yesNo = (v: Answer) => tr(v === "yes" ? "Yes" : "No", v === "yes" ? "Sí" : "No");
@@ -82,25 +87,27 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
   host.innerHTML = `<section class="quick" aria-label="One statement at a time">
       <div class="quick__meter">
         <p class="quick__count" id="quick-count"></p>
-        <progress id="area-progress" max="${d.questions.length}" value="0" aria-labelledby="quick-count"></progress>
+        <progress id="area-progress" max="${steps.length}" value="0" aria-labelledby="quick-count"></progress>
       </div>
       <div class="quick__card" id="quick-card"></div>
     </section>`;
   const card = $("#quick-card", host)!;
 
+  /** Where the person is: the current card's position among the area's cards (the area-complete card is the last). */
   function meter() {
-    const done = d.questions.filter((q) => a[q.id]).length;
+    const m = steps.length;
+    const n = Math.min(pos + 1, m);
     const count = $("#quick-count", host)!;
     // The area name is its own span: under 380px it is left for screen readers (the heading above names the area).
-    count.innerHTML = ctx.spanish() ? `${done} de ${d.questions.length} respondidas<span class="quick__count-area"> en ${esc(ctx.name)}</span>`
-      : `${done} of ${d.questions.length} answered<span class="quick__count-area"> in ${esc(ctx.name)}</span>`;
+    count.innerHTML = ctx.spanish() ? `Pregunta ${n} de ${m}<span class="quick__count-area"> en ${esc(ctx.name)}</span>`
+      : `Question ${n} of ${m}<span class="quick__count-area"> in ${esc(ctx.name)}</span>`;
     if (ctx.spanish()) count.lang = "es"; else count.removeAttribute("lang");
     const bar = $<HTMLProgressElement>("#area-progress", host)!;
-    bar.value = done;
-    bar.textContent = `${Math.round((done / d.questions.length) * 100)}%`;
+    bar.value = n;
+    bar.textContent = `${Math.round((n / m) * 100)}%`;
   }
 
-  const prevBtn = () => (pos > 0 ? `<button type="button" class="btn btn-secondary btn-sm" id="quick-prev">${icon("arrow-left")}<span>${tr("Previous", "Anterior")}</span></button>` : "");
+  const prevBtn = () => (seen.length ? `<button type="button" class="btn btn-secondary btn-sm" id="quick-prev">${icon("arrow-left")}<span>${tr("Previous", "Anterior")}</span></button>` : "");
 
   function stmtStep(q: Question): string {
     const cur = a[q.id];
@@ -115,7 +122,7 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
       ${q.reverse ? `<p class="check-item__note">${icon("info")}<span>${tr("A Yes here counts as a growth priority.", "Un Sí aquí cuenta como prioridad de crecimiento.")}</span></p>` : ""}
       ${ctx.helpFor(q)}
       <div class="quick__answers" role="group" aria-labelledby="quick-focus">${btn("yes")}${btn("no")}</div>
-      <div class="quick__nav">${prevBtn()}${cur ? `<button type="button" class="btn btn-secondary btn-sm" id="quick-fwd"><span>${tr("Keep my answer", "Mantener mi respuesta")}</span>${icon("arrow-right")}</button>` : ""}</div>
+      <div class="quick__nav">${prevBtn()}${cur ? `<button type="button" class="btn btn-secondary btn-sm" id="quick-fwd"><span>${tr("Next", "Siguiente")}</span>${icon("arrow-right")}</button>` : ""}</div>
       <p class="quick__keys">${tr("Keyboard: press Y for Yes, N for No, or the left arrow to go back.", "Teclado: pulse S para Sí, N para No, o la flecha izquierda para volver.")}</p>`;
   }
 
@@ -182,12 +189,26 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
     if (focus) focusEl($("#quick-focus", card));
   }
 
-  /** Next unanswered step after this one, then any earlier one, else the area-complete screen. */
-  function advance() {
-    const after = steps.findIndex((s, i) => i > pos && !answered(s));
-    pos = after >= 0 ? after : firstOpen();
-    confirm = false;
+  /** Show card `i`; an answered multiple-choice question shows its "Based on your choice" step. */
+  function at(i: number) {
+    pos = i;
+    confirm = steps[i]?.kind === "ladder" && answered(steps[i]);
     show(true);
+  }
+
+  /** Forward: the cards left by Previous first, then the next unanswered one after this, then any earlier one, else the area-complete card. */
+  function advance() {
+    seen.push(pos);
+    if (ahead.length) { at(ahead.pop()!); return; }
+    const after = steps.findIndex((s, i) => i > pos && !answered(s));
+    at(reviewing ? pos + 1 : after >= 0 ? after : firstOpen());
+  }
+
+  /** A jump (error summary, "Look over this area") starts a new path: Previous returns to the card left. */
+  function jump(i: number) {
+    ahead.length = 0;
+    if (i !== pos) seen.push(pos);
+    at(i);
   }
 
   /** Short exit transition (none under reduced motion), then the next card. */
@@ -220,10 +241,9 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
   }
 
   function back() {
-    if (busy || pos === 0) return;
-    pos--;
-    confirm = steps[pos].kind === "ladder" && answered(steps[pos]);
-    show(true);
+    if (busy || !seen.length) return;
+    ahead.push(pos);
+    at(seen.pop()!);
   }
 
   card.addEventListener("click", (e) => {
@@ -242,7 +262,7 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
     } else if (el.id === "quick-prev") back();
     else if (el.id === "quick-fwd" || el.id === "quick-continue") leave(advance);
     else if (el.id === "quick-rechoose") { confirm = false; show(true); }
-    else if (el.id === "quick-review") { pos = 0; confirm = answered(steps[0]) && steps[0].kind === "ladder"; show(true); }
+    else if (el.id === "quick-review") { reviewing = true; jump(0); }
     // A real submit, so the teammate hand-off in draft.ts can take over.
     else if (el.id === "quick-next") $<HTMLFormElement>("#area-form")?.requestSubmit();
   });
@@ -267,9 +287,7 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
     goTo(id: string) {
       const i = steps.findIndex((s) => (s.kind === "stmt" ? s.q.id === id : s.l.statements.includes(id)));
       if (i < 0) return;
-      pos = i;
-      confirm = steps[i].kind === "ladder" && answered(steps[i]);
-      show(true);
+      jump(i);
     },
   };
 }

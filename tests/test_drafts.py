@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import app as oci  # noqa: E402
 from features import drafts, staff_ai  # noqa: E402
 import pipeline  # noqa: E402
-from features.orgmeta import clean_org_meta  # noqa: E402
+from features.orgmeta import MAX_STATES, STATES, clean_org_meta  # noqa: E402
 
 HAS_DB = bool(os.environ.get("OCI_DB_CLUSTER_ARN"))
 
@@ -23,12 +23,23 @@ def client(role="demo"):
 class OrgMeta(unittest.TestCase):
     def test_only_known_values_are_kept(self):
         self.assertEqual(clean_org_meta({"program_models": ["Therapy/CBT", "Bowling", "Street outreach"],
-                                         "staff_size": "6-10", "budget": "Over $5M", "state": "PR"}),
+                                         "staff_size": "6-10", "budget": "Over $5M", "states": ["PR"]}),
                          {"program_models": ["Street outreach", "Therapy/CBT"], "staff_size": "6-10",
-                          "budget": "Over $5M", "state": "PR"})
+                          "budget": "Over $5M", "states": ["PR"]})
         self.assertEqual(clean_org_meta({"budget": "$3"}), None)
         self.assertEqual(clean_org_meta({"program_models": "Street outreach", "staff_size": "7", "state": "XX"}), None)
         self.assertIsNone(clean_org_meta("nope"))
+
+    def test_states_are_known_codes_deduped_in_order_and_capped(self):
+        # issue #23: an organization can work in several states or territories
+        self.assertEqual(clean_org_meta({"states": ["IL", "NY", "XX", "IL"]})["states"], ["IL", "NY"])
+        self.assertEqual(clean_org_meta({"states": ["NY", "IL"], "state": "CA"})["states"], ["NY", "IL"])
+        self.assertEqual(clean_org_meta({"states": list(STATES)})["states"], list(STATES)[:MAX_STATES])
+        self.assertIsNone(clean_org_meta({"states": ["XX", 3, None, ["IL"]]}))
+
+    def test_a_draft_saved_before_the_change_keeps_its_one_state(self):
+        self.assertEqual(clean_org_meta({"state": "IL"})["states"], ["IL"])
+        self.assertEqual(drafts.clean({"org_meta": {"staff_size": "1-5", "state": "PR"}})["org_meta"]["states"], ["PR"])
 
 
 class DraftData(unittest.TestCase):

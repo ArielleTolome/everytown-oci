@@ -1,5 +1,5 @@
-"""Organization details (program model, staff size, budget, state), who filled out the assessment, and public links
-for personalization. Fixed lists only, so the values can be counted; nothing here is scored."""
+"""Organization details (program model, staff size, budget, states or territories), who filled out the assessment, and
+public links for personalization. Fixed lists only, so the values can be counted; nothing here is scored."""
 from flask import Blueprint, jsonify, session
 
 bp = Blueprint("orgmeta", __name__)
@@ -11,6 +11,7 @@ BUDGETS = ["Under $250K", "$250K to $1M", "$1M to $5M", "Over $5M"]
 RESPONDENT_ROLES = ["Executive director", "Finance lead or bookkeeper", "Board chair or member", "Program director",
                     "Other leadership role"]
 MAX_SOCIAL = 5
+MAX_STATES = 10
 STATES = {
     "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California", "CO": "Colorado",
     "CT": "Connecticut", "DE": "Delaware", "DC": "District of Columbia", "FL": "Florida", "GA": "Georgia",
@@ -26,16 +27,18 @@ STATES = {
 
 
 def clean_org_meta(raw):
-    """Keep only known values; None when nothing valid was given (the fieldset is optional)."""
+    """Keep only known values; None when nothing valid was given (the fieldset is optional). States are a list of
+    codes, deduped in order; a draft saved before v1.9 holds one `state` code instead."""
     raw = raw if isinstance(raw, dict) else {}
     models = raw.get("program_models")
+    states = raw.get("states") if isinstance(raw.get("states"), list) else [raw.get("state")]
     meta = {
         "program_models": [m for m in PROGRAM_MODELS if isinstance(models, list) and m in models],
         "staff_size": raw.get("staff_size") if raw.get("staff_size") in STAFF_SIZES else None,
         "budget": raw.get("budget") if raw.get("budget") in BUDGETS else None,
-        "state": raw.get("state") if isinstance(raw.get("state"), str) and raw["state"] in STATES else None,
+        "states": list(dict.fromkeys(s for s in states if isinstance(s, str) and s in STATES))[:MAX_STATES],
     }
-    return meta if meta["program_models"] or meta["staff_size"] or meta["budget"] or meta["state"] else None
+    return meta if meta["program_models"] or meta["staff_size"] or meta["budget"] or meta["states"] else None
 
 
 def clean_respondent(raw):

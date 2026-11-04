@@ -156,18 +156,19 @@ def create(sub, source, created_at=None, owner=None):
     tx = _call(_client().begin_transaction)["transactionId"]
     try:
         meta = sub.get("org_meta")  # optional start-page details; an assessment without them keeps the stored ones
-        org = query("INSERT INTO organizations (id, name, name_key, website, program_models, staff_size, state, budget) "
-                    "VALUES (:id, :name, :key, :website, CAST(:models AS jsonb), :size, :state, :budget) "
+        org = query("INSERT INTO organizations (id, name, name_key, website, program_models, staff_size, states, budget) "
+                    "VALUES (:id, :name, :key, :website, CAST(:models AS jsonb), :size, CAST(:states AS jsonb), :budget) "
                     "ON CONFLICT (name_key) DO UPDATE SET name = EXCLUDED.name, website = "
                     "CASE WHEN EXCLUDED.website = '' THEN organizations.website ELSE EXCLUDED.website END, "
                     "program_models = CASE WHEN :has_meta THEN EXCLUDED.program_models ELSE organizations.program_models END, "
                     "staff_size = CASE WHEN :has_meta THEN EXCLUDED.staff_size ELSE organizations.staff_size END, "
-                    "state = CASE WHEN :has_meta THEN EXCLUDED.state ELSE organizations.state END, "
+                    "states = CASE WHEN :has_meta THEN EXCLUDED.states ELSE organizations.states END, "
                     "budget = CASE WHEN :has_meta THEN EXCLUDED.budget ELSE organizations.budget END "
                     "RETURNING id::text AS id", tx=tx, id=str(uuid.uuid4()), name=sub["org_name"],
                     key=name_key(sub["org_name"]), website=sub["org_url"],
                     models=json.dumps((meta or {}).get("program_models") or []), size=(meta or {}).get("staff_size"),
-                    state=(meta or {}).get("state"), budget=(meta or {}).get("budget"), has_meta=bool(meta))[0]["id"]
+                    states=json.dumps((meta or {}).get("states") or []), budget=(meta or {}).get("budget"),
+                    has_meta=bool(meta))[0]["id"]
         query("INSERT INTO assessments (id, org_id, created_at, source, language, status, doc, owner, respondent_role) "
               "VALUES (:id, :org_id, COALESCE(CAST(:created_at AS timestamptz), now()), :source, :language, :status, "
               ":doc, :owner, :role)",
@@ -237,12 +238,13 @@ def analytics(domains, stage_names):
                      "to_char(la.created_at, 'YYYY-MM-DD') AS assessed, "
                      "(SELECT count(*) FROM gaps g WHERE g.assessment_id = la.id) AS gap_count, "
                      "(SELECT count(*) FROM gaps g WHERE g.assessment_id = la.id AND g.priority = 'High') AS high_count, "
-                     "o.program_models::text AS program_models, o.staff_size, o.state, o.budget, "
+                     "o.program_models::text AS program_models, o.staff_size, o.states::text AS states, o.budget, "
                      "(SELECT a.respondent_role FROM assessments a WHERE a.id = la.id) AS respondent_role "
                      "FROM latest_assessments la JOIN organizations o ON o.id = la.org_id ORDER BY o.name")
     for o in org_rows:
         o["org_meta"] = {"program_models": json.loads(o.pop("program_models") or "[]"),
-                         "staff_size": o.pop("staff_size"), "state": o.pop("state"), "budget": o.pop("budget")}
+                         "staff_size": o.pop("staff_size"), "states": json.loads(o.pop("states") or "[]"),
+                         "budget": o.pop("budget")}
     bench = query("SELECT assessment_id::text AS assessment_id, domain_id, estimated_stage, score_pct::float AS score_pct, "
                   "percentile::int AS percentile FROM domain_benchmarks")
     per = {}
@@ -333,8 +335,10 @@ def _seed_meta(i):
     state = r.choice(["IL", "NY", "CA", "PA", "MD", "GA"])
     budget = r.choice({"1-5": ["Under $250K", "Under $250K", "$250K to $1M"], "6-10": ["$250K to $1M"],
                        "11-20": ["$250K to $1M", "$1M to $5M"], "21-50": ["$1M to $5M"]}[size])
+    # A few metro areas cross a state line (Chicago, New York, Lake Tahoe, Philadelphia, Washington DC, Augusta).
+    other = {"IL": "IN", "NY": "NJ", "CA": "NV", "PA": "NJ", "MD": "DC", "GA": "SC"}[state]
     return {"program_models": [m for m in PROGRAM_MODELS if m in picked], "staff_size": size, "budget": budget,
-            "state": state}
+            "states": [state, other] if i % 4 == 1 else [state]}
 
 
 def _seed_respondent(i):

@@ -45,7 +45,20 @@ an instance role, so on EC2 run `eval "$(aws configure export-credentials --form
 | `tests/regressions/answer-click-no-scroll-jump.e2e.ts` | Focus landing on `<main>` (what clicking an answer label does) never scrolls the questionnaire; it jumped to the page bottom before v1.7. |
 | `tests/quality.e2e.ts` | v1.7: staff see the four Quality and follow-through sections and a report's feedback card (read-only); organizations get 403 from the staff quality, opt-in and funnel APIs. |
 | `tests/mobile/phone-flow.e2e.ts` | v1.8 phone promises (phone-only checks skip on `web`): no sideways scroll and 16 px fields on sign-in, start, resume, all questionnaire views, report and roadmap; Start questionnaire on the first phone screen with only optional groups folded; One at a time Yes / No above the sticky bar; the bar never covers a focused answer; 44 px answer targets; Start here rows as one target; the report's Start here pill lands below its sticky bar. |
-| `tests/mobile/intake-start-errors.e2e.ts` | Phone bug bash: one edit (paste, autofill) clears a start-page field's red error bar; the time estimate never says 0 minutes. |
+| `tests/mobile/intake-start-errors.e2e.ts` | Phone bug bash: one edit (paste, autofill) clears a start-page field's red error bar; the time estimate never says 0 minutes. v1.8.2: job title and name are required, never folded on a phone, and shown as missing on `/?check=1`. |
+| `tests/mobile/intake-cards-above-bar.e2e.ts` | #10 (phone target): every One at a time card in Planning shows its question and first answer above the bottom bar. |
+| `tests/mobile/intake-link-box-resize.e2e.ts` | #15: the save link box re-fits the whole link when the window turns (390 -> 700 -> 390). |
+| `tests/mobile/report-plan-rotate-order.e2e.ts` | #15: the roadmap switches between the phone order and the desktop order when the width crosses 600 px. |
+| `tests/regressions/intake-spanish-controls.e2e.ts` | #14: with Español, the questionnaire's bar, area navigation and save tools are in Spanish. |
+| `tests/regressions/spanish-answer-controls.e2e.ts` | #19: with Español, the Yes / No and Checklist answer controls are in Spanish. |
+| `tests/regressions/resume-error-alert.e2e.ts` | #20: a wrong resume link sent with Enter is announced (the error is an alert). |
+| `tests/regressions/login-empty-field-error.e2e.ts` | #17: sign-in names the empty field and marks only that field invalid. |
+| `tests/regressions/peer-groups-left-out.e2e.ts` | #16: staff Peers says how many organizations are in no group and why. |
+| `tests/regressions/peers-card-link-target.e2e.ts` | #18: report links in "Asked to be connected" cards meet the 24 px target size. |
+| `tests/regressions/quick-previous-history.e2e.ts` | #24, #27: an answered card says Next; Previous retraces the cards seen in Planning (including multiple-choice questions) and Next walks them again. |
+| `tests/regressions/quick-progress-position.e2e.ts` | #26: "Question N of M" and its bar follow the card on screen (a multiple-choice question is one card; Previous lowers both); on phones the bar takes most of the row. |
+| `tests/regressions/language-switch.e2e.ts` | #25: Español in the top-right switch gives Spanish questions with nothing else to do; the questionnaire switch sets the draft (report) language; a submit carries `language: "es"` (the POST is intercepted, no report is made). |
+| `tests/regressions/start-several-states.e2e.ts` | #23: two states or territories added on the start page come back, in order, from the draft. |
 | `tests/mobile/intake-resume-link.e2e.ts` | Phone bug bash (phone target): the save and teammate links show in full in their box (an iPhone SE showed about 10 characters). Makes one "QA Phone" draft. |
 | `tests/mobile/report-coach-answer.e2e.ts` | Phone bug bash: after Ask about your report, the new answer is on screen (it landed above it). The POST is stubbed in the page. |
 | `tests/mobile/report-larger-text-bar.e2e.ts` | Phone bug bash: with Larger text, the report's sticky "On this page" bar stays on one line. |

@@ -1389,9 +1389,6 @@ main h2[id] { scroll-margin-top: var(--space-lg); }
   .seg__opts { display: grid; grid-template-columns: 1fr 1fr; border-radius: var(--radius-lg); }
   .seg__opt { justify-content: center; padding: 0.375rem 0.625rem; border-radius: var(--radius); text-align: center; }
   .seg__opt:last-child:nth-child(odd) { grid-column: 1 / -1; }
-  /* "Questions in" sits beside its two options when they fit */
-  .seg + .seg > legend { float: left; margin: 0 var(--space-sm) 0 0; line-height: 3.5rem; }
-  .seg + .seg .seg__opts { width: auto; }
 
   /* Yes / No and Checklist: tighter cards and stage headers; answers stay 44 px+ and side by side */
   .q-instruct { margin: var(--space-md) 0 var(--space-sm); }
@@ -1557,3 +1554,45 @@ main h2[id] { scroll-margin-top: var(--space-lg); }
 /* #18: a heading link alone in a staff card is not inside a sentence, so it needs a 24px target (WCAG 2.5.8). */
 #staff-root .cohort h4 > a { display: inline-block; min-height: 24px; }
 /* == end v1.8.1 bb-staff == */
+/* == v1.9 state == */
+/* Start page (#23): the states or territories chosen, one row each with its own Remove button. */
+.state-picks { list-style: none; margin: 0 0 var(--space-sm); padding: 0; display: grid; gap: var(--space-sm); grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+.state-picks:empty { display: none; }
+.state-picks__item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); padding: var(--space-xs) var(--space-xs) var(--space-xs) var(--space-md); border: 1px solid var(--color-border-strong); border-radius: var(--radius); background: var(--color-surface); font-weight: 700; }
+.state-picks__item .btn { flex: none; }
+.state-add label { font-weight: 400; }
+@media (max-width: 479px) { .state-picks__remove-text { display: none; } }
+/* axe target-size (2.5.8) flagged the 22px program model checkbox at 320 and 390 (also on v1.8.2); 24px meets it. */
+#org-meta .choice input { width: 1.5rem; height: 1.5rem; }
+/* == end v1.9 state == */
+/* == v1.9 questionnaire == */
+/* #25: one "English | Español" switch at the top right of the title band (start page and questionnaire). It comes first
+   in the band and floats, so the step line and the heading flow beside it and a long heading wraps under it.
+   44px options; the group's border is an outline, so it adds no height. */
+.title-band:has(> .lang-switch) { display: flow-root; }
+.title-band > .lang-switch { float: right; width: auto; margin: 0 0 var(--space-xs) var(--space-md); }
+/* A heading word that does not fit beside the switch moves under it whole (the body's break-word split "Managem-ent"). */
+.title-band:has(> .lang-switch) > h1 { overflow-wrap: normal; }
+.lang-switch .seg__opts { display: flex; flex-direction: row; flex-wrap: nowrap; width: auto; gap: 0; padding: 0; border: 0; outline: 2px solid var(--color-border-strong); outline-offset: -2px; border-radius: 1.375rem; }
+.lang-switch .seg__opt { min-height: 2.75rem; padding: 0.25rem 1rem; border-radius: 999px; white-space: nowrap; }
+@media (max-width: 599px) {
+  /* Phones: a slim 28px pill (the chosen option is filled and bold, no check icon), shorter than one heading line, so
+     a heading's first word fits beside it and its next line takes the full width; each option's target still reaches
+     44px (8px above and below the pill). */
+  .title-band > .lang-switch { margin: 0 0 0 var(--space-sm); }
+  .lang-switch .seg__opts { border-radius: 0.875rem; }
+  .lang-switch .seg__opt { min-height: 1.75rem; padding: 0 0.625rem; font-size: var(--text-sm); }
+  .lang-switch .seg__opt:has(input:checked) .seg__check { display: none; }
+  .lang-switch .seg__opt::after { content: ""; position: absolute; inset: -8px 0; }
+  .lang-switch .seg__opt input { z-index: 1; } /* the radio itself stays on top of the pill */
+  /* #26: the heading above names the area, so the line is the short "Question N of M" (the area name stays for screen
+     readers) and the bar beside it gets the rest of the row (about 230px at 390px, it was 140px). */
+  .quick__count-area { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  /* Under 380px a heading that does not fit beside the switch takes a second line, so in One at a time the "Area 3 of 4.
+     Next: ..." line is left for screen readers (the area marks show the area): every card's first answer still clears
+     the bar at 320x568. */
+  @media (max-width: 379px) {
+    [data-view="quick"] .q-progress__where { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  }
+}
+/* == end v1.9 questionnaire == */

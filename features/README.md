@@ -17,8 +17,8 @@ Optional feature modules for the Flask API. Each `<name>.py` defines a Flask Blu
 | `funnel.py` | Staff-only drop-off: started, submitted and abandoned (3+ days unsaved, never submitted) server-side drafts, started vs finished per area, and the area where abandoned drafts stopped. `GET /api/staff/funnel`. |
 | `milestones.py` | 12-week roadmap built in code from the report (no model call), with progress, points and badges. `GET /api/assessments/<sid>/roadmap`, `POST /api/assessments/<sid>/roadmap/tasks/<task_id>`, `GET /api/assessments/<sid>/roadmap/week/<n>.pdf`, `GET /api/staff/roadmaps`. |
 | `milestones.sql` | Table `roadmap_tasks` (progress only; the roadmap itself is rebuilt each time). |
-| `orgmeta.py` | Fixed lists for organization details (program model, staff size, budget, state), respondent role and public links, plus the `clean_*` validators `app.py` uses. `GET /api/org-meta`. |
-| `orgmeta.sql` | Adds `program_models`, `staff_size`, `state` columns to `organizations`. |
+| `orgmeta.py` | Fixed lists for organization details (program model, staff size, budget, states or territories: up to 10), respondent role and public links, plus the `clean_*` validators `app.py` uses. `GET /api/org-meta`. |
+| `orgmeta.sql` | Adds `program_models`, `staff_size`, `state` columns to `organizations`, then `states jsonb` (v1.9, backfilled from `state`, which is no longer read or written). |
 | `optin.py` | "Sign me up": optional opt-in to CSF trainings and updates with a name and email; ticking neither withdraws it. `GET /api/assessments/<sid>/optin` (owner or staff), `POST` (owner only), `GET /api/staff/optins`. |
 | `optin.sql` | Table `optins` (one row per assessment). |
 | `peers.py` | Staff-only peer matching: similarity = 0.4 program model overlap + 0.3 size match + 0.3 shared priorities; percentile within the primary program model. `GET /api/staff/peers/<org_id>`. |

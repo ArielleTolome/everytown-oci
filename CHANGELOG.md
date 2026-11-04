@@ -2,6 +2,18 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.9.0 — Team requests: one language switch, several states, a progress bar and Previous that follow you
+
+From the team's review of the organization leader's form. Filed as GitHub issues #23 to #27; each fix has a regression test that failed on the v1.8.2 build. The name was already required since v1.8.2 (with the job title).
+
+- **#25 One language switch, top right.** A compact "English | Español" switch sits at the top right of the start page and the questionnaire, out of the main working area. It sets both the questions and the report language, so the report and its read-aloud (Amazon Polly) follow it: a Spanish report reads aloud in Spanish (checked with Amazon Transcribe: es-US, score 0.99999). The start page's separate "Report language" choice and the questionnaire's "Questions in" switch are gone; before, switching the questions to Español still produced an English report read aloud in English. A teammate on a shared area link switches only their own questions.
+- **#24 "Next".** An answered card in One at a time moves on with "Next" ("Siguiente") instead of "Keep my answer".
+- **#27 Previous goes back to the card you just saw.** Previous (and the left arrow key) walks back through the cards in the order you saw them, and Next walks them forward again before moving on to the next unanswered statement. Before, answering skipped already-answered cards while Previous stepped back one position in the full list, so it could open a card you never saw. "Look over this area" now walks every card in order.
+- **#26 Progress follows the card on screen.** One at a time reads "Question 3 of 9 in Planning" (a multiple-choice question is one card), and the bar shows the same position, so Previous moves both back; before, they counted answered statements, jumped by six after a multiple-choice answer and never went back. The answered total stays in the bottom bar ("Saved: 7 of 15"). On phones the bar takes most of the row (239 px at 390, was 140).
+- **#23 Several states or territories.** The start page's "States or territories" (optional, up to 10) adds each one from "Add a state or territory" and lists them with Remove buttons. Staff see them all: the State filter and Ask the data count an organization in each of its states, the drawer shows "States", and the opted-in list and CSV list every state. Data: new `organizations.states` list (backfilled from `state`, which is no longer used); drafts saved before keep their one state; seed data has a few organizations across two states.
+- Also: the program model checkboxes in "Add details" are 24 px (axe target size at phone widths); the Yes / No and Checklist views keep counting answered statements.
+- Verified: unit tests (150) and type check pass; axe 0 at 320, 390 and 1280 on the changed pages; the full e2e suite on the merged code passes on desktop and phone (91 passed, 5 phone-only checks skipped on desktop).
+
 ## v1.8.2 — Job title and name are required on the start page
 
 - The organization leader must now enter "Your job title" and "Your name" (with the role and organization name) before starting the questionnaire. Both are regular required fields: no longer folded under "(optional)" on phones, each with its own error ("Enter your job title", "Enter your name") in the field and in the error summary, cleared as soon as it has text. The name is still shown only on the organization's own report and never sent to the AI.

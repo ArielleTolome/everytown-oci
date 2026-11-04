@@ -69,13 +69,14 @@ class Validation(unittest.TestCase):
                 base, org_url="peace.example.org",
                 respondent={"role": "Executive director", "title": "Founder", "name": "Jordan Lee"},
                 org_links={"social": ["facebook.com/peace"]},
-                org_meta={"budget": "Under $250K", "program_models": ["Street outreach"]}))
+                org_meta={"budget": "Under $250K", "program_models": ["Street outreach"], "states": ["IL", "IN"]}))
         self.assertEqual(ok.status_code, 201)
         org = sub.call_args.args[0]
         self.assertEqual(org["respondent"], {"name": "Jordan Lee", "title": "Founder", "role": "Executive director"})
         self.assertEqual(org["org_links"], {"website": "https://peace.example.org",
                                             "social": ["https://facebook.com/peace"]})
         self.assertEqual(org["org_meta"]["budget"], "Under $250K")
+        self.assertEqual(org["org_meta"]["states"], ["IL", "IN"])
         self.assertEqual(org["answered_by"], {"PL": "Executive director"})  # no draft token: the leader answered all
 
     def test_samples_have_a_role_and_budget(self):
@@ -91,7 +92,7 @@ class NameNeverReachesTheModel(unittest.TestCase):
         answers = {q["id"]: ("no" if q["trigger_on"] == "no" else "yes") for q in domains[0]["questions"]}
         sub = oci.build_assessment({"org_name": "Org", "org_url": "", "language": "en",
                                     "org_meta": {"program_models": ["Hospital-based violence intervention"],
-                                                 "staff_size": "1-5", "budget": "Under $250K", "state": None},
+                                                 "staff_size": "1-5", "budget": "Under $250K", "states": ["IL", "IN"]},
                                     "respondent": {"name": "Jordan Secretname", "title": "Founder",
                                                    "role": "Executive director"}}, answers, domains)
         with mock.patch.object(pipeline, "_converse", return_value=[]) as conv:
@@ -102,6 +103,7 @@ class NameNeverReachesTheModel(unittest.TestCase):
         self.assertIn("Executive director", sent)
         self.assertIn("Hospital-based violence intervention", sent)
         self.assertIn("Under $250K", sent)
+        self.assertIn('\\"states\\": [\\"IL\\", \\"IN\\"]', sent)  # every state or territory reaches the prompt
 
 
 class Research(unittest.TestCase):

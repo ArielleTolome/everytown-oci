@@ -18,7 +18,7 @@ export interface Change { reassessed: number; rows: ChangeRow[]; areas_up: numbe
 export interface Peer { org: Ref; score: number; reasons: string[] }
 export interface OrgDetail extends Ref {
   assessed: string; source: string; assessments: number; program_models: string[]; staff_size: string | null; budget: string | null;
-  state: string | null; role: string | null; asked: string[]; asked_at: string | null; trace_url?: string | null; trace_cloudwatch_url?: string | null;
+  states: string[]; role: string | null; asked: string[]; asked_at: string | null; trace_url?: string | null; trace_cloudwatch_url?: string | null;
   stages: { domain_id: string; domain_name: string; stage: string; score: number; percentile: number | null; high: number }[];
   top_gaps: { question_id: string; question_text: string; priority: string; domain_name: string }[];
 }
@@ -278,7 +278,7 @@ export interface Roadmap { org_id: string; assessment_id: string; weeks_done: nu
 export function drawerHtml(o: OrgDetail, stateName: (c: string) => string) {
   const model = o.program_models[0];
   const facts = [["Program model", o.program_models.join(", ")], ["Staff size", o.staff_size ? `${o.staff_size} staff` : ""], ["Budget", o.budget ?? ""],
-    ["State", o.state ? stateName(o.state) : ""], ["Completed by", o.role ?? ""], ["Latest assessment", `${o.assessed} (${plural(o.assessments, "assessment", "assessments")} in total)`]];
+    [o.states.length > 1 ? "States" : "State", o.states.map(stateName).join(", ")], ["Completed by", o.role ?? ""], ["Latest assessment", `${o.assessed} (${plural(o.assessments, "assessment", "assessments")} in total)`]];
   return `<div class="drawer__head">
       <div><span class="eyebrow">Organization</span><h2 id="drawer-title" tabindex="-1">${esc(o.name)}</h2></div>
       <button type="button" class="btn btn-secondary btn-sm" data-close-drawer>${icon("circle-x")}<span>Close</span></button>

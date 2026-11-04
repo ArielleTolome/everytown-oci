@@ -103,7 +103,7 @@ def reports():
         areas = ALL_AREAS if n % 2 else PRIORITY
         profile = None if n == 2 else (
             "%s (synthetic) runs %s in %s with %s staff and a yearly budget of %s." % (
-                db.SEED_NAMES[i], " and ".join(m.lower() for m in meta["program_models"]), meta["state"],
+                db.SEED_NAMES[i], " and ".join(m.lower() for m in meta["program_models"]), " and ".join(meta["states"]),
                 meta["staff_size"], meta["budget"]))
         add("seeded-%d" % i, ["seeded", "en", "%d-areas" % len(areas), meta["staff_size"]],
             build_sub(db.SEED_NAMES[i] + " (synthetic)", "en", areas, seeded_answers(i, areas), meta, role, profile))

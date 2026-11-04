@@ -78,7 +78,7 @@ Both must pass. `test:demo` makes one report (about 45 seconds). If a step fails
 
 1. Open https://d2mi2h3eu8y69s.cloudfront.net/api/healthz and confirm `ok`.
 2. **Tab B (prepared report).** Sign in as `demo` / `demo`. Open **Try a made-up sample organization** and click **Riverbend Violence Interruption Network (synthetic sample)**. Wait for **Your report is ready**. Keep this tab at the top of the report. Do not sign out: the roadmap belongs to this sign-in session.
-3. **Tab A (live run).** In the same window, a new tab on the start page. Optional: choose **Español** under **Report language**.
+3. **Tab A (live run).** In the same window, a new tab on the start page. Optional: choose **Español** in the language switch at the top right.
 4. **Tab C (staff).** A private window, sign in as `staff` / `staff`, stay on **Training needs**.
 5. **Tab D (AWS console).** In the private window, sign in to the AWS console in us-west-2 and open the CloudWatch dashboard `everytown-oci`, so the trace link opens without a sign-in.
 6. Open `OCI-Capacity-Coach-pitch.pdf` and `sample-report.pdf` locally as the offline backup. Browser zoom 125%. Notifications off.

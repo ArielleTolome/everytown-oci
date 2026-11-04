@@ -178,13 +178,14 @@ class Optin(Base):
         # issue #13: grantee was (source <> 'demo'), so every new group showed "Grantee: Yes"
         self.sign_in("staff")
         row = {"assessment_id": SID, "org_id": SID, "org_name": "QA Org", "program_models": '["Hospital-based"]',
-               "state": None, "training": True, "updates": False, "name": None, "email": "a@example.org",
+               "states": '["IL", "IN"]', "training": True, "updates": False, "name": None, "email": "a@example.org",
                "updated": "2026-11-04 10:00 UTC", "updated_at": "2026-11-04T10:00:00"}
         self.query.return_value = [row]
         (got,) = self.client.get("/api/staff/optins").get_json()["optins"]
         self.assertNotIn("grantee", got)
         self.assertNotIn("grantee", self.query.call_args.args[0])
         self.assertEqual(got["program_models"], ["Hospital-based"])
+        self.assertEqual(got["states"], ["IL", "IN"])
 
 
 class Funnel(unittest.TestCase):

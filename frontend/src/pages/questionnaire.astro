@@ -35,8 +35,10 @@ import Icon from "../components/Icon.astro";
   let current: Domain | null = null; // area on screen, for the time-left line
   let demo = false; // demo preload button: demo user plus ?demo=1 (remembered on this device)
   let sampleAnswers: Promise<Record<string, "yes" | "no"> | null> | null = null;
-  // shortcut: question language is not saved; a reload falls back to the report language. Persist it if people ask.
+  // The question language is the report language (draft.language), except on a teammate link: a teammate switches only
+  // their questions (not saved; a reload falls back to the owner's report language), and draft.ts sends only answers.
   let qlang: "en" | "es" = "en";
+  const teammate = new URLSearchParams(location.search).has("area");
   let glossary: { term: string; plain: string; example: string; re: RegExp }[] = [];
   let es: Record<string, { text: string; about?: string; connects?: string }> = {};
   let keyed = ""; // set by a Y/N shortcut so the save status says what was chosen
@@ -199,18 +201,15 @@ import Icon from "../components/Icon.astro";
         <fieldset class="seg" aria-describedby="view-hint"><legend id="view-legend"></legend><div class="seg__opts">
           ${seg("q-view", "quick", "One at a time", view === "quick")}${seg("q-view", "yn", "Yes / No for each", view === "yn")}${seg("q-view", "check", "Checklist: tick what's true", view === "check")}
         </div><p class="hint seg__hint" id="view-hint"></p></fieldset>
-        ${es[d.questions[0].id] ? `<fieldset class="seg"><legend>Questions in</legend><div class="seg__opts">
-          ${seg("q-lang", "en", "English", !spanish())}${seg("q-lang", "es", '<span lang="es">Español</span>', spanish())}
-        </div></fieldset>` : ""}
       </div>
       ${demo ? `<p class="q-demo"><button type="button" class="q-demo__btn" id="demo-fill">${icon("clipboard")}<span>Demo: fill this area with sample answers</span></button></p>` : ""}`;
     // Save and share are secondary in One at a time view, so they follow the card there; a teammate keeps the notice
     // about which area they answer on top.
     const draftTools = `<div id="draft-tools" data-area="${esc(d.id)}" data-name="${esc(nameOf(d))}"${langEs()}></div>`;
-    const toolsBelow = quickView && !new URLSearchParams(location.search).has("area");
+    const toolsBelow = quickView && !teammate;
     root.dataset.view = view;
     root.innerHTML = `
-      <div class="title-band"${langEs()}>
+      <div class="title-band"${langEs()}>${langSwitch()}
         <span class="eyebrow">${L("Step 2 of 3: Questionnaire", "Paso 2 de 3: Cuestionario")}</span>
         <h1 id="area-title" tabindex="-1">${esc(nameOf(d))}</h1>
       </div>
@@ -245,20 +244,18 @@ import Icon from "../components/Icon.astro";
     watchBar();
 
     $(".q-tools")!.addEventListener("change", (e) => {
-      const input = e.target as HTMLInputElement;
-      if (input.name === "q-view") {
-        view = input.value as View;
-        try { localStorage.setItem(VIEW_KEY, view); } catch { /* storage disabled */ }
-      } else qlang = input.value === "es" ? "es" : "en";
-      // The layout depends on the view and the controls on the language: re-render, then put focus back on the chosen option.
+      view = (e.target as HTMLInputElement).value as View;
+      try { localStorage.setItem(VIEW_KEY, view); } catch { /* storage disabled */ }
+      // The layout depends on the view: re-render, then put focus back on the chosen option.
       render(n, false);
-      $<HTMLInputElement>(`input[name="${input.name}"]:checked`)?.focus();
+      $<HTMLInputElement>('input[name="q-view"]:checked')?.focus();
     });
+    watchLang(() => render(n, false));
     const form = $<HTMLFormElement>("#area-form")!;
     form.addEventListener("change", (e) => {
       const input = e.target as HTMLInputElement;
       const id = input.type === "radio" ? input.name : input.dataset.q;
-      // Only this area's statements are answers: in One at a time view the view and language switches sit in this form too.
+      // Only this area's statements are answers: in One at a time view the view switch sits in this form too.
       if (!id || !d.questions.some((q) => q.id === id)) return;
       const wasComplete = isComplete(d);
       draft.answers[id] = input.type === "radio" ? (input.value as "yes" | "no") : input.checked ? "yes" : "no";
@@ -344,6 +341,25 @@ import Icon from "../components/Icon.astro";
   const seg = (name: string, value: string, label: string, on: boolean) => `
     <label class="seg__opt"><input type="radio" name="${name}" value="${value}"${on ? " checked" : ""}><span class="seg__check" aria-hidden="true">${icon("check")}</span><span>${label}</span></label>`;
 
+  /** #25: one language switch, top right of the title band (not shown when the Spanish texts did not load). It sets the
+   * questions and the report language (draft.language: the report and its read-aloud voice); a teammate's only their questions. */
+  const langSwitch = () => (Object.keys(es).length ? `
+    <fieldset class="seg lang-switch" aria-describedby="lang-hint">
+      <legend class="visually-hidden">${L("Language", "Idioma")}</legend>
+      <p class="visually-hidden" id="lang-hint">${teammate ? L("Your questions can be in English or Spanish.", "Sus preguntas pueden estar en inglés o en español.")
+        : L("Questions and your report can be in English or Spanish.", "Las preguntas y su informe pueden estar en inglés o en español.")}</p>
+      <div class="seg__opts">${seg("language", "en", '<span lang="en">English</span>', !spanish())}${seg("language", "es", '<span lang="es">Español</span>', spanish())}</div>
+    </fieldset>` : "");
+
+  function watchLang(redraw: () => void) {
+    $(".lang-switch")?.addEventListener("change", (e) => {
+      qlang = (e.target as HTMLInputElement).value === "es" ? "es" : "en";
+      if (!teammate) { draft.language = qlang; saveDraft(draft); }
+      redraw();
+      $<HTMLInputElement>(".lang-switch input:checked")?.focus();
+    });
+  }
+
   /** "Next: <area>". Under 600px the area name is read out but not shown, so the button never wraps (the progress line names it). */
   const nextHtml = (name: string) => `<span${langEs()}>${L("Next", "Siguiente")}<span class="q-next-name">: ${esc(name)}</span></span>`;
 
@@ -374,7 +390,7 @@ import Icon from "../components/Icon.astro";
       },
       cheer: cheerFor(d),
       // Teammate links (?area=) send the area back instead of moving on (draft.ts relabels the bar button the same way).
-      nextHtml: new URLSearchParams(location.search).has("area") ? `<span${langEs()}>${L("Send my answers back", "Enviar mis respuestas")}</span>`
+      nextHtml: teammate ? `<span${langEs()}>${L("Send my answers back", "Enviar mis respuestas")}</span>`
         : i === domains.length - 1 ? `<span${langEs()}>${L("Review and finish", "Revisar y terminar")}</span>` : nextHtml(nameOf(domains[i + 1])),
     }) : null;
     const t = spanish() ? es[d.id] : undefined;
@@ -493,7 +509,7 @@ import Icon from "../components/Icon.astro";
     const lastName = nameOf(domains[domains.length - 1]);
     document.title = `${L("Ready for your results", "Listo para sus resultados")} · OCI Capacity Coach`;
     root.innerHTML = `
-      <div class="title-band"${langEs()}>
+      <div class="title-band"${langEs()}>${langSwitch()}
         <span class="eyebrow">${L("Step 2 of 3: Questionnaire", "Paso 2 de 3: Cuestionario")}</span>
         <h1 id="finish-title" tabindex="-1">${L(`You answered all ${t} statements`, `Respondió las ${t} afirmaciones`)}</h1>
       </div>
@@ -520,6 +536,7 @@ import Icon from "../components/Icon.astro";
     watchBar();
     $("#area-form")!.addEventListener("submit", (e) => { e.preventDefault(); submitAll(); });
     $("#back-btn")!.addEventListener("click", () => { location.hash = String(domains.length); });
+    watchLang(renderFinish);
     window.scrollTo(0, 0);
     focusEl($("#finish-title"));
   }

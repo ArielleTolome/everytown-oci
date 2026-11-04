@@ -10,7 +10,7 @@ import { icon } from "./icons";
 /** Time estimates on the start page and the questionnaire both use this, so they agree. */
 export const SECONDS_PER_STATEMENT = 8;
 
-export interface OrgMeta { program_models: string[]; staff_size: string | null; budget?: string | null; state: string | null }
+export interface OrgMeta { program_models: string[]; staff_size: string | null; budget?: string | null; states: string[] }
 export interface Respondent { role: string | null; title: string | null; name: string | null }
 export interface OrgLinks { social: string[] }
 
@@ -62,7 +62,7 @@ const team = () => sync()?.area ?? null;
 
 function normalize(d: Partial<Draft> | null): Draft | null {
   if (!d || typeof d !== "object") return null;
-  const m = d.org_meta;
+  const m = d.org_meta as (OrgMeta & { state?: string | null }) | null | undefined; // `state`: one code, drafts before v1.9
   const r = d.respondent;
   const social = d.org_links && Array.isArray(d.org_links.social) ? d.org_links.social.map(String) : [];
   return {
@@ -72,7 +72,8 @@ function normalize(d: Partial<Draft> | null): Draft | null {
     domain_ids: Array.isArray(d.domain_ids) ? d.domain_ids.map(String) : [],
     answers: d.answers && typeof d.answers === "object" ? d.answers : {},
     org_meta: m && typeof m === "object"
-      ? { program_models: Array.isArray(m.program_models) ? m.program_models.map(String) : [], staff_size: m.staff_size ?? null, budget: m.budget ?? null, state: m.state ?? null }
+      ? { program_models: Array.isArray(m.program_models) ? m.program_models.map(String) : [], staff_size: m.staff_size ?? null, budget: m.budget ?? null,
+        states: Array.isArray(m.states) ? m.states.map(String) : m.state ? [String(m.state)] : [] }
       : null,
     respondent: r && typeof r === "object" ? { role: r.role ?? null, title: r.title ?? null, name: r.name ?? null } : null,
     org_links: social.length ? { social } : null,

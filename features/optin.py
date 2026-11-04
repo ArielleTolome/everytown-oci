@@ -76,13 +76,15 @@ def staff_optins():
         return err
     rows = db.query(
         "SELECT DISTINCT ON (a.org_id) p.assessment_id::text AS assessment_id, o.id::text AS org_id, "
-        "o.name AS org_name, o.program_models::text AS program_models, o.state, p.training, p.updates, p.name, "
+        "o.name AS org_name, o.program_models::text AS program_models, o.states::text AS states, p.training, "
+        "p.updates, p.name, "
         "p.email, %s AS updated, p.updated_at FROM optins p "
         "JOIN assessments a ON a.id = p.assessment_id JOIN organizations o ON o.id = a.org_id "
         "ORDER BY a.org_id, p.updated_at DESC" % (STAMP % "p.updated_at"))
     rows.sort(key=lambda r: r.pop("updated_at"), reverse=True)  # newest first across organizations
     for r in rows:
         r["program_models"] = json.loads(r["program_models"] or "[]")
+        r["states"] = json.loads(r["states"] or "[]")
     return jsonify(optins=rows)
 
 

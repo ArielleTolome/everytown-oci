@@ -14,7 +14,7 @@ interface Quality {
   issues: { issue: string; count: number }[];
 }
 interface Optin {
-  assessment_id: string; org_id: string; org_name: string; program_models: string[]; state: string | null;
+  assessment_id: string; org_id: string; org_name: string; program_models: string[]; states: string[];
   training: boolean; updates: boolean; name: string | null; email: string; updated: string;
 }
 interface Funnel {
@@ -192,7 +192,7 @@ export function mountQuality(panel: HTMLElement, ctx: Ctx) {
     const yes = (b: boolean) => (b ? "Yes" : "No");
     return `<p class="sq-csv"><button type="button" class="btn btn-secondary btn-sm" data-q-csv="optins">${icon("download")}<span>Download as CSV</span></button></p>
       ${table("sq-optins-table", `${plural(rows.length, "organization", "organizations")} opted in`, th(["Organization", "Program model", "State", "Trainings", "Updates", "Name", "Email", "Date"]),
-        rows.map((r) => `<tr><th scope="row">${reportLink(r.assessment_id, r.org_name)}</th><td>${esc(r.program_models.join(", "))}</td><td>${esc(r.state ? ctx.stateName(r.state) : "")}</td>
+        rows.map((r) => `<tr><th scope="row">${reportLink(r.assessment_id, r.org_name)}</th><td>${esc(r.program_models.join(", "))}</td><td>${esc(r.states.map(ctx.stateName).join(", "))}</td>
           <td>${yes(r.training)}</td><td>${yes(r.updates)}</td><td>${esc(r.name ?? "")}</td><td class="sq-nowrap">${esc(r.email)}</td><td class="sq-nowrap">${esc(r.updated.slice(0, 10))}</td></tr>`).join(""))}`;
   }
 
@@ -298,7 +298,7 @@ export function mountQuality(panel: HTMLElement, ctx: Ctx) {
       announce("Follow-through downloaded as CSV.");
     } else if (csv?.dataset.qCsv === "optins") {
       downloadCsv("oci-opt-ins", [["Organization", "Program model", "State", "Trainings", "Updates", "Name", "Email", "Date"],
-        ...optins.map((r) => [r.org_name, r.program_models.join("; "), r.state ? ctx.stateName(r.state) : "", r.training ? "Yes" : "No", r.updates ? "Yes" : "No", r.name ?? "", r.email, r.updated])]);
+        ...optins.map((r) => [r.org_name, r.program_models.join("; "), r.states.map(ctx.stateName).join("; "), r.training ? "Yes" : "No", r.updates ? "Yes" : "No", r.name ?? "", r.email, r.updated])]);
       announce("Opt-in list downloaded as CSV.");
     }
   });
