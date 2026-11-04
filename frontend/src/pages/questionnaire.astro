@@ -389,10 +389,12 @@ import Icon from "../components/Icon.astro";
   }
 
   // Fallback for browsers that ignore scroll-padding when moving focus: nudge the page if the bar covers the focused control.
+  // Controls only: clicking a label can focus <main> (tabindex -1), whose bottom is the page bottom, and the nudge then
+  // jumped the page to the end on every other answer.
   document.addEventListener("focusin", (e) => {
     const bar = $("#q-bar");
     const el = e.target as HTMLElement;
-    if (!bar || bar.contains(el)) return;
+    if (!bar || bar.contains(el) || !el.matches("input, button, select, textarea, a[href], summary")) return;
     const target = el.closest(".answer, .check-item__row") ?? el;
     const overlap = target.getBoundingClientRect().bottom - bar.getBoundingClientRect().top + 12;
     if (overlap > 0) window.scrollBy({ top: overlap });
