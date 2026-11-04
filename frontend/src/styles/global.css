@@ -1508,3 +1508,24 @@ main h2[id] { scroll-margin-top: var(--space-lg); }
 /* iPhone SE width: the bar stays one line, so its two icons go (the words stay). */
 @media (max-width: 379px) { #results-root .toc__details > summary > .icon:first-child, #results-root .toc__jump > .icon { display: none; } }
 /* == end v1.8 report == */
+/* == v1.8 bash-report == */
+@media (max-width: 599px) {
+  /* Larger text: "On this page" and "Start here" overflowed the one-line bar, so its two icons go. */
+  :root[data-text="large"] #results-root .toc__details > summary > .icon:first-child, :root[data-text="large"] #results-root .toc__jump > .icon { display: none; }
+  /* Scores table: the caption is as wide as the table, so it was cut at the screen edge; keep it in view and wrapped. */
+  #results-root .table-wrap { container-type: inline-size; }
+  #results-root .table-wrap caption { position: sticky; left: 0; max-width: 100cqi; }
+  /* The full-width Ask button touched the question box. */
+  #results-root .coach-form .actions { margin-top: var(--space-sm); }
+}
+/* iPhone SE width with larger text: both labels never fit one line, so the pill goes; "Start here" is in the list. */
+@media (max-width: 379px) { :root[data-text="large"] #results-root .toc__jump { display: none; } }
+/* == end v1.8 bash-report == */
+/* == v1.8 bash-intake == */
+/* Phones: the saved and teammate links are a full-width box that wraps the whole link (draft.ts grows it); Copy goes under it. */
+@media (max-width: 599px) {
+  .draft-panel .input-group { flex-wrap: wrap; }
+  .draft-panel .input-group .draft-panel__link { flex-basis: 100%; resize: none; overflow: hidden; overflow-wrap: anywhere; }
+  .draft-panel .input-group .btn { flex: 1; }
+}
+/* == end v1.8 bash-intake == */

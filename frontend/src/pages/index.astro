@@ -176,7 +176,7 @@ import Icon from "../components/Icon.astro";
 
   function setError(field: Field, msg: string | null) {
     const err = $(`#${field}-error`)!;
-    const wrap = $(`[data-field=${field}]`)!;
+    const wrap = $(`[data-field=${field}]:not(li)`)!; // not the error summary's item, which shares the attribute
     const control = GROUPS.has(field) ? wrap : targets[field]()!;
     wrap.classList.toggle("field--error", !!msg);
     if (field === "social") {
@@ -306,7 +306,12 @@ import Icon from "../components/Icon.astro";
       + (rest.length ? `<details class="m-more area-more" ${open ? "open" : ""}><summary>More areas you can add: ${esc(rest.map((d) => d.name).join(", "))}${icon("chevron-down", "m-more__chevron")}</summary>
         <ul class="area-options" role="list">${rest.map(card).join("")}</ul></details>` : "");
     // The intro's time estimate is the sum of the area estimates, so the two always agree.
-    const total = () => { $("#time-total")!.textContent = plural(domains.filter((d) => chosen().includes(d.id)).reduce((s, d) => s + areaMinutes(d), 0), "minute", "minutes"); };
+    const total = () => {
+      const mins = domains.filter((d) => chosen().includes(d.id)).map(areaMinutes);
+      const lo = Math.min(...domains.map(areaMinutes)), hi = Math.max(...domains.map(areaMinutes));
+      // No area picked: give the per-area range, never "0 minutes".
+      $("#time-total")!.textContent = mins.length ? plural(mins.reduce((s, m) => s + m, 0), "minute", "minutes") : lo === hi ? `${plural(lo, "minute", "minutes")} each` : `${lo} to ${hi} minutes each`;
+    };
     total();
     $("#domains")!.addEventListener("change", () => { total(); if (chosen().length) setError("domains", null); });
   }

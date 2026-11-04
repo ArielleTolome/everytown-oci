@@ -127,6 +127,11 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
     try {
       const res = await api.post<AskResponse>(url, { question });
       log.insertAdjacentHTML("beforeend", turnHtml({ ...res, question }, sub));
+      // The log sits above the form; on phones the form is taller than the screen, so a new answer can land off screen
+      // (above it, or below it when the page moved meanwhile): bring it into view only then, so desktop never moves.
+      const turn = log.lastElementChild!;
+      const at = turn.getBoundingClientRect().top;
+      if (at < 0 || at > innerHeight - 80) turn.scrollIntoView({ block: "start" });
       input.value = "";
       status.textContent = "";
       setRemaining(res.remaining);

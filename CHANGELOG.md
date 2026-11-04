@@ -2,6 +2,44 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.8.0 — Phone first: easier to complete on a phone, tested on a phone
+
+Many leaders of small CVI groups answer on their phones between shifts. Six omp agents worked in parallel Herdr terminals in one window: three made the start page, questionnaire, report and roadmap phone first, then three ran the end-to-end tests and a phone bug bash. Desktop at 1280 px is pixel-identical (checked page by page), so the demo for judging is unchanged.
+
+| iPhone 13 (390x664), screens of scrolling | v1.7 | v1.8 |
+|---|---|---|
+| Start page | 9.8 | 4.8 |
+| Questionnaire, One at a time: first answer on the first screen | no | yes (also iPhone SE and Pixel 7) |
+| Questionnaire, Yes / No per area | 10.5 | 6.9 |
+| Questionnaire, Checklist per area | 8.8 | 5.9 |
+| Report | 15.2 | 9.9 |
+| 12-week roadmap | 7.6 | 5.2 |
+
+Text under 14 px on these pages went from 7 to 21 pieces per page to none; the one 24x24 tap target is gone; no page scrolls sideways or makes iOS zoom into a field.
+
+**Start page and sign-in**
+- Optional details (your name and title, website and social links, report language, organization details, how it works, the four extra areas) fold under named "Add ... (optional)" rows on phones; rows with saved answers or an error open on their own.
+- A full-width Start questionnaire bar at the bottom of the screen, clear of the home indicator, that steps aside while you type.
+- One compact phone header: Display and Sign out as icon buttons, "Signed in as ..." under the name. Safe areas for the notch and home bar (`viewport-fit=cover`).
+- Phone keyboards fit each field: web keyboards for links, no automatic capitals in usernames and links, Next and Go keys; Enter in Username moves to Password.
+
+**Questionnaire**
+- One at a time: the statement and both answer buttons fit on the first screen; progress on one line; keyboard tips hidden on touch screens; word help after the answers.
+- Yes / No and Checklist: tighter cards and stage headings, 44 px+ answer targets side by side.
+- The bottom bar is one row on phones (Back, "Saved: 3 of 15", Next), leaves room for the home bar and steps aside while you type a link or comment.
+
+**Report and roadmap**
+- A sticky "On this page" bar with a one-tap "Start here" link; the section list opens over the page and jumps land below the bar.
+- Long and optional parts sit behind "Show ..." controls on phones (the rest of the summary, why each priority comes first, the statements behind it, the coach, support and sign-up forms, detailed tables, plan, guide and sources). Start here steps, stages and the PDF stay in view; everything is open on desktop and in print.
+- Each Start here and roadmap step is one tap target (the whole row ticks it). This week's steps come first on the roadmap; locked weeks are one line; badges fold.
+- Ask about your report sends with the keyboard's Send key and keeps Ask above the on-screen keyboard.
+
+**E2E testing**
+- Every e2e test now runs on two targets, `web` (1280x720) and `phone` (390x664, iPhone Safari agent). New `qa/tests/mobile/phone-flow.e2e.ts` pins the phone promises (it fails when the v1.7 layout is injected); phone bug-bash charters in `qa/bugbash-phone-charters.txt`.
+- Phone bug bash (7 charters on the live site plus owner-only checks): 18 findings, 8 confirmed and fixed with a regression each that failed on live first, 10 rejected with evidence (not reproducible, intended design, explorer artifacts). Fixed: a red error bar that stayed after a field was fixed by paste or autofill; "about 0 minutes" with no area picked; the resume and teammate links cut to about 10 characters on an iPhone SE (now a full-width wrapping box); a coach answer that landed off screen after Ask; the roadmap's "Week N done!" shown off screen (desktop too); the report's sticky bar overflowing with Larger text; the scores table caption cut off on phones; a cramped Ask button.
+- Result on the live site: 66 tests on both targets (63 passed, 3 phone-only tests skipped on desktop) and the on-stage demo path (4 of 4).
+- Not covered: real devices (all checks use Chromium phone emulation), the on-screen keyboard itself (emulated by shrinking the viewport), and a fully Spanish interface (Español translates statements and their controls; the rest of the site stays English).
+
 ## v1.7.0 — After the CSF director walkthrough: quality checks, follow-through, opt-ins, clearer answering
 
 We recorded a 21-minute walkthrough with the Community Safety Fund director and transcribed it with Amazon Transcribe. Her read: "for what this is, it's absolutely on the right track." This release answers what she raised; [`docs/next-steps.md`](docs/next-steps.md) maps each point to what was built and what is left. Four omp agents built it in parallel Herdr terminals (API, report page, staff dashboard, questionnaire).

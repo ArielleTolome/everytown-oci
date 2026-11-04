@@ -281,7 +281,12 @@ export async function mountPlan(root: HTMLElement, id: string): Promise<void> {
       if (finished.length) {
         const next = c!.opened[0] ?? state.current_week;
         confetti($(`[data-week="${finished[0]}"]`, root));
+        // The "Week N done!" line goes to the top of the week it points to, so it shows with that week's focused
+        // heading; above the list it was off screen once a few weeks were done (on phones from week 1).
+        const card = next ? $(`li[data-week="${next}"]`, root) : null;
+        if (card) card.prepend($("#rm-cheer", root)!);
         focusEl($(next ? `#week-${next}-title` : "#rm-cheer", root));
+        $("#rm-cheer", root)!.scrollIntoView({ block: "nearest" });
         announce(parts.join(" "));
       } else {
         $<HTMLInputElement>(`#task-${CSS.escape(task)}`, root)?.focus();

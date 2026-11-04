@@ -4,6 +4,8 @@ Client-side TypeScript modules that the pages in `../pages/` import. They build 
 
 ## Files
 
+Phone layouts (v1.8): `report-ui.ts` exports `PHONE` (the under-600px media query) and `fold(summary, body)`, a closed "Show ..." disclosure on phones that is always open (summary hidden) from 600px and in print; `toc.ts` adds a sticky "On this page" bar with a one-tap "Start here" link on phones.
+
 | File | What it does |
 |---|---|
 | `api.ts` | Typed API client: `api.get` / `api.post` to `/api${path}` (JSON body with `x-amz-content-sha256`), `ApiError`, `requireUser()` (`/api/me`, redirects to `/login/?next=` on 401), cached `getMeta()` (`/api/meta`). Shared types (`User`, `Question`, `Assessment`, ...). |

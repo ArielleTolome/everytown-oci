@@ -192,14 +192,18 @@ const ROLE: Record<string, string> = {
 };
 
 function linkBlock(id: string, label: string, url: string) {
+  // Phones get a box that wraps, so the whole link is readable; wider screens keep the one-line field.
+  const field = matchMedia("(max-width: 599px)").matches
+    ? `<textarea class="input draft-panel__link" id="${id}" rows="1" readonly spellcheck="false">${esc(url)}</textarea>`
+    : `<input class="input" id="${id}" type="text" readonly value="${esc(url)}" spellcheck="false">`;
   return `<label class="draft-panel__label" for="${id}">${esc(label)}</label>
     <div class="input-group">
-      <input class="input" id="${id}" type="text" readonly value="${esc(url)}" spellcheck="false">
+      ${field}
       <button type="button" class="btn btn-primary btn-sm" data-copy="${id}">${icon("clipboard")}<span>Copy link</span></button>
     </div>`;
 }
 
-async function copy(input: HTMLInputElement, status: HTMLElement) {
+async function copy(input: HTMLInputElement | HTMLTextAreaElement, status: HTMLElement) {
   try { await navigator.clipboard.writeText(input.value); } catch { input.select(); document.execCommand("copy"); }
   status.textContent = "Link copied.";
 }
@@ -261,8 +265,10 @@ async function fillPanel(panel: HTMLElement, kind: "save" | "share", area: strin
     const status = panel.querySelector<HTMLElement>(".draft-panel__status")!;
     panel.querySelector<HTMLButtonElement>("[data-copy]")!.addEventListener("click", (e) => {
       const id = (e.currentTarget as HTMLElement).dataset.copy!;
-      copy(panel.querySelector<HTMLInputElement>(`#${id}`)!, status);
+      copy(panel.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${id}`)!, status);
     });
+    // Phones: the link wraps, so the box grows to show all of it. shortcut: not re-measured on rotation.
+    panel.querySelectorAll<HTMLTextAreaElement>(".draft-panel__link").forEach((t) => { t.style.height = `${t.scrollHeight + t.offsetHeight - t.clientHeight}px`; });
     focusEl(panel.querySelector(".draft-panel__title"));
   } catch {
     panel.innerHTML = `<p class="field-error" role="alert">${icon("alert")}<span>We could not make a link right now. Your answers are still saved on this device. Please try again.</span></p>`;
