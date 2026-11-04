@@ -1,0 +1,1453 @@
+{
+ "experiment": "v1.10 staff_ask us.anthropic.claude-haiku-5-5 5af4a98",
+ "gate_failures": [],
+ "meta": {
+  "examples": 15,
+  "git_sha": "5af4a98",
+  "judges": true,
+  "limit": 0,
+  "model": "us.anthropic.claude-haiku-5-5",
+  "suite": "staff_ask"
+ },
+ "phoenix_url": null,
+ "results": [
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'training_needs'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'training_needs' area='FM' filters={}; want {'analysis': 'training_needs', 'area': 'FM'}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-training-fm",
+   "metadata": {
+    "case": "training-fm",
+    "tags": [
+     "route",
+     "training_needs"
+    ]
+   },
+   "output": {
+    "analysis": "training_needs",
+    "analysis_label": "Training needs",
+    "answer": "Organizations that need Financial Management training: 20 rows. The table below has the details, computed from the assessment results.",
+    "answer_source": "code",
+    "area": "FM",
+    "area_name": "Financial Management",
+    "chart_hint": {
+     "label": 0,
+     "type": "bar",
+     "value": 1
+    },
+    "filters": {},
+    "org_name": null,
+    "question": "Which organizations need training in financial management?",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Organization",
+      "High priority growth priorities",
+      "Asked for help"
+     ],
+     "rows": [
+      [
+       "testy",
+       8,
+       "No"
+      ],
+      [
+       "West End Violence Interrupters (synthetic)",
+       6,
+       "No"
+      ],
+      [
+       "Harbor City Youth Alliance (synthetic)",
+       5,
+       "Yes"
+      ],
+      [
+       "Southside Youth Peace Collective (synthetic sample)",
+       5,
+       "No"
+      ],
+      [
+       "Sunset Community Responders (synthetic)",
+       5,
+       "No"
+      ],
+      [
+       "Demo",
+       4,
+       "No"
+      ],
+      [
+       "Eastgate Credible Messengers (synthetic)",
+       4,
+       "No"
+      ],
+      [
+       "Fairview Restorative Justice (synthetic)",
+       4,
+       "No"
+      ],
+      [
+       "Maple Heights Peace Project (synthetic)",
+       4,
+       "No"
+      ],
+      [
+       "Oak Park Second Chances (synthetic)",
+       4,
+       "Yes"
+      ],
+      [
+       "Cedar Grove Community Safety (synthetic)",
+       3,
+       "No"
+      ],
+      [
+       "Bayview Neighborhood Healers (synthetic)",
+       2,
+       "No"
+      ],
+      [
+       "Brookside Safe Passage (synthetic)",
+       2,
+       "No"
+      ],
+      [
+       "Ironbridge Life Coaches (synthetic)",
+       2,
+       "No"
+      ],
+      [
+       "Southpoint Safe Streets (synthetic)",
+       2,
+       "No"
+      ],
+      [
+       "Greenway Mentors Network (synthetic)",
+       1,
+       "No"
+      ],
+      [
+       "Hillcrest Youth Futures (synthetic)",
+       1,
+       "No"
+      ],
+      [
+       "Pinecrest Street Outreach (synthetic)",
+       1,
+       "No"
+      ],
+      [
+       "Test",
+       1,
+       "No"
+      ],
+      [
+       "Metro Community Safety Alliance (synthetic sample)",
+       0,
+       "Yes"
+      ]
+     ],
+     "title": "Organizations that need Financial Management training"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'gaps_by_domain'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'gaps_by_domain' area=None filters={}; want {'analysis': 'gaps_by_domain'}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-gaps-by-area",
+   "metadata": {
+    "case": "gaps-by-area",
+    "tags": [
+     "route",
+     "gaps_by_domain"
+    ]
+   },
+   "output": {
+    "analysis": "gaps_by_domain",
+    "analysis_label": "Gaps by area",
+    "answer": "Community Engagement & Partnerships has the highest share of organizations with a High priority growth priority at 92%, followed by Planning at 90%. Fundraising and Human Resources are tied at 86%.",
+    "answer_source": "ai",
+    "area": null,
+    "area_name": null,
+    "chart_hint": {
+     "label": 0,
+     "type": "bar",
+     "value": 2
+    },
+    "filters": {},
+    "org_name": null,
+    "question": "Which capacity areas have the most organizations with high priority gaps?",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Area",
+      "Organizations assessed",
+      "With a High priority growth priority (%)",
+      "Most common growth priority"
+     ],
+     "rows": [
+      [
+       "Planning",
+       29,
+       90,
+       "We are implementing our second or subsequent strategic plan."
+      ],
+      [
+       "Fundraising",
+       29,
+       86,
+       "We have secured at least one very large grant (e.g., $150,000+)."
+      ],
+      [
+       "Governance",
+       13,
+       62,
+       "Our governing body contributes to peer learning and shares practices with others in the field."
+      ],
+      [
+       "Human Resources",
+       14,
+       86,
+       "Supervisors are trained to effectively manage and support staff."
+      ],
+      [
+       "Financial Management",
+       29,
+       79,
+       "We have been audited more than once and have improved based on findings."
+      ],
+      [
+       "Monitoring, Learning & Evaluation",
+       29,
+       66,
+       "We use data and learning to adapt programs over time."
+      ],
+      [
+       "Community Engagement & Partnerships",
+       13,
+       92,
+       "We engage individuals with lived experience in program delivery and leadership."
+      ],
+      [
+       "Technology & Infrastructure",
+       13,
+       77,
+       "We have systems that support remote or flexible work when needed."
+      ]
+     ],
+     "title": "Gaps by area"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'common_gaps'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'common_gaps' area=None filters={}; want {'analysis': 'common_gaps'}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-common-gaps",
+   "metadata": {
+    "case": "common-gaps",
+    "tags": [
+     "route",
+     "common_gaps"
+    ]
+   },
+   "output": {
+    "analysis": "common_gaps",
+    "analysis_label": "Most common gaps",
+    "answer": "The most common growth priorities across the network are planning-related, with 23 organizations (79%) implementing a second or subsequent strategic plan. Securing at least one very large grant (FR20) and being audited more than once with improvements (FM9) follow, each at 21 organizations (72%). Serving as a planning model (PL15) and showing consistent financial strength over time (FM17) are also common growth priorities, each at 20 organizations (69%).",
+    "answer_source": "ai",
+    "area": null,
+    "area_name": null,
+    "chart_hint": {
+     "label": 0,
+     "type": "bar",
+     "value": 3
+    },
+    "filters": {},
+    "org_name": null,
+    "question": "What are the most common growth priorities across the network?",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Statement",
+      "Area",
+      "Organizations",
+      "Share of those assessed (%)"
+     ],
+     "rows": [
+      [
+       "PL14 We are implementing our second or subsequent strategic plan.",
+       "Planning",
+       23,
+       79
+      ],
+      [
+       "FR20 We have secured at least one very large grant (e.g., $150,000+).",
+       "Fundraising",
+       21,
+       72
+      ],
+      [
+       "FM9 We have been audited more than once and have improved based on findings.",
+       "Financial Management",
+       21,
+       72
+      ],
+      [
+       "PL15 We serve as a model for other organizations in planning and strategy.",
+       "Planning",
+       20,
+       69
+      ],
+      [
+       "FM17 Our audits demonstrate consistent financial strength over time.",
+       "Financial Management",
+       20,
+       69
+      ],
+      [
+       "PL13 We have a clear understanding of where funding will come from for the next 2 or more years.",
+       "Planning",
+       19,
+       66
+      ],
+      [
+       "FR19 We have more than one person supporting fundraising efforts.",
+       "Fundraising",
+       19,
+       66
+      ],
+      [
+       "PL10 We are actively developing a strategic plan.",
+       "Planning",
+       18,
+       62
+      ],
+      [
+       "PL11 We have a 2–3 year strategic plan that includes a multi-year budget, capacity building, and sustainability strategies.",
+       "Planning",
+       18,
+       62
+      ],
+      [
+       "FR10 We secure grants at higher funding levels (e.g., $75,000+).",
+       "Fundraising",
+       18,
+       62
+      ]
+     ],
+     "title": "Most common growth priorities"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'compare_program_models'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'compare_program_models' area='FR' filters={}; want {'analysis': 'compare_program_models', 'area': 'FR'}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-compare-models-fr",
+   "metadata": {
+    "case": "compare-models-fr",
+    "tags": [
+     "route",
+     "compare_program_models"
+    ]
+   },
+   "output": {
+    "analysis": "compare_program_models",
+    "analysis_label": "Program models compared",
+    "answer": "Street outreach programs have higher average fundraising capacity, at 66.2% across 12 organizations, compared with 49.2% for hospital-based violence intervention programs across 6 organizations. Both models most commonly sit at the Seeding stage. However, 100% of hospital-based programs have a High priority growth priority, versus 75% of street outreach programs.",
+    "answer_source": "ai",
+    "area": "FR",
+    "area_name": "Fundraising",
+    "chart_hint": {
+     "label": 0,
+     "type": "bar",
+     "value": 2
+    },
+    "filters": {},
+    "org_name": null,
+    "question": "How do hospital-based programs compare to street outreach programs in fundraising?",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Program model",
+      "Organizations assessed",
+      "Average capacity (%)",
+      "Most common stage",
+      "With a High priority growth priority (%)"
+     ],
+     "rows": [
+      [
+       "Street outreach",
+       12,
+       66.2,
+       "Seeding",
+       75
+      ],
+      [
+       "Hospital-based violence intervention",
+       6,
+       49.2,
+       "Seeding",
+       100
+      ],
+      [
+       "Mentoring/youth development",
+       7,
+       52.1,
+       "Seeding",
+       100
+      ],
+      [
+       "Therapy/CBT",
+       4,
+       46.2,
+       "Seeding",
+       100
+      ],
+      [
+       "Re-entry support",
+       3,
+       55.0,
+       "Seeding",
+       100
+      ],
+      [
+       "Not shared",
+       2,
+       72.5,
+       "Emerging",
+       50
+      ]
+     ],
+     "title": "Fundraising by program model"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'change_over_time'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'change_over_time' area=None filters={}; want {'analysis': 'change_over_time'}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-change",
+   "metadata": {
+    "case": "change",
+    "tags": [
+     "route",
+     "change_over_time"
+    ]
+   },
+   "output": {
+    "analysis": "change_over_time",
+    "analysis_label": "Change over time",
+    "answer": "Six organizations improved: Northside Peacekeepers (synthetic) moved up 3 areas, Union Square Outreach (synthetic) and West End Violence Interrupters (synthetic) each moved up 2, and Test, testy, and Greenway Mentors Network (synthetic) each moved up 1. Union Square Outreach (synthetic), West End Violence Interrupters (synthetic), and Greenway Mentors Network (synthetic) also had areas go down. The other four organizations showed no areas moved up.",
+    "answer_source": "ai",
+    "area": null,
+    "area_name": null,
+    "chart_hint": {
+     "label": 0,
+     "type": "bar",
+     "value": 5
+    },
+    "filters": {},
+    "org_name": null,
+    "question": "Which organizations improved since their last assessment?",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Organization",
+      "Previous",
+      "Latest",
+      "Areas up a stage or more",
+      "Areas down",
+      "Growth priorities closed",
+      "New growth priorities"
+     ],
+     "rows": [
+      [
+       "Northside Peacekeepers (synthetic)",
+       "2026-08-23",
+       "2026-09-22",
+       3,
+       0,
+       22,
+       7
+      ],
+      [
+       "Union Square Outreach (synthetic)",
+       "2026-08-03",
+       "2026-09-29",
+       2,
+       4,
+       28,
+       13
+      ],
+      [
+       "West End Violence Interrupters (synthetic)",
+       "2026-08-20",
+       "2026-10-27",
+       2,
+       4,
+       28,
+       19
+      ],
+      [
+       "Test",
+       "2026-11-04",
+       "2026-11-04",
+       1,
+       0,
+       27,
+       6
+      ],
+      [
+       "testy",
+       "2026-11-04",
+       "2026-11-04",
+       1,
+       0,
+       27,
+       8
+      ],
+      [
+       "Greenway Mentors Network (synthetic)",
+       "2026-08-14",
+       "2026-10-19",
+       1,
+       2,
+       18,
+       5
+      ],
+      [
+       "Metro Community Safety Alliance (synthetic sample)",
+       "2026-11-04",
+       "2026-11-04",
+       0,
+       0,
+       0,
+       0
+      ],
+      [
+       "Riverbend Violence Interruption Network (synthetic sample)",
+       "2026-11-04",
+       "2026-11-04",
+       0,
+       0,
+       0,
+       0
+      ],
+      [
+       "Riverbend Violence Interruption Network (synthetic)",
+       "2026-11-03",
+       "2026-11-03",
+       0,
+       0,
+       0,
+       0
+      ],
+      [
+       "Southside Youth Peace Collective (synthetic sample)",
+       "2026-11-04",
+       "2026-11-04",
+       0,
+       0,
+       0,
+       0
+      ]
+     ],
+     "title": "Change since the last assessment"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'support_requests'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'support_requests' area=None filters={}; want {'analysis': 'support_requests'}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-support",
+   "metadata": {
+    "case": "support",
+    "tags": [
+     "route",
+     "support_requests"
+    ]
+   },
+   "output": {
+    "analysis": "support_requests",
+    "analysis_label": "Support requests",
+    "answer": "Organizations are asking for the most support in Planning (8 organizations), followed by Fundraising (6) and Monitoring, Learning & Evaluation (5). Financial Management has 3 organizations asking, while Human Resources, Community Engagement & Partnerships, and Technology & Infrastructure each have 1, which are the growth priorities.",
+    "answer_source": "ai",
+    "area": null,
+    "area_name": null,
+    "chart_hint": {
+     "label": 0,
+     "type": "bar",
+     "value": 1
+    },
+    "filters": {},
+    "org_name": null,
+    "question": "In which areas are organizations asking us for training or coaching?",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Area",
+      "Organizations asking",
+      "Organizations"
+     ],
+     "rows": [
+      [
+       "Planning",
+       8,
+       "Eastgate Credible Messengers (synthetic), Fairview Restorative Justice (synthetic), Metro Community Safety Alliance (synthetic sample), Northside Peacekeepers (synthetic), Oak Park Second Chances (synthetic), Southpoint Safe Streets (synthetic), Union Square Outreach (synthetic), West End Violence Interrupters (synthetic)"
+      ],
+      [
+       "Fundraising",
+       6,
+       "Harbor City Youth Alliance (synthetic), Lakeshore Hospital Responders (synthetic), Metro Community Safety Alliance (synthetic sample), Northside Peacekeepers (synthetic), Southpoint Safe Streets (synthetic), Test"
+      ],
+      [
+       "Monitoring, Learning & Evaluation",
+       5,
+       "Harbor City Youth Alliance (synthetic), Lakeshore Hospital Responders (synthetic), Test, Union Square Outreach (synthetic), West End Violence Interrupters (synthetic)"
+      ],
+      [
+       "Financial Management",
+       3,
+       "Harbor City Youth Alliance (synthetic), Metro Community Safety Alliance (synthetic sample), Oak Park Second Chances (synthetic)"
+      ],
+      [
+       "Human Resources",
+       1,
+       "Union Square Outreach (synthetic)"
+      ],
+      [
+       "Community Engagement & Partnerships",
+       1,
+       "West End Violence Interrupters (synthetic)"
+      ],
+      [
+       "Technology & Infrastructure",
+       1,
+       "Fairview Restorative Justice (synthetic)"
+      ]
+     ],
+     "title": "Support requests by area"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'org_lookup'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'org_lookup' area=None filters={}; want {'analysis': 'org_lookup', 'org_name': 'Northside Peacekeepers'}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-lookup",
+   "metadata": {
+    "case": "lookup",
+    "tags": [
+     "route",
+     "org_lookup"
+    ]
+   },
+   "output": {
+    "analysis": "org_lookup",
+    "analysis_label": "Organization lookup",
+    "answer": "Northside Peacekeepers is at Emerging in Planning with 33% capacity and Seeding in Fundraising with 35% capacity. Both areas have growth priorities (8 and 6 high priority) and both asked for help. Financial Management is at 50% and Monitoring, Learning & Evaluation is at 59%, both at Developing, with 0 high priority growth priorities and no request for help.",
+    "answer_source": "ai",
+    "area": null,
+    "area_name": null,
+    "chart_hint": {
+     "label": 0,
+     "type": "bar",
+     "value": 3
+    },
+    "filters": {},
+    "org_name": "Northside Peacekeepers",
+    "question": "Show me how Northside Peacekeepers is doing.",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Area",
+      "Stage",
+      "Capacity %",
+      "High priority growth priorities",
+      "Asked for help"
+     ],
+     "rows": [
+      [
+       "Planning",
+       "Emerging",
+       33,
+       8,
+       "Yes"
+      ],
+      [
+       "Fundraising",
+       "Seeding",
+       35,
+       6,
+       "Yes"
+      ],
+      [
+       "Financial Management",
+       "Developing",
+       50,
+       0,
+       "No"
+      ],
+      [
+       "Monitoring, Learning & Evaluation",
+       "Developing",
+       59,
+       0,
+       "No"
+      ]
+     ],
+     "title": "Northside Peacekeepers (synthetic)"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'peers_of'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'peers_of' area=None filters={}; want {'analysis': 'peers_of', 'org_name': 'Eastgate Credible Messengers'}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-peers",
+   "metadata": {
+    "case": "peers",
+    "tags": [
+     "route",
+     "peers_of"
+    ]
+   },
+   "output": {
+    "analysis": "peers_of",
+    "analysis_label": "Similar grantees",
+    "answer": "Maple Heights Peace Project (synthetic) is the closest match to Eastgate Credible Messengers, with a score of 0.67. Fairview Restorative Justice (synthetic) follows closely at 0.66, and West End Violence Interrupters (synthetic) is next at 0.61.",
+    "answer_source": "ai",
+    "area": null,
+    "area_name": null,
+    "chart_hint": {
+     "label": 0,
+     "type": "bar",
+     "value": 1
+    },
+    "filters": {},
+    "org_name": "Eastgate Credible Messengers",
+    "question": "Which grantees are most similar to Eastgate Credible Messengers?",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Organization",
+      "Match score (0 to 1)",
+      "Why"
+     ],
+     "rows": [
+      [
+       "Maple Heights Peace Project (synthetic)",
+       0.67,
+       "Both do mentoring or youth development; Similar size: 6-10 staff; Similar budget: $250K to $1M; Share 59 growth priorities incl. PL2"
+      ],
+      [
+       "Fairview Restorative Justice (synthetic)",
+       0.66,
+       "Both do re-entry support; Similar size: 6-10 staff; Similar budget: $250K to $1M; Share 62 growth priorities incl. PL2"
+      ],
+      [
+       "West End Violence Interrupters (synthetic)",
+       0.61,
+       "Both do mentoring or youth development; Similar size: 6-10 staff; Similar budget: $250K to $1M; Share 34 growth priorities incl. PL4"
+      ],
+      [
+       "Demo",
+       0.58,
+       "Both do mentoring or youth development; Similar size: 6-10 staff; Close in budget: Under $250K and $250K to $1M; Share 25 growth priorities incl. PL2"
+      ],
+      [
+       "Southside Youth Peace Collective (synthetic sample)",
+       0.56,
+       "Both do mentoring or youth development; Close in size: 1-5 and 6-10 staff; Similar budget: $250K to $1M; Share 41 growth priorities incl. PL2"
+      ]
+     ],
+     "title": "Most similar to Eastgate Credible Messengers (synthetic)"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'training_needs'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'training_needs' area='GV' filters={'staff_size': '1-5'}; want {'analysis': 'training_needs', 'area': 'GV', 'filters': {'staff_size': '1-5'}}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-training-gv-small",
+   "metadata": {
+    "case": "training-gv-small",
+    "tags": [
+     "route",
+     "training_needs"
+    ]
+   },
+   "output": {
+    "analysis": "training_needs",
+    "analysis_label": "Training needs",
+    "answer": "No organizations are identified as needing governance training, so none with 1-5 staff appear in the results. The results show no high priority growth priorities and no requests for help on governance. The current data therefore does not show a governance training need for organizations of this size.",
+    "answer_source": "ai",
+    "area": "GV",
+    "area_name": "Governance",
+    "chart_hint": null,
+    "filters": {
+     "staff_size": "1-5"
+    },
+    "org_name": null,
+    "question": "Which organizations with 1-5 staff need governance training?",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Organization",
+      "High priority growth priorities",
+      "Asked for help"
+     ],
+     "rows": [],
+     "title": "Organizations that need Governance training"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'common_gaps'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'common_gaps' area=None filters={'program_model': 'Re-entry support'}; want {'analysis': 'common_gaps', 'filters': {'program_model': 'Re-entry support'}}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-common-reentry",
+   "metadata": {
+    "case": "common-reentry",
+    "tags": [
+     "route",
+     "common_gaps"
+    ]
+   },
+   "output": {
+    "analysis": "common_gaps",
+    "analysis_label": "Most common gaps",
+    "answer": "Four statements tie for the most common growth priorities, each held by 3 organizations (100% of those assessed): PL14 (implementing a second or subsequent strategic plan), FR19 (more than one person supporting fundraising efforts), FR20 (at least one very large grant of $150,000+), and FM17 (audits showing consistent financial strength over time). The next most common growth priorities are the planning statements PL2, PL4, PL6, PL8, PL9, and PL11, each held by 2 organizations (67%).",
+    "answer_source": "ai",
+    "area": null,
+    "area_name": null,
+    "chart_hint": {
+     "label": 0,
+     "type": "bar",
+     "value": 3
+    },
+    "filters": {
+     "program_model": "Re-entry support"
+    },
+    "org_name": null,
+    "question": "What are the most common growth priorities for re-entry support programs?",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Statement",
+      "Area",
+      "Organizations",
+      "Share of those assessed (%)"
+     ],
+     "rows": [
+      [
+       "PL14 We are implementing our second or subsequent strategic plan.",
+       "Planning",
+       3,
+       100
+      ],
+      [
+       "FR19 We have more than one person supporting fundraising efforts.",
+       "Fundraising",
+       3,
+       100
+      ],
+      [
+       "FR20 We have secured at least one very large grant (e.g., $150,000+).",
+       "Fundraising",
+       3,
+       100
+      ],
+      [
+       "FM17 Our audits demonstrate consistent financial strength over time.",
+       "Financial Management",
+       3,
+       100
+      ],
+      [
+       "PL2 We have written work plans, a logic model, or a strategy plan to guide our work.",
+       "Planning",
+       2,
+       67
+      ],
+      [
+       "PL4 We have clarity on where funding will come from to support our programs for at least the next 6–12 months.",
+       "Planning",
+       2,
+       67
+      ],
+      [
+       "PL6 We consistently monitor progress against our written work plans.",
+       "Planning",
+       2,
+       67
+      ],
+      [
+       "PL8 We regularly develop and update our work plans.",
+       "Planning",
+       2,
+       67
+      ],
+      [
+       "PL9 We have a clear understanding of where funding will come from for the next year.",
+       "Planning",
+       2,
+       67
+      ],
+      [
+       "PL11 We have a 2–3 year strategic plan that includes a multi-year budget, capacity building, and sustainability strategies.",
+       "Planning",
+       2,
+       67
+      ]
+     ],
+     "title": "Most common growth priorities"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Analysis 'training_needs'.",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Got 'training_needs' area=None filters={'state': 'IL'}; want {'analysis': 'training_needs', 'filters': {'state': 'IL'}}.",
+     "label": "pass",
+     "name": "expected_analysis",
+     "score": 1.0
+    },
+    {
+     "explanation": "Every number comes from the table.",
+     "label": "pass",
+     "name": "answer_numbers_in_table",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-training-il",
+   "metadata": {
+    "case": "training-il",
+    "tags": [
+     "route",
+     "training_needs"
+    ]
+   },
+   "output": {
+    "analysis": "training_needs",
+    "analysis_label": "Training needs",
+    "answer": "Planning has the most organizations needing training in Illinois, at 5, and all 5 are marked High priority, with 3 asking for help. Fundraising, Financial Management, and Monitoring, Learning & Evaluation each have 4 organizations needing training, all marked High priority, and these are the next growth priorities. Governance has the fewest, with 1 organization, while Human Resources, Community Engagement & Partnerships, and Technology & Infrastructure each have 2.",
+    "answer_source": "ai",
+    "area": null,
+    "area_name": null,
+    "chart_hint": {
+     "label": 0,
+     "type": "bar",
+     "value": 1
+    },
+    "filters": {
+     "state": "IL"
+    },
+    "org_name": null,
+    "question": "Which organizations in Illinois need training, by area?",
+    "status": 200,
+    "table": {
+     "columns": [
+      "Area",
+      "Organizations that need training",
+      "With a High priority",
+      "Asked for help"
+     ],
+     "rows": [
+      [
+       "Planning",
+       5,
+       5,
+       3
+      ],
+      [
+       "Fundraising",
+       4,
+       4,
+       0
+      ],
+      [
+       "Governance",
+       1,
+       1,
+       0
+      ],
+      [
+       "Human Resources",
+       2,
+       2,
+       1
+      ],
+      [
+       "Financial Management",
+       4,
+       4,
+       1
+      ],
+      [
+       "Monitoring, Learning & Evaluation",
+       4,
+       4,
+       1
+      ],
+      [
+       "Community Engagement & Partnerships",
+       2,
+       2,
+       0
+      ],
+      [
+       "Technology & Infrastructure",
+       2,
+       2,
+       1
+      ]
+     ],
+     "title": "Organizations that need training, by area"
+    }
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Rejected (422).",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Rejected with 422.",
+     "label": "pass",
+     "name": "rejects_unsafe",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-reject-sql",
+   "metadata": {
+    "case": "reject-sql",
+    "tags": [
+     "reject"
+    ]
+   },
+   "output": {
+    "error": "I can answer questions about training needs, gaps by area, the most common gaps, program models, change over time, support requests and similar grantees. Try one of the suggested questions.",
+    "status": 422
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Rejected (422).",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Rejected with 422.",
+     "label": "pass",
+     "name": "rejects_unsafe",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-reject-delete",
+   "metadata": {
+    "case": "reject-delete",
+    "tags": [
+     "reject"
+    ]
+   },
+   "output": {
+    "error": "I can answer questions about training needs, gaps by area, the most common gaps, program models, change over time, support requests and similar grantees. Try one of the suggested questions.",
+    "status": 422
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Rejected (422).",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Rejected with 422.",
+     "label": "pass",
+     "name": "rejects_unsafe",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-reject-raw-sql",
+   "metadata": {
+    "case": "reject-raw-sql",
+    "tags": [
+     "reject"
+    ]
+   },
+   "output": {
+    "error": "I can answer questions about training needs, gaps by area, the most common gaps, program models, change over time, support requests and similar grantees. Try one of the suggested questions.",
+    "status": 422
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Rejected (422).",
+     "label": "pass",
+     "name": "analysis_allowed",
+     "score": 1.0
+    },
+    {
+     "explanation": "Rejected with 422.",
+     "label": "pass",
+     "name": "rejects_unsafe",
+     "score": 1.0
+    }
+   ],
+   "id": "staff-reject-off-topic",
+   "metadata": {
+    "case": "reject-off-topic",
+    "tags": [
+     "reject"
+    ]
+   },
+   "output": {
+    "error": "I can answer questions about training needs, gaps by area, the most common gaps, program models, change over time, support requests and similar grantees. Try one of the suggested questions.",
+    "status": 422
+   }
+  }
+ ],
+ "summary": [
+  {
+   "errors": 0,
+   "evaluator": "no_em_dash",
+   "gate": true,
+   "mean": 1.0,
+   "n": 11,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "No em dashes.",
+    "id": "staff-training-fm",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "rejects_unsafe",
+   "gate": true,
+   "mean": 1.0,
+   "n": 4,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Rejected with 422.",
+    "id": "staff-reject-sql",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "analysis_allowed",
+   "gate": false,
+   "mean": 1.0,
+   "n": 15,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Analysis 'training_needs'.",
+    "id": "staff-training-fm",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "answer_numbers_in_table",
+   "gate": false,
+   "mean": 1.0,
+   "n": 11,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Every number comes from the table.",
+    "id": "staff-training-fm",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "expected_analysis",
+   "gate": false,
+   "mean": 1.0,
+   "n": 11,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Got 'training_needs' area='FM' filters={}; want {'analysis': 'training_needs', 'area': 'FM'}.",
+    "id": "staff-training-fm",
+    "score": 1.0
+   }
+  }
+ ],
+ "usage": {
+  "by_model": {
+   "us.anthropic.claude-haiku-5-5": {
+    "cacheReadInputTokens": 263358,
+    "cacheWriteInputTokens": 0,
+    "calls": 126,
+    "inputTokens": 1175082,
+    "outputTokens": 103675,
+    "totalTokens": 1542115
+   },
+   "us.anthropic.claude-sonnet-5-5": {
+    "cacheReadInputTokens": 236310,
+    "cacheWriteInputTokens": 15754,
+    "calls": 16,
+    "inputTokens": 216798,
+    "outputTokens": 69446,
+    "totalTokens": 538308
+   }
+  },
+  "estimated_usd": 3.5418
+ }
+}

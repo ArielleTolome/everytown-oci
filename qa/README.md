@@ -65,10 +65,10 @@ an instance role, so on EC2 run `eval "$(aws configure export-credentials --form
 | `tests/regressions/report-plan-layout.e2e.ts` | #32 to #37: Your plan reads Summary about your organization, the roadmap, then Start here, and Start here shows only the steps of open weeks. |
 | `tests/regressions/roadmap-timeline-badge.e2e.ts` | #38: the roadmap opens on a 12-week timeline with points and badges first and no step count; picking a week shows it (a locked week says when it opens); finishing a week pops up a badge dialog once (Escape returns focus); the report's roadmap card names this week without a count. Ticks are answered in the page. |
 | `tests/mobile/intake-resume-link.e2e.ts` | Phone bug bash (phone target): the save and teammate links show in full in their box (an iPhone SE showed about 10 characters). Makes one "QA Phone" draft. |
-| `tests/mobile/report-coach-answer.e2e.ts` | Phone bug bash, #37: Chat about your report opens as a dialog and the new answer is on screen. The POST is stubbed in the page. |
+| `tests/mobile/report-coach-answer.e2e.ts` | Phone bug bash, #37: Chat about your report opens as a dialog and the new answer is on screen. v1.10.1: a question asked while the earlier conversation is still loading still shows its answer (it showed "We could not answer right now"). The ask requests are stubbed in the page. |
 | `tests/mobile/report-larger-text-bar.e2e.ts` | Phone bug bash: with Larger text, the report's sticky "On this page" bar stays on one line. |
 | `tests/mobile/report-week-done-cheer.e2e.ts` | Phone bug bash: finishing a roadmap week shows "Week N done!" where focus lands (it was off screen). The POST is answered in the page, so Riverbend is unchanged. |
-| `tests/demo/demo-path.e2e.ts` | Tag `demo`: the demo script's on-stage path. Leader: one-click Southside sample to "Your report is ready", Start here, PDF. Staff: Training needs, Ask the data preset, Peers, the Southside drawer's CloudWatch trace link. |
+| `tests/demo/demo-path.e2e.ts` | Tag `demo`: the demo script's on-stage path. Leader: one-click Southside sample to "Your report is ready", Start here, one chat question (a real coach call), PDF. Staff: Training needs, Ask the data preset, Peers, the Southside drawer's CloudWatch trace link. |
 
 ## Changing it safely
 

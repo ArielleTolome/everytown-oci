@@ -194,12 +194,12 @@ figure figcaption p { font-size: 27px; }
   <div class="body">
     <div class="grid3" style="align-items:start;">
       <figure>
-        <img class="shot" style="height:560px;" src="img/questionnaire.jpg" alt="Questionnaire, Planning area. One statement per card, We primarily focus on short-term planning and activities, with large Yes and No buttons, keyboard tips and an English or Spanish switch.">
-        <figcaption><span class="step" aria-hidden="true">1</span><p><strong>Answer.</strong> One statement at a time, Yes or No, in English or Spanish. Teammates can answer an area.</p></figcaption>
+        <img class="shot" style="height:560px;" src="img/questionnaire.jpg" alt="Questionnaire, Planning area, question 1 of 9: We primarily focus on short-term planning and activities, with large Yes and No buttons, Previous and Next, and an English or Español switch at the top right.">
+        <figcaption><span class="step" aria-hidden="true">1</span><p><strong>Answer.</strong> Pick how to answer from a sample, then Yes or No, in English or Spanish, on a phone or a computer.</p></figcaption>
       </figure>
       <figure>
         <img class="shot" style="height:560px;" src="img/report-start.jpg" alt="Start here: weeks 1 to 4 of your roadmap, labelled Picked from your answers, steps written by AI. Two priorities side by side: Map your funding for the next 12 months and Help all staff collect data the same way, each with why it comes first and the answer it is based on (FR7, ML6).">
-        <figcaption><span class="step" aria-hidden="true">2</span><p><strong>Start here.</strong> Two priorities, the exact answers behind them and a vetted resource. Plus a PDF letter for the board.</p></figcaption>
+        <figcaption><span class="step" aria-hidden="true">2</span><p><strong>Start here.</strong> Two priorities, the exact answers behind them, a vetted resource. Plus a chat and a PDF letter.</p></figcaption>
       </figure>
       <figure>
         <img class="shot" style="height:560px;" src="img/roadmap-weeks.jpg" alt="12-week roadmap: level, 180 points, 4 weeks in a row, 4 of 7 badges earned and the next badge, then a timeline of all 12 weeks: weeks 1 to 4 done, week 5 this week, weeks 6 to 12 with the date each opens.">
@@ -303,7 +303,7 @@ figure figcaption p { font-size: 27px; }
   <div class="body">
     <div style="display:grid;grid-template-columns:1fr 820px;gap:48px;align-items:center;">
       <div class="grid2 tight" style="gap:18px;">
-        <div class="card"><h3>WCAG 2.2 AA</h3><p class="small">An automated accessibility check finds 0 problems on every page, on computers and phones.</p></div>
+        <div class="card"><h3>WCAG 2.2 AA, phone first</h3><p class="small">0 automated accessibility problems on every page; every screen tested on a phone and a computer.</p></div>
         <div class="card"><h3>Grade 8 or plainer</h3><p class="small">Code measures the reading level of every report; above grade 8.5, AI rewrites it in plainer words.</p></div>
         <div class="card"><h3>Strength first</h3><p class="small">A coach's letter: a summary about your organization, then growth priorities. Never a grade.</p></div>
         <div class="card"><h3>Listen</h3><p class="small">Any section read aloud with Amazon Polly. Larger text and high contrast in one menu.</p></div>
@@ -330,12 +330,12 @@ figure figcaption p { font-size: 27px; }
     </div>
     <div class="grid3">
       <div class="card pale"><h3>Everytown owns it</h3><p class="small">Free and open source (Apache-2.0). One script sets it up in Everytown's own AWS account.</p></div>
-      <div class="card pale"><h3>Checked on every release</h3><p class="small">Automatic tests of the AI's writing, every screen and accessibility run before each release, so changes do not quietly break reports.</p></div>
+      <div class="card pale"><h3>Tested with a new user</h3><p class="small">A first-time user tried it on Nov 4 with no help. All 12 places she got stuck were fixed and live the same day. Tests of the AI, every screen and accessibility run before each release.</p></div>
       <div class="card pale"><h3>Everytown's own method</h3><p class="small">The 143 statements and reference scoring engine are Everytown's, unchanged. Week 12 is "Retake the OCI", so staff see whether support helped.</p></div>
     </div>
   </div>
   <div class="foot"><span>Spend guards: capped concurrency, an hourly report cap, optional AWS Budget. Observability: CloudWatch, a few dollars a month; Phoenix optional, about $22.</span><span>9</span></div>
-  <aside class="notes">5:55 to 6:35. It works today: you just saw it live. A report costs about 11 cents of Bedrock, the whole network twice a year is under 50 dollars of tokens, and hosting is one to three dollars a month with the database on auto-pause. There are no servers to patch. Everytown owns it: Apache-2.0, three CloudFormation stacks, one deploy script. It stays healthy because every release has to pass the evals, the end-to-end tests and the accessibility checks. And it is Everytown's own method, unchanged, with a retake in week 12 so staff can see whether their support moved anyone.</aside>
+  <aside class="notes">5:55 to 6:35. It works today: you just saw it live. A report costs about 11 cents of Bedrock, the whole network twice a year is under 50 dollars of tokens, and hosting is one to three dollars a month with the database on auto-pause. There are no servers to patch. Everytown owns it: Apache-2.0, three CloudFormation stacks, one deploy script. It stays healthy because every release has to pass the evals, the end-to-end tests on desktop and phone, and the accessibility checks; and when a first-time user tried it with no help on Nov 4, all 12 places she got stuck were fixed and live the same day. And it is Everytown's own method, unchanged, with a retake in week 12 so staff can see whether their support moved anyone.</aside>
 </section>
 
 <!-- 10. Scalability -->
@@ -432,10 +432,10 @@ figure figcaption p { font-size: 27px; }
   <div class="body">
     <div style="display:grid;grid-template-columns:1fr 720px;gap:48px;align-items:start;">
       <table style="border-collapse:collapse;font-size:23px;width:100%;">
-        <caption class="muted small" style="text-align:left;padding-bottom:12px;">v1.1 baseline; every run publishes to CloudWatch. Judge scores from 0 to 1.</caption>
+        <caption class="muted small" style="text-align:left;padding-bottom:12px;">v1.10 run on Nov 4; every run publishes to CloudWatch. Judge scores from 0 to 1.</caption>
         <thead><tr style="text-align:left;border-bottom:3px solid var(--navy);"><th style="padding:10px 12px 10px 0;">Suite</th><th style="padding:10px 12px;">Cases</th><th style="padding:10px 12px;">Gate</th><th style="padding:10px 0 10px 12px;">Judges</th></tr></thead>
         <tbody>
-          <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 12px 14px 0;"><strong>Reports</strong><br><span class="muted small">EN/ES samples, edge cases, prompt injection</span></td><td style="padding:14px 12px;">16</td><td style="padding:14px 12px;">Pass</td><td style="padding:14px 0 14px 12px;">personalization 0.88, actionability 0.84, faithfulness 0.75, plain language 0.72</td></tr>
+          <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 12px 14px 0;"><strong>Reports</strong><br><span class="muted small">EN/ES samples, edge cases, prompt injection</span></td><td style="padding:14px 12px;">16</td><td style="padding:14px 12px;">Pass</td><td style="padding:14px 0 14px 12px;">personalization 0.88, actionability 0.86, plain language 0.75, faithfulness 0.70</td></tr>
           <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 12px 14px 0;"><strong>Coach</strong><br><span class="muted small">how-to, change my score, crisis, off-topic</span></td><td style="padding:14px 12px;">21</td><td style="padding:14px 12px;">Pass</td><td style="padding:14px 0 14px 12px;">helpfulness 0.69</td></tr>
           <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 12px 14px 0;"><strong>Staff questions</strong><br><span class="muted small">including SQL injection and delete requests</span></td><td style="padding:14px 12px;">15</td><td style="padding:14px 12px;">Pass</td><td style="padding:14px 0 14px 12px;">all unsafe requests rejected</td></tr>
           <tr><td style="padding:14px 12px 14px 0;"><strong>Judge calibration</strong><br><span class="muted small">good vs deliberately bad outputs</span></td><td style="padding:14px 12px;">20</td><td style="padding:14px 12px;">Pass</td><td style="padding:14px 0 14px 12px;">every judge ranks bad below good, twice in a row</td></tr>
@@ -445,7 +445,7 @@ figure figcaption p { font-size: 27px; }
     </div>
   </div>
   <div class="foot"><span>python3 -m evals.run --suite all · --compare runs a model A/B · exits nonzero when a gate fails</span><span>A3</span></div>
-  <aside class="notes">If asked how we know it works. Code checks are the release gates; Claude Haiku judges with fixed rubrics measure quality and were calibrated against deliberately bad outputs. Faithfulness at 0.75 is the score we watch: most misses are a general claim about the field that is not in the library, which is visible in each trace for review.</aside>
+  <aside class="notes">If asked how we know it works. Code checks are the release gates; Claude Haiku judges with fixed rubrics measure quality and were calibrated against deliberately bad outputs. Faithfulness at 0.70 is the score we watch: most misses are a general claim about the field that is not in the library, which is visible in each trace for review. The latest run also covers the chat after it learned the roadmap: every gate passes.</aside>
 </section>
 
 <!-- A4. Cost detail -->
@@ -475,7 +475,7 @@ figure figcaption p { font-size: 27px; }
   <div class="band"><p class="kicker">Appendix · roadmap</p><h2>Built to be iterated on, not rebuilt</h2></div>
   <div class="body">
     <div class="grid3">
-      <div class="card mark"><p class="chip">Live today</p><ul class="ticks" style="margin-top:18px;"><li>All 8 areas, 143 statements</li><li>Report, PDF letter, 12-week roadmap</li><li>Staff dashboard, Ask the data, Peers</li><li>English and Spanish</li><li>Tracing and evals in CloudWatch</li></ul></div>
+      <div class="card mark"><p class="chip">Live today</p><ul class="ticks" style="margin-top:18px;"><li>All 8 areas, 143 statements</li><li>Report, chat, PDF letter, 12-week roadmap</li><li>Staff dashboard, Ask the data, Peers</li><li>English and Spanish, phone and computer</li><li>Tracing and evals in CloudWatch</li></ul></div>
       <div class="card mark"><p class="chip">Next, with Everytown</p><ul class="ticks" style="margin-top:18px;"><li>Pilot with 3 to 4 grantees</li><li>Real sign-in in the Grantee Portal</li><li>CSF experts review the field guides</li><li>Add pilot feedback to the eval sets</li></ul></div>
       <div class="card mark"><p class="chip">Later, as data grows</p><ul class="ticks" style="margin-top:18px;"><li>Peer benchmarking beyond the staff preview</li><li>Match new grantees with established peers</li><li>More languages</li></ul></div>
     </div>

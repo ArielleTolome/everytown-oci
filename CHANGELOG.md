@@ -2,6 +2,22 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.1 — Final pitch deck and demo script, and a chat fix found by the on-stage test
+
+**Pitch deck** ([`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf), 16 pages, attached)
+- Every app screenshot is the current build: the questionnaire (Question 1 of 9, Previous and Next), Start here (weeks 1 to 4, side by side, labelled by source), the 12-week roadmap timeline with badges, and the Summary about your organization.
+- Slide 4 mentions picking how to answer, phones and the chat; slide 8 says "phone first" and that code checks the reading level; slide 9 adds the Nov 4 user test (12 places a first-time user got stuck, fixed and live the same day); appendix A3 has the Nov 4 eval run (every gate passes; personalization 0.88, actionability 0.86, plain language 0.75, faithfulness 0.70, coach helpfulness 0.69); A5 lists the chat and phones.
+- `docs/pitch/sample-report.pdf` (the offline backup) is the current Riverbend report: Summary about your organization, research last, Everytown watermark and confidentiality clause.
+
+**Demo script** ([`docs/pitch/demo-script.md`](docs/pitch/demo-script.md))
+- Demo-first run of show retimed to 7:15 with a 20-second chat beat ("What is the first step this week?") and the user-test line on slide 9; the 2:30 live demo adds the same chat beat; the PDF line mentions the watermark.
+- Preparation: do not practice the chat in the prepared tab (15 questions per report, the conversation is kept). Numbers for questions: phone-first testing, the user test, the new eval run, 35 end-to-end test files on desktop and phone, the spend guard of 10.
+- The on-stage test (`npm run test:demo`) now asks the chat one starter question, so judging-morning preflight covers it.
+
+**Fix**
+- Chat about your report: a starter clicked while the earlier conversation was still loading showed "We could not answer right now" although the answer was saved (the loaded history replaced the conversation under the new question). A question now waits for the history first. Found when the new on-stage test failed once; regression test in `qa/tests/mobile/report-coach-answer.e2e.ts` (failed on v1.10.0 on desktop and phone, passes now).
+- Verified: full e2e on the fixed build 105 passed, 5 phone-only skipped; after deploy the chat tests pass on the live site and the on-stage path passes on the first try (4 of 4); evals: every gate passes (reports, coach with the new roadmap context, staff questions; about $3.54).
+
 ## v1.10.0 — User-test fixes: an easier questionnaire, a clearer report, a roadmap timeline, a report chat, confidential PDFs
 
 From the team's user test on Nov 4: a first-time user went through the site with no guidance, and the team wrote down every place she got stuck (recording and WhatsApp notes with screenshots). Filed as GitHub issues #28 to #39. Already fixed in v1.9.0 and checked again: name required, the "Keep my answer" button now says "Next", one language switch, the progress bar and Previous going back to the card you saw (never to question 1).

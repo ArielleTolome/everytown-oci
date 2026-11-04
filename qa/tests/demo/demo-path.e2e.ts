@@ -3,8 +3,8 @@ import { expect } from 'e2e';
 
 // The exact on-stage path from docs/pitch/demo-script.md. Run it on judging morning:
 //   APP_URL=https://d2mi2h3eu8y69s.cloudfront.net npm run test:demo
-// It creates one Southside sample report (about $0.11, counts against the hourly cap), so it is tagged `demo`
-// and left out of the normal and live runs.
+// It creates one Southside sample report (about $0.11, counts against the hourly cap) and asks its chat one starter
+// question (one real coach call on that new report), so it is tagged `demo` and left out of the normal and live runs.
 
 test('leader: one-click sample, report ready, PDF', { session: 'demo', tags: ['demo'] }, async ({ app, screen, browser }) => {
   await app.open('/');
@@ -14,6 +14,19 @@ test('leader: one-click sample, report ready, PDF', { session: 'demo', tags: ['d
   // The script's promise: the AI report in about 40 seconds; 120 s leaves room for a cold start.
   await expect(screen.getByText('Your report is ready')).toBeVisible({ timeout: 120_000 });
   await expect(screen.getByRole('heading', /Start here/)).toBeVisible();
+  // On stage the chat answers one starter question (a real coach call); wait for the answer text itself.
+  await screen.getByRole('button', 'Chat about your report').tap();
+  const chat = screen.getByRole('dialog', 'Chat about your report');
+  await expect(chat).toBeVisible();
+  await chat.getByRole('button', 'What is the first step this week?').tap();
+  let answered = false;
+  for (let i = 0; i < 60 && !answered; i++) {
+    answered = await browser.evaluate(() => !!document.querySelector('#chat-panel .coach-turn__text p')?.textContent?.trim());
+    if (!answered) await new Promise((r) => setTimeout(r, 1000));
+  }
+  expect(answered).toBe(true);
+  await browser.keyboard.press('Escape');
+  await expect(chat).not.toBeVisible();
   const pdf = await browser.evaluate(async () => {
     const id = new URLSearchParams(location.search).get('id');
     const res = await fetch(`/api/assessments/${id}/report.pdf`);

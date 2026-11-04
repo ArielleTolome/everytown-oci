@@ -99,6 +99,7 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
   const url = `/assessments/${encodeURIComponent(sub.id)}/ask`;
   let opener: HTMLElement | null = null;
   let loaded = false;
+  let loading: Promise<void> = Promise.resolve();
   let busy = false;
 
   const showError = (msg: string) => {
@@ -123,7 +124,7 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
     if (loaded) return;
     loaded = true;
     log.setAttribute("aria-live", "off");
-    api.get<{ messages: Turn[]; remaining: number }>(url).then((res) => {
+    loading = api.get<{ messages: Turn[]; remaining: number }>(url).then((res) => {
       log.innerHTML = res.messages.map((t) => turnHtml(t, sub)).join("");
       scroller.scrollTop = scroller.scrollHeight;
       if (res.remaining <= 0) closed(LIMIT);
@@ -165,6 +166,10 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
     if (!question) { showError("Type a question first."); input.focus(); return; }
     showError("");
     busy = true;
+    // A question asked while the conversation is still loading waits for it; otherwise the history replaced the log
+    // under the new question and its answer (already saved) showed as "could not answer".
+    await loading;
+    if (!form.isConnected) { busy = false; return; }
     submit.setAttribute("aria-disabled", "true");
     // The question shows at once as the reader's bubble; the typing dots stand in for the answer.
     log.insertAdjacentHTML("beforeend", `<div class="coach-turn" data-pending><div class="coach-turn__q"><p class="visually-hidden">You asked:</p><p>${esc(question)}</p></div></div>`);

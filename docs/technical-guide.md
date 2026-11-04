@@ -474,6 +474,7 @@ axe-core 4.10.2 (WCAG 2.0, 2.1, 2.2 A and AA) on every page and staff tab at 320
 | v1.9.0 | Team requests: one language switch for questions and report, several states, progress and Previous that follow the person (#23 to #27). |
 | v1.9.1 | This technical guide. |
 | v1.10.0 | User-test fixes: answer-style chooser, filled-in step, Previous and Next on every card, state chips, a two-layer results page, Chat about your report, roadmap timeline and badges, PDF watermark and confidentiality (#28 to #39). |
+| v1.10.1 | Final pitch deck and demo script; chat fix (a question asked while the conversation loaded lost its answer). |
 
 The full notes for each are in [`CHANGELOG.md`](../CHANGELOG.md) and on the GitHub Releases page.
 
