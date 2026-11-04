@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "End-to-end tests and bug bash for the OCI Capacity Coach (e2e, Claude on Bedrock)",
   "scripts": {
-    "test:e2e": "e2e run --exclude-tag live",
-    "test:live": "e2e run --tag live"
+    "test:e2e": "e2e run --exclude-tag live --exclude-tag demo",
+    "test:live": "e2e run --tag live",
+    "test:demo": "e2e run --tag demo --action-timeout 8000"
   },
   "type": "commonjs",
   "devDependencies": {

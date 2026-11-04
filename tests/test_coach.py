@@ -73,6 +73,17 @@ class Ask(unittest.TestCase):
         self.assertIn("911", out["answer"])
         converse.assert_not_called()
 
+    def test_crisis_question_is_answered_at_the_limit_and_never_uses_a_question(self):
+        # Bug bash v1.5: a crisis question used up one of the limited questions.
+        self._patch(pipeline, "_converse")
+        self.count.return_value = coach.MAX_QUESTIONS
+        res = self.post("Some days I want to end my life.")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.get_json()["remaining"], 0)
+        self.count.return_value = 3
+        self.assertEqual(self.post("Some days I want to end my life.").get_json()["remaining"], coach.MAX_QUESTIONS - 3)
+        self.assertTrue(self.save.call_args.args[2]["crisis"])  # stored flagged, so _count skips it
+
     def test_plain_text_decline_is_validated_and_returned_not_an_error(self):
         # Found by the coach eval: asked to change a score, the model sometimes declines without the tool.
         self._patch(pipeline, "_converse", return_value=[{"reasoningContent": {}}, {

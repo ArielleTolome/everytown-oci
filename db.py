@@ -123,14 +123,17 @@ def owner_of(sid):
     return rows[0]["owner"] if rows else None
 
 
-def set_support(sub, domain_ids):
-    """Replace this assessment's support request and mirror it into the document, atomically."""
+def set_support(sub, domain_ids, at=None):
+    """Replace this assessment's support request and mirror it into the document, atomically. `at` (ISO UTC)
+    backdates the request, so seed data never asks for help before its own assessment existed."""
+    stamp, at_param = ("CAST(:at AS timestamptz)", {"at": at}) if at else ("now()", {})
     tx = _call(_client().begin_transaction)["transactionId"]
     try:
         query("DELETE FROM support_requests WHERE assessment_id = :id", tx=tx, id=sub["id"])
-        batch("INSERT INTO support_requests (assessment_id, domain_id) VALUES (CAST(:a AS uuid), :d)",
-              [{"a": sub["id"], "d": d} for d in domain_ids], tx)
-        when = query("SELECT to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') || ' UTC' AS t", tx=tx)[0]["t"]
+        batch("INSERT INTO support_requests (assessment_id, domain_id, requested_at) VALUES (CAST(:a AS uuid), :d, %s)"
+              % stamp, [dict(at_param, a=sub["id"], d=d) for d in domain_ids], tx)
+        when = query("SELECT to_char(%s AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') || ' UTC' AS t" % stamp, tx=tx,
+                     **at_param)[0]["t"]
         sub["support"] = {"domain_ids": domain_ids, "requested_at": when}
         query("UPDATE assessments SET doc = :doc WHERE id = :id", tx=tx, doc=sub, id=sub["id"])
         _call(_client().commit_transaction, transactionId=tx)
@@ -302,12 +305,12 @@ def seed():
             sub["status"] = "done"
             sub["steps"] = [dict(s, state="done") for s in sub["steps"]]
             days_ago = 40 + rnd.randint(0, 60) if visit == 0 and i % 5 == 0 else rnd.randint(0, 45)
-            sub["created"] = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(time.time() - days_ago * 86400))
-            create(sub, "seed", created_at=time.strftime("%Y-%m-%dT%H:%M:%SZ",
-                                                         time.gmtime(time.time() - days_ago * 86400)))
+            created = time.time() - days_ago * 86400
+            sub["created"] = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(created))
+            create(sub, "seed", created_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(created)))
             if rnd.random() < 0.6:  # most organizations ask for help in the areas of their top growth priorities
                 areas = list(dict.fromkeys(g["domain_id"] for g in sub["gaps"][:3]))
-                set_support(sub, areas)
+                set_support(sub, areas, at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(created + 3600)))
     # Feature modules may add their own synthetic data: features/<name>.py `seed(rnd)` (deterministic rnd).
     import importlib
     import pkgutil

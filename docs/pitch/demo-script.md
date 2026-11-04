@@ -23,6 +23,18 @@ Judging criteria (official weights): **[INNOV]** Technical innovation 25%, **[IM
 
 Slide 5 (staff screenshots) is skipped when the live demo covers the staff view. The appendix (A1 to A5) answers likely questions: responsible AI, security and privacy, eval results, cost, roadmap.
 
+## Judging morning preflight (30 minutes before)
+
+From a laptop with AWS access (the e2e agent needs AWS keys in the environment; on an instance role, first run `eval "$(aws configure export-credentials --format env)"`):
+
+```
+cd qa && export AWS_REGION=us-west-2 APP_URL=https://d2mi2h3eu8y69s.cloudfront.net
+npx e2e run --exclude-tag demo --action-timeout 8000   # sign-in, smoke, regressions and the live 404 check (read-only)
+npm run test:demo                                       # the exact on-stage path: Southside sample to a ready report and PDF, then staff Training needs, Ask the data, Peers and the CloudWatch trace link
+```
+
+Both must pass. `test:demo` makes one report (about 45 seconds). If a step fails, its screenshot and trace are under `qa/.e2e/results/`. Do not redeploy on judging morning; a failed step is either the network (use the backup below) or something to report as a known issue.
+
 ## Before you go on stage (10 minutes)
 
 1. Open https://d2mi2h3eu8y69s.cloudfront.net/api/healthz and confirm `ok`.
@@ -55,7 +67,7 @@ If a new report is refused because of the hourly cap, say "that is the hourly re
 - Hosting: about $45 a month with Aurora kept warm at 0.5 ACU (as for judging), $1 to $3 a month with auto-pause; CloudWatch observability a few dollars a month, no server.
 - Evals: 16 report cases, 21 coach questions, 15 staff questions, 20 judge calibration cases; all gates pass. Report judges (v1.5 run): actionability 0.88, personalization 0.83, faithfulness 0.73, plain language 0.72; coach helpfulness 0.69.
 - Bugs the evals caught: the guardrail blocked a normal Spanish report (it judged our own facts as a prompt attack); "change my score" returned an error; tracing was silently off after a deploy (a missing library).
-- Protection on this temporary deployment: mocked login; CloudFront with IAM-signed origin access to the Lambda; 5 concurrent requests; an hourly cap on new reports; traces and model logs only in CloudWatch, behind AWS sign-in.
+- Protection on this temporary deployment: mocked login; CloudFront with IAM-signed origin access to the Lambda; 10 concurrent requests; an hourly cap on new reports; traces and model logs only in CloudWatch, behind AWS sign-in.
 - axe-core: no WCAG 2.2 A or AA violations on any page.
-- Scale: Bedrock quotas in this account are 6M tokens a minute for Claude Sonnet and 10M for Haiku. A report uses about 31,000 Sonnet tokens (cached prompt included) plus Haiku research, so even with output tokens counted 5× the quotas allow more than 100 reports a minute. Lambda allows 1,000 concurrent runs (the demo reserves 5 as a spend guard); Aurora Serverless v2 scales to a 16 ACU ceiling set at deploy.
+- Scale: Bedrock quotas in this account are 6M tokens a minute for Claude Sonnet and 10M for Haiku. A report uses about 31,000 Sonnet tokens (cached prompt included) plus Haiku research, so even with output tokens counted 5× the quotas allow more than 100 reports a minute. Lambda allows 1,000 concurrent runs (the demo reserves 10 as a spend guard; this shared workshop account cannot reserve more); Aurora Serverless v2 scales to a 16 ACU ceiling set at deploy.
 - Sustainability: Apache-2.0 open source; three CloudFormation stacks and `scripts/deploy.sh`; no servers; evals, 11 end-to-end tests and axe-core before every release.

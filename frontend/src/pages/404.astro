@@ -2,7 +2,7 @@
 import Base from "../layouts/Base.astro";
 import Icon from "../components/Icon.astro";
 ---
-<Base title="Page not found" public>
+<Base title="Page not found">
   <div class="title-band">
     <span class="eyebrow">Page not found</span>
     <h1>We could not find that page</h1>
@@ -10,6 +10,16 @@ import Icon from "../components/Icon.astro";
   <p class="notice"><Icon name="info" /><span>The link may be incomplete, or the page may have moved. Your saved answers on this device are safe.</span></p>
   <div class="actions actions--start">
     <a class="btn btn-primary" href="/">Go to the start page</a>
-    <a class="btn btn-secondary" href="/login/">Sign in</a>
+    <a class="btn btn-secondary" href="/login/" id="nf-login">Sign in</a>
   </div>
 </Base>
+
+<script>
+  import { api, type User } from "../lib/api";
+
+  // Signed in: show who in the header like other pages; signed out stays here (no redirect to login).
+  api.get<{ user: User }>("/me").then(({ user }) => {
+    document.dispatchEvent(new CustomEvent("oci:user", { detail: user }));
+    document.getElementById("nf-login")?.remove();
+  }).catch(() => { /* not signed in */ });
+</script>

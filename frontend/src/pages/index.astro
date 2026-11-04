@@ -128,6 +128,7 @@ import Icon from "../components/Icon.astro";
   const socialAdd = $<HTMLButtonElement>("#social-add")!;
   const summary = $("#error-summary")!;
   const list = $("#error-list")!;
+  const baseTitle = document.title;
   const MAX_SOCIAL = 5;
   const URL_ERROR = "Enter a full web address, like https://example.org, or leave it blank";
   const SOCIAL_ERROR = "Enter each social media link as a full web address, like https://instagram.com/yourgroup, or remove it";
@@ -163,6 +164,9 @@ import Icon from "../components/Icon.astro";
       control.setAttribute("aria-describedby", `${describedBase[field]} ${field}-error`.trim());
     } else {
       err.hidden = true;
+      // A fixed field leaves the summary; the summary goes once nothing is left in it.
+      list.querySelector(`[data-field="${field}"]`)?.remove();
+      if (!summary.hidden && !list.children.length) { summary.hidden = true; document.title = baseTitle; }
       control.removeAttribute("aria-invalid");
       if (describedBase[field]) control.setAttribute("aria-describedby", describedBase[field]); else control.removeAttribute("aria-describedby");
     }
@@ -197,7 +201,7 @@ import Icon from "../components/Icon.astro";
     FIELDS.forEach((f) => setError(f, errors[f] ?? null));
     const entries = FIELDS.filter((f) => errors[f]).map((f): [Field, string] => [f, errors[f]!]);
     if (!entries.length) { summary.hidden = true; return; }
-    list.innerHTML = entries.map(([f, msg]) => `<li><a href="#${targets[f]()?.id ?? f}">${esc(msg)}</a></li>`).join("");
+    list.innerHTML = entries.map(([f, msg]) => `<li data-field="${f}"><a href="#${targets[f]()?.id ?? f}">${esc(msg)}</a></li>`).join("");
     summary.hidden = false;
     summary.setAttribute("role", "alert");
     document.title = `Check your answers: Your organization · OCI Capacity Coach`;
@@ -213,8 +217,9 @@ import Icon from "../components/Icon.astro";
     el?.focus();
   });
 
-  // Clear a field's error as soon as it is fixed (validation on blur, not on every keystroke).
-  nameEl.addEventListener("blur", () => { if (nameEl.value.trim()) setError("org_name", null); });
+  // Clear a field's error as soon as it is fixed; new errors still wait for blur or submit, never a keystroke.
+  nameEl.addEventListener("input", () => { if (nameEl.value.trim()) setError("org_name", null); });
+  urlEl.addEventListener("input", () => { if (normalizeUrl(urlEl.value) !== null) setError("org_url", null); });
   urlEl.addEventListener("blur", () => setError("org_url", normalizeUrl(urlEl.value) === null ? URL_ERROR : null));
   socialList.addEventListener("focusout", () => {
     if (!$("#social-error")!.hidden) setError("social", badSocial().length ? SOCIAL_ERROR : null);

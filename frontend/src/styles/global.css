@@ -6,6 +6,8 @@
 /* Display serif for h1/h2 only: Source Serif 4 (OFL), latin subset, variable wght + opsz, 48 KB. Free stand-in for CSF's GT Super. */
 @font-face { font-family: "Source Serif 4"; src: url("/fonts/SourceSerif4-latin-var.woff2") format("woff2-variations"), url("/fonts/SourceSerif4-latin-var.woff2") format("woff2"); font-weight: 200 900; font-style: normal; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
 @font-face { font-family: "Atkinson Hyperlegible"; src: url("/fonts/AtkinsonHyperlegible-BoldItalic.ttf") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
+/* Arrows and math signs only (Atkinson has no arrows); the browser downloads it only when such a character is on the page. */
+@font-face { font-family: "Noto Sans Math"; src: url("/fonts/NotoSansMath-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; unicode-range: U+2190-21FF, U+2200-22FF, U+27F0-27FF, U+2900-297F; }
 
 :root {
   /* Primitive: Everytown brand (everytown.org) */
@@ -51,8 +53,8 @@
   --stage-4: var(--et-royal); --stage-4-ink: var(--et-white);
   --stage-5: var(--et-navy); --stage-5-ink: var(--et-white);
 
-  --font-sans: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-sans: "Atkinson Hyperlegible", "Noto Sans Math", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Source Serif 4", "Noto Sans Math", Georgia, "Times New Roman", serif;
   --text-sm: 0.9375rem; --text-base: 1.0625rem; --text-lg: 1.25rem; --text-xl: 1.625rem;
   --text-2xl: clamp(1.875rem, 1.4rem + 2vw, 2.75rem);
 

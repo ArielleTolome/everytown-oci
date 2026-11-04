@@ -345,7 +345,7 @@ figure figcaption p { font-size: 27px; }
   <div class="body">
     <div class="grid4">
       <div class="card mark"><p class="metric">100+</p><p class="small">reports a minute within this account's Bedrock token quotas</p></div>
-      <div class="card mark"><p class="metric">1,000</p><p class="small">concurrent Lambda runs in the account; the demo caps at 5 to bound spend</p></div>
+      <div class="card mark"><p class="metric">1,000</p><p class="small">concurrent Lambda runs in the account; the demo caps at 10 to bound spend</p></div>
       <div class="card mark"><p class="metric">16<small> ACU</small></p><p class="small">Aurora Serverless v2 ceiling, a deploy parameter; it scales with use</p></div>
       <div class="card mark"><p class="metric">Linear</p><p class="small">cost: about $0.11 per report, nothing to buy up front</p></div>
     </div>
@@ -417,7 +417,7 @@ figure figcaption p { font-size: 27px; }
     <div class="grid3">
       <div class="card mark"><h3>Data</h3><p class="small">Synthetic organizations only. Aurora encrypted at rest, reached through the RDS Data API with an RDS-managed secret. Traces carry a role and a hashed session id, never a respondent's name.</p></div>
       <div class="card mark"><h3>Network</h3><p class="small">One CloudFront domain. The Lambda URL accepts only IAM-signed requests from that distribution. The website fetcher blocks private addresses. Traces and model logs stay in CloudWatch, behind AWS sign-in.</p></div>
-      <div class="card mark"><h3>Spend and abuse</h3><p class="small">5 concurrent requests, an hourly cap on new reports, 15 coach questions per report, optional AWS Budget. Secrets stay out of git.</p></div>
+      <div class="card mark"><h3>Spend and abuse</h3><p class="small">10 concurrent requests, an hourly cap on new reports, 15 coach questions per report, optional AWS Budget. Secrets stay out of git.</p></div>
     </div>
     <div class="card pale"><h3>Before production</h3><p class="small">Real sign-in replaces the mocked demo logins (today anyone signed in can open a report by its id, acceptable only for synthetic data), CloudWatch Logs data protection to mask personal data in traces and model logs, and an Everytown retention policy for them.</p></div>
   </div>

@@ -60,10 +60,12 @@ SYSTEM = (
 CRISIS = re.compile(r"\b(suicid\w*|kill myself|end my life|hurt myself|self[- ]harm|immediate danger|in danger "
                     r"right now|matarme|suicidarme|quitarme la vida|hacerme daño|peligro inmediato)\b", re.I)
 CRISIS_ANSWER = {
-    "en": "If you or someone else is in danger right now, call 911, and for a mental health crisis call or text "
-          "988, the Suicide & Crisis Lifeline.",
-    "es": "Si usted u otra persona está en peligro ahora mismo, llame al 911; si es una crisis de salud mental, "
-          "llame o envíe un mensaje de texto al 988, la Línea de Prevención del Suicidio y Crisis.",
+    "en": "We are sorry you are going through this, and you do not have to face it alone. If you or someone else "
+          "is in danger right now, call 911. For a mental health crisis, call or text 988, the Suicide & Crisis "
+          "Lifeline, any time, day or night.",
+    "es": "Sentimos mucho que esté pasando por esto, y no tiene que enfrentarlo solo. Si usted u otra persona está "
+          "en peligro ahora mismo, llame al 911. Si es una crisis de salud mental, llame o envíe un mensaje de texto "
+          "al 988, la Línea de Prevención del Suicidio y Crisis, a cualquier hora del día o de la noche.",
 }
 # The guardrail blocked the question or the answer. Asking again gets the same block, so the reader gets a fixed
 # answer instead of an error. Its prompt-attack filter also blocks plain role-play ("Act as our board chair..."),
@@ -112,9 +114,10 @@ def _history(sid, limit):
 
 
 def _count(sid):
+    """Questions that count against MAX_QUESTIONS: crisis questions never do, so nobody in distress is cut off."""
     import db
-    return db.query("SELECT count(*) AS n FROM coach_messages WHERE assessment_id = :assessment_id",
-                    assessment_id=sid)[0]["n"]
+    return db.query("SELECT count(*) AS n FROM coach_messages WHERE assessment_id = :assessment_id "
+                    "AND answer->>'crisis' IS NULL", assessment_id=sid)[0]["n"]
 
 
 def _save(sid, question, answer):
@@ -137,7 +140,7 @@ def ask(sid):
         return error("Only the person who submitted this assessment, or Everytown staff, can ask about it.", 403)
     if request.method == "GET":
         turns = _history(sub["id"], MAX_QUESTIONS)
-        return jsonify(messages=turns, remaining=max(0, MAX_QUESTIONS - len(turns)))
+        return jsonify(messages=turns, remaining=max(0, MAX_QUESTIONS - _count(sub["id"])))
     if sub["status"] != "done" or not sub.get("report"):
         return error("You can ask questions once your report is ready.", 409)
     question = body().get("question")
@@ -146,8 +149,9 @@ def ask(sid):
         return error("Type a question first.", 400)
     if len(question) > MAX_CHARS:
         return error("Please keep your question under %d characters." % MAX_CHARS, 400)
+    crisis = bool(CRISIS.search(question))
     asked = _count(sub["id"])
-    if asked >= MAX_QUESTIONS:
+    if asked >= MAX_QUESTIONS and not crisis:
         return error("You have asked %d questions about this report, the most we allow. Talk the rest through "
                      "with your team, or ask the Community Safety Fund for support." % MAX_QUESTIONS, 429)
     try:
@@ -158,12 +162,12 @@ def ask(sid):
         logging.exception("coach answer failed for %s", sub["id"])
         return error("We could not answer right now. Please try again in a minute.", 502)
     observability.set_attrs(None, {"input.value": question, "output.value": answer["answer"],
-                                   "oci.crisis_short_circuit": bool(CRISIS.search(question)),
+                                   "oci.crisis_short_circuit": crisis,
                                    "oci.gap_ids": answer["gap_ids"] or None, "oci.language": sub["language"],
                                    "oci.resources": [r["url"] for r in answer["resources"]] or None,
-                                   "oci.questions_asked": asked + 1})
+                                   "oci.questions_asked": asked + (not crisis)})
     _save(sub["id"], question, answer)
-    return jsonify(dict(answer, remaining=max(0, MAX_QUESTIONS - asked - 1)))
+    return jsonify(dict(answer, remaining=max(0, MAX_QUESTIONS - asked - (not crisis))))
 
 
 def respond(sub, question, turns):
@@ -176,7 +180,8 @@ def respond(sub, question, turns):
             return answer_question(sub, question, turns)
         except pipeline.GuardrailBlocked:
             fixed = BLOCKED_SCORE_ANSWER if SCORE_QUESTION.search(question) else BLOCKED_ANSWER
-    return {"answer": fixed.get(sub["language"], fixed["en"]), "gap_ids": [], "resources": []}
+    out = {"answer": fixed.get(sub["language"], fixed["en"]), "gap_ids": [], "resources": []}
+    return dict(out, crisis=True) if fixed is CRISIS_ANSWER else out
 
 
 def answer_question(sub, question, turns):

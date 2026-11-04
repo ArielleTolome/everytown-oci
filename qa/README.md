@@ -8,13 +8,16 @@ Background and the bug bash procedure: [root README](../README.md#end-to-end-tes
 
 ```bash
 cd qa && npm ci
-APP_URL=<url> AWS_REGION=us-west-2 npx e2e run --exclude-tag live --action-timeout 8000 --reporter list
+APP_URL=<url> AWS_REGION=us-west-2 npx e2e run --exclude-tag live --exclude-tag demo --action-timeout 8000 --reporter list
 npx e2e run --tag live          # read-only checks against the deployed site (LIVE_URL)
+APP_URL=<url> npm run test:demo # the on-stage demo path; makes one report (tag demo)
 ```
 
 `APP_URL` defaults to `http://127.0.0.1:8092` (the container). Tests tagged `live` hit the deployed CloudFront site
-(`LIVE_URL`, default the demo URL) and are excluded from normal runs. `npm run test:e2e` and `npm run test:live` are
-the same two commands without the extra flags. Needs Node 24.8 or newer and AWS credentials for Bedrock.
+(`LIVE_URL`, default the demo URL) and are excluded from normal runs; tests tagged `demo` create a report and run only
+with `npm run test:demo`. `npm run test:e2e` and `npm run test:live` are the first two commands without the extra
+flags. Needs Node 24.8 or newer and AWS credentials for Bedrock in the environment: the Bedrock provider does not read
+an instance role, so on EC2 run `eval "$(aws configure export-credentials --format env)"` first.
 
 ## Files
 
@@ -35,6 +38,7 @@ the same two commands without the extra flags. Needs Node 24.8 or newer and AWS 
 | `tests/regressions/common-gaps-model-overlap.e2e.ts` | #6: staff "Most common gaps" explains that an org with two program models counts in both. |
 | `tests/regressions/unknown-path-404-page.e2e.ts` | #8: the container serves the app's not-found page for an unknown path. |
 | `tests/regressions/cloudfront-404-status.e2e.ts` | #9 (tag `live`): the deployed site answers an unknown path with HTTP 404. |
+| `tests/demo/demo-path.e2e.ts` | Tag `demo`: the demo script's on-stage path. Leader: one-click Southside sample to "Your report is ready", Start here, PDF. Staff: Training needs, Ask the data preset, Peers, the Southside drawer's CloudWatch trace link. |
 
 ## Changing it safely
 

@@ -3,7 +3,7 @@
 # Expects AWS credentials in the environment.
 # Optional env: STACK (app stack, default everytown-oci), DB_STACK (default everytown-oci-db), AWS_REGION,
 #   DB_MIN_CAPACITY (Aurora ACUs; 0 = auto-pause after an idle hour), EXTRA_DOCS (dir of extra KB docs),
-#   RESERVED_CONCURRENCY (Lambda cap, template default 5), MONTHLY_BUDGET_USD (cost budget, template default 100;
+#   RESERVED_CONCURRENCY (Lambda cap, template default 10), MONTHLY_BUDGET_USD (cost budget, template default 100;
 #   0 skips it, needed where budgets:ModifyBudget is denied). Unset values keep the stack's previous setting.
 # Observability (account and Region settings CloudFormation cannot express, both idempotent): CloudWatch Transaction
 #   Search receives the app's OpenTelemetry spans, and Bedrock model invocation logging writes to the stack's log group.

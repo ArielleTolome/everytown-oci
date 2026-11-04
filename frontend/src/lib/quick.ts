@@ -72,6 +72,9 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
   let since = 0; // answers since the last encouragement line
   let shown = 0;
   let cheer = "";
+  // Spanish questions get Spanish controls; `sp` is trusted HTML (escape any data put in it).
+  const tr = (en: string, sp: string) => (ctx.spanish() ? `<span lang="es">${sp}</span>` : en);
+  const yesNo = (v: Answer) => tr(v === "yes" ? "Yes" : "No", v === "yes" ? "Sí" : "No");
 
   host.innerHTML = `<section class="quick" aria-label="One statement at a time">
       <div class="quick__meter">
@@ -84,29 +87,31 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
 
   function meter() {
     const done = d.questions.filter((q) => a[q.id]).length;
-    $("#quick-count", host)!.textContent = `${done} of ${d.questions.length} answered in ${d.name}`;
+    const count = $("#quick-count", host)!;
+    count.textContent = ctx.spanish() ? `${done} de ${d.questions.length} respondidas en ${d.name}` : `${done} of ${d.questions.length} answered in ${d.name}`;
+    if (ctx.spanish()) count.lang = "es"; else count.removeAttribute("lang");
     const bar = $<HTMLProgressElement>("#area-progress", host)!;
     bar.value = done;
     bar.textContent = `${Math.round((done / d.questions.length) * 100)}%`;
   }
 
-  const prevBtn = () => (pos > 0 ? `<button type="button" class="btn btn-secondary btn-sm" id="quick-prev">${icon("arrow-left")}<span>Previous</span></button>` : "");
+  const prevBtn = () => (pos > 0 ? `<button type="button" class="btn btn-secondary btn-sm" id="quick-prev">${icon("arrow-left")}<span>${tr("Previous", "Anterior")}</span></button>` : "");
 
   function stmtStep(q: Question): string {
     const cur = a[q.id];
     const btn = (v: Answer) => `<button type="button" class="quick__btn" data-answer="${v}" aria-pressed="${cur === v}">
-        <span class="quick__btn-label">${v === "yes" ? "Yes" : "No"}</span>
-        <span class="answer__tag quick__tag" aria-hidden="true">${icon("check")}Selected</span>
-        <kbd class="quick__key" aria-hidden="true">${v === "yes" ? "Y" : "N"}</kbd>
+        <span class="quick__btn-label">${yesNo(v)}</span>
+        <span class="answer__tag quick__tag" aria-hidden="true">${icon("check")}${tr("Selected", "Seleccionada")}</span>
+        <kbd class="quick__key" aria-hidden="true">${v === "no" ? "N" : ctx.spanish() ? "S" : "Y"}</kbd>
       </button>`;
     return `
       <p class="quick__kicker"><span class="stage-badge">Stage ${q.stage}</span> ${esc(q.stage_name)}</p>
       <h2 class="quick__stmt" id="quick-focus" tabindex="-1">${ctx.stmt(q)}</h2>
-      ${q.reverse ? `<p class="check-item__note">${icon("info")}<span>A Yes here counts as a growth priority.</span></p>` : ""}
+      ${q.reverse ? `<p class="check-item__note">${icon("info")}<span>${tr("A Yes here counts as a growth priority.", "Un Sí aquí cuenta como prioridad de crecimiento.")}</span></p>` : ""}
       ${ctx.helpFor(q)}
       <div class="quick__answers" role="group" aria-labelledby="quick-focus">${btn("yes")}${btn("no")}</div>
-      <div class="quick__nav">${prevBtn()}${cur ? `<button type="button" class="btn btn-secondary btn-sm" id="quick-fwd"><span>Keep my answer</span>${icon("arrow-right")}</button>` : ""}</div>
-      <p class="quick__keys">Keyboard: press Y for Yes, N for No, or the left arrow to go back.</p>`;
+      <div class="quick__nav">${prevBtn()}${cur ? `<button type="button" class="btn btn-secondary btn-sm" id="quick-fwd"><span>${tr("Keep my answer", "Mantener mi respuesta")}</span>${icon("arrow-right")}</button>` : ""}</div>
+      <p class="quick__keys">${tr("Keyboard: press Y for Yes, N for No, or the left arrow to go back.", "Teclado: pulse S para Sí, N para No, o la flecha izquierda para volver.")}</p>`;
   }
 
   function chooseStep(l: Ladder): string {
@@ -119,32 +124,33 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
       <p class="quick__kicker"><span class="stage-badge">One question</span> Answers ${l.statements.length} statements</p>
       <h2 class="quick__stmt" id="quick-focus" tabindex="-1"${es}>${esc(ctx.spanish() ? l.question_es : l.question)}</h2>
       ${ctx.spanish() ? `<details class="q-help" lang="es"><summary>Ver el original en inglés</summary><p lang="en">${esc(l.question)}</p></details>` : ""}
-      <p class="hint" id="quick-ladder-hint">Your choice answers ${l.statements.length} statements in ${esc(areas)}. Next, you will see each answer and can change any of them.</p>
+      <p class="hint" id="quick-ladder-hint">${tr(`Your choice answers ${l.statements.length} statements in ${esc(areas)}. Next, you will see each answer and can change any of them.`,
+        `Su elección responde ${l.statements.length} afirmaciones en ${esc(areas)}. Después verá cada respuesta y podrá cambiar cualquiera.`)}</p>
       <div class="quick__choices" role="group" aria-labelledby="quick-focus" aria-describedby="quick-ladder-hint"${es}>
         ${l.choices.map((c, i) => `<button type="button" class="quick__choice" data-choice="${i}" aria-pressed="${i === picked}">
-          <span>${esc(ctx.spanish() ? c.label_es : c.label)}</span><span class="answer__tag quick__tag" aria-hidden="true">${icon("check")}Selected</span></button>`).join("")}
+          <span>${esc(ctx.spanish() ? c.label_es : c.label)}</span><span class="answer__tag quick__tag" aria-hidden="true">${icon("check")}${tr("Selected", "Seleccionada")}</span></button>`).join("")}
       </div>
       <div class="quick__nav">${prevBtn()}</div>`;
   }
 
-  const ansText = (id: string) => `${icon(a[id] === "yes" ? "circle-check" : "circle-x")}<strong>${a[id] === "yes" ? "Yes" : "No"}</strong>`;
-  const flipText = (id: string) => `Change to ${a[id] === "yes" ? "No" : "Yes"}`;
+  const ansText = (id: string) => `${icon(a[id] === "yes" ? "circle-check" : "circle-x")}<strong>${yesNo(a[id])}</strong>`;
+  const flipText = (id: string) => (ctx.spanish() ? `Cambiar a ${a[id] === "yes" ? "No" : "Sí"}` : `Change to ${a[id] === "yes" ? "No" : "Yes"}`);
 
   function confirmStep(l: Ladder): string {
     return `
-      <h2 class="quick__stmt" id="quick-focus" tabindex="-1">Based on your choice, we recorded:</h2>
-      <p class="hint">Most organizations grow through these in order, but not all do. If one is not true for you, change it.</p>
+      <h2 class="quick__stmt" id="quick-focus" tabindex="-1">${tr("Based on your choice, we recorded:", "Según su elección, registramos:")}</h2>
+      <p class="hint">${tr("Most organizations grow through these in order, but not all do. If one is not true for you, change it.", "La mayoría de las organizaciones avanzan en este orden, pero no todas. Si alguna no es cierta para ustedes, cámbiela.")}</p>
       <ul class="ladder-list" role="list">${l.statements.map((id) => {
         const { q, area } = ctx.byId.get(id)!;
         return `<li class="ladder-item">
           <p class="ladder-item__text" id="lt-${esc(id)}"><span class="ladder-item__area">${esc(area)}</span> ${ctx.stmt(q)}</p>
           <p class="ladder-item__ans is-${a[id]}" id="la-${esc(id)}">${ansText(id)}</p>
-          <button type="button" class="btn btn-secondary btn-sm ladder-item__flip" data-flip="${esc(id)}" aria-describedby="lt-${esc(id)}">${icon("pencil")}<span>${flipText(id)}</span></button>
+          <button type="button" class="btn btn-secondary btn-sm ladder-item__flip" data-flip="${esc(id)}" aria-describedby="lt-${esc(id)}">${icon("pencil")}<span${ctx.spanish() ? ' lang="es"' : ""}>${flipText(id)}</span></button>
         </li>`;
       }).join("")}</ul>
       <div class="quick__nav">${prevBtn()}
-        <button type="button" class="btn btn-secondary btn-sm" id="quick-rechoose">${icon("refresh")}<span>Choose a different answer</span></button>
-        <button type="button" class="btn btn-primary" id="quick-continue"><span>Looks right, continue</span>${icon("arrow-right")}</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="quick-rechoose">${icon("refresh")}<span>${tr("Choose a different answer", "Elegir otra respuesta")}</span></button>
+        <button type="button" class="btn btn-primary" id="quick-continue"><span>${tr("Looks right, continue", "Está bien, continuar")}</span>${icon("arrow-right")}</button>
       </div>`;
   }
 
@@ -239,10 +245,10 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
   card.addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const k = e.key.toLowerCase();
-    if (k === "y" || k === "n") {
+    if (k === "y" || k === "n" || (k === "s" && ctx.spanish())) {
       if (steps[pos]?.kind !== "stmt") return;
       e.preventDefault();
-      answer(k === "y" ? "yes" : "no");
+      answer(k === "n" ? "no" : "yes");
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
       back();

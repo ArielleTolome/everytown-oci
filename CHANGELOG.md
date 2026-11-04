@@ -2,6 +2,20 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.5.3 — E2E and bug bash before judging: fixes, more Lambda headroom, a one-command demo check
+
+All 11 end-to-end tests passed on the live site, then a 9-charter bug bash (e2e explore, Claude on Bedrock) raised 15 findings. 9 were confirmed and fixed; 6 were rejected with evidence (the roadmap's "a finished step never relocks its week" and the active-week streak are by design; a "lost tick" and a changed "Asked for help" count came from explorers and scripts editing the same shared report at once; the 200-character name limit already existed; `?t=` teammate links do not exist).
+
+- **Lambda throttling fixed.** CloudWatch showed 6 throttled requests when concurrency hit the reserved 5 (a report worker plus page requests). Reserved concurrency is now 10 (template default and the live stack), the most this shared account allows while keeping AWS's 100 unreserved. Bedrock spend stays bounded by the hourly report cap.
+- **Crisis questions in Ask about your report** never use up one of the 15 questions and are answered even at the limit, and the fixed 911 / 988 answer now starts with a caring sentence (English and Spanish). Regression test in `tests/test_coach.py`.
+- **Spanish questionnaire controls.** With the questions in Español, the One at a time view's Sí / No, Anterior, Mantener mi respuesta, keyboard hint (S for Sí), progress line and multiple-choice helper text are in Spanish, tagged `lang="es"`.
+- **Intake errors clear as you fix them:** the inline error and the "There is a problem" summary go away once a field becomes valid.
+- **Not-found pages.** The 404 page shows who is signed in; a roadmap for an unknown report says "We could not find this report" and links to the start page instead of to the missing report.
+- **Arrows (→) render** in report text: the already-shipped Noto Sans Math is a fallback for arrow and math characters (Atkinson Hyperlegible has none).
+- **Seed data dates.** Seeded support requests are dated an hour after their own assessment, not on the day of the deploy, so the staff drawer's dates agree.
+- **Demo check in one command:** `qa/tests/demo/demo-path.e2e.ts` (tag `demo`, `npm run test:demo`) walks the demo script's on-stage path: Southside sample to a ready report and PDF, then Training needs, Ask the data, Peers and the CloudWatch trace link. The demo script has a judging-morning preflight. New regressions in `qa/tests/regressions/bugbash-v15.e2e.ts`.
+- Verified on live after deploying: 14 of 14 e2e tests and both demo-path tests pass; quick coach eval gates pass.
+
 ## v1.5.2 — Docs for the team: a guide in every folder and AGENTS.md
 
 - `AGENTS.md` (read by Claude Code through `CLAUDE.md`): the project in one minute, a map of the repo, the rules that never bend (code scores, statements and stage names unchanged, grounded or dropped, synthetic data, plain language and WCAG 2.2 AA, house style), the checks to run before pushing, and how to work alongside other people and AI sessions (stage only your own files, never commit secrets, name test organizations `QA `).

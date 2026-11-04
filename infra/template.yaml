@@ -31,7 +31,7 @@ Parameters:
     Default: oci
   ReservedConcurrency:
     Type: Number
-    Default: 5
+    Default: 10
     MinValue: 1
     Description: Cap on concurrent Lambda runs (web requests and async AI worker runs share it); bounds Bedrock spend.
   MonthlyBudgetUsd:
