@@ -52,7 +52,9 @@ class ReportError(Exception):
 
 def clean(text):
     """House style: Everytown copy avoids em dashes; the PDF renders plain text."""
-    text = re.sub(r"\s*\u2014\s*", ", ", text if isinstance(text, str) else "")
+    text = text if isinstance(text, str) else ""
+    text = re.sub(r"^\s*\u2014\s*|\s*\u2014\s*$", "", text, flags=re.M)  # a dash at a line's edge joins nothing
+    text = re.sub(r"\s*\u2014\s*", ", ", text)
     return re.sub(r"\*\*|^#+\s*", "", text, flags=re.M).strip()
 
 

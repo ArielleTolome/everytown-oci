@@ -124,11 +124,10 @@ class Owners(unittest.TestCase):
             out = pipeline.validate_report({"plan": [action(owner=owner)]}, gaps("PL1"))
             self.assertEqual(out["plan"][0]["owner"], "Leadership team", repr(owner))
 
-    @unittest.expectedFailure
-    def test_lone_em_dash_owner_becomes_leadership_team(self):
-        # Known issue: clean() turns an em dash into ", " and strips, leaving "," as the owner (and a leading
-        # ", " on text that starts with an em dash). Remove this decorator once clean() handles it.
-        out = pipeline.validate_report({"plan": [action(owner="\u2014")]}, gaps("PL1"))
+    def test_em_dash_at_the_edge_of_text_is_dropped_not_turned_into_a_comma(self):
+        out = pipeline.validate_report({"summary": "\u2014 Keep going \u2014", "strengths": ["A\n\u2014 B"],
+                                        "plan": [action(owner="\u2014")]}, gaps("PL1"))
+        self.assertEqual((out["summary"], out["strengths"]), ("Keep going", ["A\nB"]))
         self.assertEqual(out["plan"][0]["owner"], "Leadership team")
 
 
