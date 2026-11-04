@@ -1,15 +1,20 @@
-"""Run an eval suite against the real AI steps on Bedrock, score it, and publish the scores to CloudWatch.
+"""Run an eval suite against the real AI steps on Bedrock, score it, and publish the scores to CloudWatch and Phoenix.
 
     python3 -m evals.run --suite reports|coach|staff_ask|all [--limit N] [--judges/--no-judges]
-                         [--cloudwatch/--no-cloudwatch] [--model ID] [--compare ID] [--name NAME]
+                         [--cloudwatch/--no-cloudwatch] [--phoenix/--no-phoenix] [--model ID] [--compare ID]
+                         [--name NAME]
 
 Always writes evals/results/<timestamp>-<suite>.json and .md (per-evaluator mean score, pass rate, worst case) and
 prints the table. Exit code 1 when any gate check (checks.GATES) fails or errors, so it can block a release.
 With CloudWatch (the default), each suite's metrics go to namespace EverytownOCI/Evals and one JSON event per
 example plus a summary event go to log group /everytown-oci/evals, one log stream per run.
+With Phoenix (OCI_PHOENIX_ENDPOINT + OCI_PHOENIX_API_KEY, read from infra/.phoenix.env when present), the dataset is
+uploaded once per content hash and the run is a Phoenix experiment named "<suite> <model> <git sha>" with every
+evaluator score attached.
 """
 import argparse
 import copy
+import hashlib
 import json
 import os
 import re
@@ -30,6 +35,18 @@ CONSOLE = "https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-we
 # USD per million tokens (input, output, cache read, cache write). shortcut: list prices of the Claude 4.5
 # generation as an estimate; update when Bedrock publishes prices for the model ids in use.
 PRICES = {"sonnet": (3.0, 15.0, 0.30, 3.75), "haiku": (1.0, 5.0, 0.10, 1.25), "opus": (5.0, 25.0, 0.50, 6.25)}
+
+
+def phoenix_env():
+    """OCI_PHOENIX_ENDPOINT and OCI_PHOENIX_API_KEY from infra/.phoenix.env (scripts/deploy_observability.sh), unless
+    already set, so runs land in Phoenix without exporting anything."""
+    path = os.path.join(ROOT, "infra", ".phoenix.env")
+    if not os.path.exists(path):
+        return
+    env = dict(line.split("=", 1) for line in open(path).read().splitlines() if "=" in line)
+    for var, key in (("OCI_PHOENIX_ENDPOINT", "PHOENIX_URL"), ("OCI_PHOENIX_API_KEY", "PHOENIX_API_KEY")):
+        if env.get(key):
+            os.environ.setdefault(var, env[key])
 
 
 def setup_env():
@@ -240,6 +257,62 @@ def run_local(suite, rows, evals):
     return out
 
 
+# ---------- Phoenix ----------
+
+def phoenix_client():
+    from phoenix.client import Client
+    return Client(base_url=os.environ["OCI_PHOENIX_ENDPOINT"], api_key=os.environ.get("OCI_PHOENIX_API_KEY"))
+
+
+def dataset_name(suite, rows):
+    digest = hashlib.sha256("\n".join(json.dumps(r, sort_keys=True) for r in rows).encode()).hexdigest()[:8]
+    return "oci-%s-%s" % (suite, digest)
+
+
+def upload(client, suite, rows):
+    """The dataset named by suite and content hash: reused when it exists, so experiments on the same data compare;
+    a changed dataset gets a new name instead of silently mixing versions."""
+    name = dataset_name(suite, rows)
+    try:
+        return client.datasets.get_dataset(dataset=name)
+    except Exception:
+        pass
+    return client.datasets.create_dataset(
+        name=name, dataset_description="Everytown OCI %s eval set (evals/datasets/%s.jsonl), synthetic only."
+        % (suite, suite), inputs=[r["input"] for r in rows], outputs=[r["expected"] for r in rows],
+        metadata=[dict(r["metadata"], eval_id=r["id"]) for r in rows])
+
+
+def run_phoenix(client, suite, rows, chosen, evals, experiment_name, metadata):
+    from phoenix.client.experiments import create_evaluator
+    from phoenix.client.resources.datasets import Dataset
+
+    full = upload(client, suite, rows)
+    want = {r["id"] for r in chosen}
+    examples = [e for e in full.examples if (e.get("metadata") or {}).get("eval_id") in want]
+    dataset = Dataset(full._dataset_info, dict(full._examples_data, examples=examples))  # the --limit subset
+    wrapped = {name: create_evaluator(kind="CODE" if name == "code_checks" else "LLM", name=name)(fn)
+               for name, fn in evals.items()}
+    ran = client.experiments.run_experiment(
+        dataset=dataset, task=TASKS[suite], evaluators=wrapped, experiment_name=experiment_name,
+        experiment_metadata=metadata, timeout=900, retries=0, print_summary=False)
+    by_example = {e["id"]: e for e in examples}
+    by_run = {}
+    for run in ran["task_runs"]:
+        example = by_example[run["dataset_example_id"]]
+        by_run[run["id"]] = {"id": example["metadata"]["eval_id"],
+                             "metadata": {k: v for k, v in example["metadata"].items() if k != "eval_id"},
+                             "output": run.get("output") or {"error": run.get("error") or "no output"}, "evals": []}
+    for ev in ran["evaluation_runs"]:
+        row = by_run.get(ev.experiment_run_id)
+        if row is not None:
+            res = ev.result if isinstance(ev.result, dict) else {}
+            row["evals"].append({"name": ev.name, "score": res.get("score"), "label": res.get("label") or (
+                "error" if ev.error else None), "explanation": res.get("explanation") or ev.error})
+    url = client.experiments.get_experiment_url(dataset_id=full.id, experiment_id=ran["experiment_id"])
+    return sorted(by_run.values(), key=lambda r: [c["id"] for c in chosen].index(r["id"])), url
+
+
 # ---------- CloudWatch ----------
 
 def metric_data(suite, table, gate_failures, cost):
@@ -363,25 +436,33 @@ def run_suite(suite, args, model, meter):
     else:
         pipeline.FAST_MODEL_ID = model or pipeline.FAST_MODEL_ID
         model = pipeline.FAST_MODEL_ID
-    chosen = pick(load(suite), args.limit)
+    rows = load(suite)
+    chosen = pick(rows, args.limit)
+    evals = evaluators(suite, args.judges)
     sha = git_sha()
     name = "%s%s %s %s" % (args.name + " " if args.name else "", suite, model, sha)
     meta = {"suite": suite, "model": model, "git_sha": sha, "judges": args.judges, "limit": args.limit,
             "examples": len(chosen)}
     before = meter.cost()
     start = time.time()
-    results = run_local(suite, chosen, evaluators(suite, args.judges))
+    url = None
+    if args.phoenix:
+        results, url = run_phoenix(phoenix_client(), suite, rows, chosen, evals, name, meta)
+    else:
+        results = run_local(suite, chosen, evals)
     table, gate_failures = summarize(results)
     cost = meter.cost() - before
     extra = {"Model": model, "Examples": len(chosen), "Minutes": round((time.time() - start) / 60, 1),
              "Estimated Bedrock cost (USD)": "%.2f" % cost}
+    if url:
+        extra["Phoenix experiment"] = url
     md = markdown(name, table, gate_failures, extra)
     for row in results:  # keep result files reviewable: raw model output is summarized, not stored twice
         raw = row["output"].pop("raw", None) if isinstance(row["output"], dict) else None
         if isinstance(raw, dict):
             row["output"]["raw_counts"] = {k: len(raw.get(k) or []) for k in ("focus", "plan")}
     path = write_results(suite, {"experiment": name, "meta": meta, "summary": table, "gate_failures": gate_failures,
-                                 "usage": meter.report(), "results": results}, md)
+                                 "usage": meter.report(), "phoenix_url": url, "results": results}, md)
     print("\n" + md + "\nWrote %s.json and .md\n" % os.path.relpath(path, ROOT), flush=True)
     if args.cloudwatch:
         try:
@@ -399,16 +480,21 @@ def parse_args(argv=None):
                    help="LLM judges (Claude Haiku); --no-judges for code checks only")
     p.add_argument("--cloudwatch", action=argparse.BooleanOptionalAction, default=True,
                    help="publish metrics and per-example log events to CloudWatch (default: on)")
+    p.add_argument("--phoenix", action=argparse.BooleanOptionalAction, default=None,
+                   help="log datasets and experiments to Phoenix (default: on when OCI_PHOENIX_ENDPOINT is set)")
     p.add_argument("--model", help="model under test: the report writer for reports, the fast model otherwise")
     p.add_argument("--compare", metavar="MODEL", help="run the same suite again with this model, for A/B")
     p.add_argument("--name", default="", help="experiment name prefix")
     args = p.parse_args(argv)
+    if args.phoenix is None:
+        args.phoenix = bool(os.environ.get("OCI_PHOENIX_ENDPOINT"))
     if args.limit < 0:
         p.error("--limit must be 0 or more")
     return args
 
 
 def main(argv=None):
+    phoenix_env()
     args = parse_args(argv)
     setup_env()
     meter = install_meter()

@@ -35,10 +35,13 @@ export interface Bi {
 
 export const pct = (n: number | null | undefined) => (n == null ? "" : `${Math.round(n)}%`);
 export const report = (r: Ref, label = r.name) => `<a href="/results/?id=${encodeURIComponent(r.assessment_id)}">${esc(label)}<span class="visually-hidden"> report</span></a>`;
-/** Staff-only audit link to the latest report's AI trace in the Amazon CloudWatch console (AWS sign-in). */
-export const traceLink = (url: string | null | undefined) => (url && /^https?:\/\//.test(url)
-  ? `<p class="trace-link" data-no-print>${icon("search")}<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">View AI trace in CloudWatch (staff)<span class="visually-hidden"> (opens the AWS console in a new tab)</span></a></p>`
-  : "");
+/** Staff-only audit link to the latest report's AI trace: in Arize Phoenix (its own sign-in), or in the Amazon
+ *  CloudWatch console (AWS sign-in) for reports traced before Phoenix was configured. */
+export const traceLink = (url: string | null | undefined) => {
+  if (!url || !/^https?:\/\//.test(url)) return "";
+  const [where, opens] = url.includes(".console.aws.amazon.com/") ? ["CloudWatch", "the AWS console"] : ["Phoenix", "Phoenix"];
+  return `<p class="trace-link" data-no-print>${icon("search")}<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">View AI trace in ${where} (staff)<span class="visually-hidden"> (opens ${opens} in a new tab)</span></a></p>`;
+};
 const head = (id: string, eyebrow: string, title: string, extra = "") =>
   `<div class="section-head"><div><span class="eyebrow">${esc(eyebrow)}</span><h2 id="${id}">${esc(title)}</h2></div>${extra}</div>`;
 const empty = (text: string) => `<p class="notice">${icon("info")}<span>${esc(text)}</span></p>`;

@@ -21,7 +21,7 @@ import report
 from engine.scoring import calculate_recommendations
 from utils.data_loader import get_domains, get_stage_names, get_stage_weights
 
-observability.setup()  # no-op unless OCI_TRACES=xray
+observability.setup()  # no-op unless OCI_TRACES=xray or OCI_PHOENIX_ENDPOINT is set
 
 USERS = {"demo": ("demo", "org"), "staff": ("staff", "staff")}  # mocked login, per the vision doc
 PRIORITY_DOMAINS = ["PL", "FR", "FM", "ML"]

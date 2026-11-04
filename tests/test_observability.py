@@ -66,7 +66,7 @@ class TracingOff(unittest.TestCase):
         self.addCleanup(reset)
 
     def test_unset_switch_is_a_silent_noop(self):
-        with mock.patch.dict(os.environ, {}, clear=False), \
+        with mock.patch.dict(os.environ, {}, clear=False), mock.patch.object(observability, "PHOENIX", ""), \
                 mock.patch.object(urllib.request, "urlopen", side_effect=AssertionError("network")):
             os.environ.pop("OCI_TRACES", None)
             observability.setup()
@@ -102,6 +102,24 @@ class TracingOff(unittest.TestCase):
         self.assertEqual(line["_aws"]["CloudWatchMetrics"], [{"Namespace": "EverytownOCI/Quality", "Dimensions": [["Check"]],
                                                               "Metrics": [{"Name": "CheckScore"}, {"Name": "CheckFailed"}]}])
 
+    def test_xray_and_phoenix_both_get_every_span_and_the_link_prefers_phoenix(self):
+        from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+        xray, phoenix = InMemorySpanExporter(), InMemorySpanExporter()
+        with mock.patch.dict(os.environ, {"OCI_TRACES": "xray"}), \
+                mock.patch.object(observability, "PHOENIX", "https://phoenix.example"), \
+                mock.patch.object(observability, "_exporter", return_value=xray), \
+                mock.patch.object(observability, "_phoenix_exporter", return_value=phoenix):
+            observability.setup()
+            with observability.span("oci.report"):
+                trace_id = observability.current_trace_id()
+            observability.flush()
+            self.assertEqual(observability.trace_link(trace_id)["url"],
+                             "https://phoenix.example/redirects/traces/" + trace_id)
+        self.assertEqual([s.name for s in xray.get_finished_spans()], ["oci.report"])
+        self.assertEqual([s.name for s in phoenix.get_finished_spans()], ["oci.report"])
+        self.assertEqual(phoenix.get_finished_spans()[0].resource.attributes["openinference.project.name"],
+                         observability.SERVICE)
+
     def _exporter(self):
         from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
         return InMemorySpanExporter()
@@ -112,9 +130,10 @@ class TracingOn(unittest.TestCase):
         from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
         reset()
         self.addCleanup(reset)
-        p = mock.patch.object(observability, "SERVICE", "everytown-oci")  # independent of the shell's env
-        p.start()
-        self.addCleanup(p.stop)
+        for name, value in (("SERVICE", "everytown-oci"), ("PHOENIX", "")):  # independent of the shell's env
+            p = mock.patch.object(observability, name, value)
+            p.start()
+            self.addCleanup(p.stop)
         self.exporter = InMemorySpanExporter()
         observability.setup(exporter=self.exporter)
 

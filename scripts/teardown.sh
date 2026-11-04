@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # Remove the Everytown OCI deployment: turns off Bedrock model invocation logging, empties the app's buckets, deletes
 # the app stack (with its CloudWatch dashboard, alarms and log groups), then the database stack (Aurora keeps a final
-# snapshot), then the artifact bucket. Safe to re-run. Transaction Search stays on for the account.
-# Usage: scripts/teardown.sh [--yes]   Optional env: STACK, DB_STACK, AWS_REGION (same defaults as deploy.sh).
+# snapshot), then the Phoenix observability stack (its data volume keeps a final snapshot), then the artifact bucket.
+# Safe to re-run. Transaction Search stays on for the account.
+# Usage: scripts/teardown.sh [--yes]   Optional env: STACK, DB_STACK, OBS_STACK, AWS_REGION (same defaults as the
+#   deploy scripts).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 STACK=${STACK:-everytown-oci}
 DB_STACK=${DB_STACK:-everytown-oci-db}
+OBS_STACK=${OBS_STACK:-everytown-oci-obs}
 export AWS_DEFAULT_REGION=${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-2}}
 REGION=$AWS_DEFAULT_REGION
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
@@ -18,7 +21,7 @@ if [ "${1:-}" != --yes ]; then
     echo "Refusing to run non-interactively without --yes." >&2
     exit 1
   fi
-  read -r -p "Delete stacks $STACK and $DB_STACK (all assessments; a final DB snapshot is kept) and bucket $ARTIFACTS in $REGION ($ACCOUNT)? Type 'delete': " answer
+  read -r -p "Delete stacks $STACK, $DB_STACK and $OBS_STACK (all assessments and Phoenix traces; final DB and Phoenix volume snapshots are kept) and bucket $ARTIFACTS in $REGION ($ACCOUNT)? Type 'delete': " answer
   [ "$answer" = delete ] || { echo "Aborted."; exit 1; }
 fi
 
@@ -71,6 +74,10 @@ CLUSTER_ID=$(out "$DB_STACK" DbClusterArn)
 CLUSTER_ID=${CLUSTER_ID##*:}
 delete_stack "$DB_STACK"
 
+# 2b. Phoenix observability stack (DeletionPolicy Snapshot keeps a final snapshot of the data volume).
+OBS_VOLUME=$(out "$OBS_STACK" DataVolumeId)
+delete_stack "$OBS_STACK"
+
 # 3. Lambda artifacts (created by deploy.sh, outside CloudFormation).
 if aws s3api head-bucket --bucket "$ARTIFACTS" 2>/dev/null; then
   empty_bucket "$ARTIFACTS"
@@ -80,7 +87,7 @@ fi
 
 echo
 echo "Remaining:"
-for s in "$STACK" "$DB_STACK"; do
+for s in "$STACK" "$DB_STACK" "$OBS_STACK"; do
   stack_exists "$s" && echo "  stack $s: $(aws cloudformation describe-stacks --stack-name "$s" --query 'Stacks[0].StackStatus' --output text)"
 done
 aws s3api head-bucket --bucket "$ARTIFACTS" 2>/dev/null && echo "  bucket $ARTIFACTS"
@@ -92,5 +99,12 @@ if [ -n "$CLUSTER_ID" ]; then
   done <<< "$snapshots"
 else
   echo "  (database stack was already gone; list old snapshots with: aws rds describe-db-cluster-snapshots --snapshot-type manual)"
+fi
+if [ -n "$OBS_VOLUME" ]; then
+  snapshots=$(aws ec2 describe-snapshots --owner-ids self --filters Name=volume-id,Values="$OBS_VOLUME" \
+    --query 'Snapshots[].[SnapshotId,StartTime]' --output text 2>/dev/null) || snapshots=
+  while read -r snapshot created; do
+    [ -n "$snapshot" ] && echo "  final Phoenix volume snapshot $snapshot ($created); delete with: aws ec2 delete-snapshot --snapshot-id $snapshot"
+  done <<< "$snapshots"
 fi
 echo "Done."

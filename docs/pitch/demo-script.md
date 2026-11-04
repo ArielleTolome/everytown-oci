@@ -1,24 +1,25 @@
 # OCI Capacity Coach: 8-minute pitch and live demo
 
-Deck: [`OCI-Capacity-Coach-pitch.pdf`](OCI-Capacity-Coach-pitch.pdf) (15 pages), or present [`index.html`](index.html) in a browser: arrows or space to move, `N` for speaker notes (timed per slide). Rebuild the PDF after editing the deck: `python3 scripts/build_pitch_pdf.py`.
+Deck: [`OCI-Capacity-Coach-pitch.pdf`](OCI-Capacity-Coach-pitch.pdf) (16 pages), or present [`index.html`](index.html) in a browser: arrows or space to move, `N` for speaker notes (timed per slide). Rebuild the PDF after editing the deck: `python3 scripts/build_pitch_pdf.py`.
 
 Live app: https://d2mi2h3eu8y69s.cloudfront.net. Sign in as `demo` / `demo` (organization) or `staff` / `staff` (Everytown staff). AI observability: the CloudWatch dashboard `everytown-oci` (stack output `DashboardUrl`) and Transaction Search, in the AWS console.
 
-Judging criteria tags: **[TECH]** Technical Capability, **[UI]** User Interface and Design, **[IMPACT]** Impact and Scalability, **[ORIG]** Originality and Uniqueness.
+Judging criteria (official weights): **[INNOV]** Technical innovation 25%, **[IMPACT]** Social impact potential 25%, **[FEAS]** Feasibility and sustainability 20%, **[SCALE]** Scalability 15%, **[PRES]** Presentation quality 15%. Every slide's top-right tag names the criterion it serves. Presentation quality is the whole talk: stay on time, demo live, land one line per slide.
 
-## Run of show (7:40, then 2:00 of questions)
+## Run of show (7:45, then 2:00 of questions)
 
 | Time | Slide | Point to land | Criterion |
 |---|---|---|---|
 | 0:00 to 0:20 | 1 Title | CVI organizations stop shootings in their neighborhoods; CSF helps them get stronger. The AI never scores. Synthetic data, mocked login, URL torn down after judging. | [IMPACT] |
-| 0:20 to 1:00 | 2 The need | 45 pilot organizations, 2 staff writing every report by hand, 140+ in the network. The self-assessment is the front door to CSF training. | [IMPACT] |
-| 1:00 to 1:40 | 3 What Everytown told us | Four quotes from the CSF interview, four things we built. | [ORIG] [UI] |
-| 1:40 to 4:10 | 4 Live demo | Switch to the browser (below). Slides 4 and 5 are the backup if the network fails. | all |
-| 4:10 to 5:00 | 6 How it works | Code scores, AI writes, code checks. Six fixed steps, not an agent. | [TECH] |
-| 5:00 to 5:50 | 7 Traced and tested | Every report is a trace in Amazon CloudWatch; 52 synthetic test cases; the evals caught 3 real bugs. | [TECH] [ORIG] |
-| 5:50 to 6:20 | 8 Accessible | Coach's letter, reading grade measured in code, Listen, Spanish, WCAG 2.2 AA. | [UI] |
-| 6:20 to 7:00 | 9 Impact and cost | 40 s and about $0.11 a report; the whole network twice a year for under $100 a year. | [IMPACT] |
-| 7:00 to 7:40 | 10 Our ask | Pilot with 3 to 4 CSF grantees this quarter. Leave this slide up for questions. | [IMPACT] |
+| 0:20 to 1:00 | 2 The need | 45 pilot organizations, 2 staff writing every report by hand, 140+ in the network. Impact path: stronger organizations keep violence intervention running; every grantee gets a plan in minutes, training aims at real gaps, staff time goes to coaching. | [IMPACT] |
+| 1:00 to 1:30 | 3 What Everytown told us | Four quotes from the CSF interview, four things we built. | [IMPACT] |
+| 1:30 to 4:00 | 4 Live demo | Switch to the browser (below). Slides 4 and 5 are the backup if the network fails. | [PRES] all |
+| 4:00 to 4:45 | 6 How it works | Code scores, AI writes, code checks. Six fixed steps, not an agent. | [INNOV] |
+| 4:45 to 5:30 | 7 Traced and tested | Every report is a trace in Amazon CloudWatch; 52 synthetic test cases; the evals caught 3 real bugs. | [INNOV] |
+| 5:30 to 5:55 | 8 Accessible | Impact only counts if the readers can use it: coach's letter, reading grade measured in code, Listen, Spanish, WCAG 2.2 AA. | [IMPACT] |
+| 5:55 to 6:35 | 9 Feasibility and sustainability | Live today; $0.11 a report, under $50 a year of tokens, $1 to $3 a month hosting, 0 servers; Apache-2.0 CloudFormation Everytown owns; gates on every release. | [FEAS] |
+| 6:35 to 7:10 | 10 Scalability | 100+ reports a minute within the Bedrock quotas; Lambda 1,000 concurrent (5 is a spend guard); cost grows linearly; better peer matches as it grows. | [SCALE] |
+| 7:10 to 7:45 | 11 Our ask | Pilot with 3 to 4 CSF grantees this quarter. Leave this slide up for questions. | [FEAS] |
 
 Slide 5 (staff screenshots) is skipped when the live demo covers the staff view. The appendix (A1 to A5) answers likely questions: responsible AI, security and privacy, eval results, cost, roadmap.
 
@@ -52,7 +53,9 @@ If a new report is refused because of the hourly cap, say "that is the hourly re
 - 8 areas, 143 statements; the reference scoring engine passes all 3 answer keys (`verify_benchmark.py`).
 - About 40 seconds and about $0.11 of Bedrock per report (token counts on the trace). 15 coach questions per report.
 - Hosting: about $45 a month with Aurora kept warm at 0.5 ACU (as for judging), $1 to $3 a month with auto-pause; CloudWatch observability a few dollars a month, no server.
-- Evals: 16 report cases, 21 coach questions, 15 staff questions, 20 judge calibration cases; all gates pass. Judges: personalization 0.88, actionability 0.84, faithfulness 0.75, plain language 0.72, coach helpfulness 0.69.
+- Evals: 16 report cases, 21 coach questions, 15 staff questions, 20 judge calibration cases; all gates pass. Report judges (v1.5 run): actionability 0.88, personalization 0.83, faithfulness 0.73, plain language 0.72; coach helpfulness 0.69.
 - Bugs the evals caught: the guardrail blocked a normal Spanish report (it judged our own facts as a prompt attack); "change my score" returned an error; tracing was silently off after a deploy (a missing library).
 - Protection on this temporary deployment: mocked login; CloudFront with IAM-signed origin access to the Lambda; 5 concurrent requests; an hourly cap on new reports; traces and model logs only in CloudWatch, behind AWS sign-in.
 - axe-core: no WCAG 2.2 A or AA violations on any page.
+- Scale: Bedrock quotas in this account are 6M tokens a minute for Claude Sonnet and 10M for Haiku. A report uses about 31,000 Sonnet tokens (cached prompt included) plus Haiku research, so even with output tokens counted 5× the quotas allow more than 100 reports a minute. Lambda allows 1,000 concurrent runs (the demo reserves 5 as a spend guard); Aurora Serverless v2 scales to a 16 ACU ceiling set at deploy.
+- Sustainability: Apache-2.0 open source; three CloudFormation stacks and `scripts/deploy.sh`; no servers; evals, 11 end-to-end tests and axe-core before every release.

@@ -2,6 +2,15 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.5.1 — Pitch aligned to the official judging criteria; Apache-2.0 license
+
+- The deck follows the five official criteria and weights: technical innovation (25%), social impact potential (25%), feasibility and sustainability (20%), scalability (15%) and presentation quality (15%). Every slide's top-right tag names the criterion it serves.
+- Slide 2 states the impact path: stronger organizations keep violence intervention running; every grantee gets a plan in minutes, CSF aims training at real gaps, and staff time goes to coaching.
+- New slide 9, Feasibility and sustainability: live today, $0.11 a report, under $50 a year of tokens, $1 to $3 a month hosting, no servers, Apache-2.0 CloudFormation Everytown owns, and gates on every release.
+- New slide 10, Scalability: more than 100 reports a minute within the account's Bedrock quotas (measured tokens per report from Bedrock invocation logs, output counted 5×), 1,000 concurrent Lambda runs (the demo's 5 is a spend guard), Aurora up to 16 ACU, linear cost, and better peer matches as the network grows.
+- The demo script is retimed to 7:45 and retagged to the official criteria, with scale and sustainability answers for questions and the v1.5 eval scores.
+- The repository is licensed under Apache License 2.0 (`LICENSE`); the container image carries the `org.opencontainers.image.licenses` label.
+
 ## v1.5.0 — UI/UX pass with impeccable and Hallmark: clearer, calmer, phone-first, sturdier
 
 Product context: `PRODUCT.md` (written with `/impeccable init`: Everytown's mission, the leaders and CSF staff who use the tool, what it does, what must never change). Hallmark ran in audit mode on the start page and questionnaire; its findings were applied inside the Everytown Community Safety Fund look (where a Hallmark rule conflicts with the brand, such as eyebrow labels, the brand wins). Then `/impeccable clarify`, `adapt`, `harden` and `quieter`, in three parallel workers, one per surface.

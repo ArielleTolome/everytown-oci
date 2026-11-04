@@ -31,6 +31,7 @@ jobs:
           labels: |
             org.opencontainers.image.title=OCI Capacity Coach
             org.opencontainers.image.description=Everytown Organizational Capacity Index: Flask API and Astro site. Needs AWS (Bedrock, Aurora Data API).
+            org.opencontainers.image.licenses=Apache-2.0
       - uses: docker/build-push-action@v6
         with:
           context: .

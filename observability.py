@@ -1,9 +1,10 @@
 """Tracing for every AI step: OpenTelemetry spans with OpenInference and gen_ai attributes, sent to AWS X-Ray's OTLP
-endpoint (SigV4), where CloudWatch Transaction Search, generative AI observability and Omni read them.
+endpoint (SigV4), where CloudWatch Transaction Search, generative AI observability and Omni read them, and to Arize
+Phoenix (project = service name) when OCI_PHOENIX_ENDPOINT is set.
 
-Off unless OCI_TRACES=xray: then nothing is imported and every helper is a cheap no-op. Tracing never breaks a
-request: setup and export failures are logged and swallowed. Never put a respondent's name, a raw sign-in owner id or
-a guardrail trace (it holds unmasked values) on a span.
+Off unless OCI_TRACES=xray or OCI_PHOENIX_ENDPOINT is set: then nothing is imported and every helper is a cheap
+no-op. Tracing never breaks a request: setup and export failures are logged and swallowed. Never put a respondent's
+name, a raw sign-in owner id or a guardrail trace (it holds unmasked values) on a span.
 """
 import contextlib
 import contextvars
@@ -18,6 +19,7 @@ import time
 log = logging.getLogger(__name__)
 SERVICE = os.environ.get("OCI_TRACE_SERVICE") or "everytown-oci"
 REGION = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or "us-west-2"
+PHOENIX = (os.environ.get("OCI_PHOENIX_ENDPOINT") or "").rstrip("/")
 MAX_ATTR = 60_000  # characters per attribute: a whole prompt fits in X-Ray's 200 KB span limit
 QUALITY_NAMESPACE = "EverytownOCI/Quality"
 
@@ -59,10 +61,19 @@ def _exporter():
                             timeout=5)
 
 
+def _phoenix_exporter():
+    """OTLP/HTTP to Phoenix's /v1/traces with its system API key."""
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+    key = os.environ.get("OCI_PHOENIX_API_KEY")
+    return OTLPSpanExporter(endpoint=PHOENIX + "/v1/traces", timeout=5,
+                            headers={"authorization": "Bearer " + key} if key else None)
+
+
 def setup(exporter=None):
-    """Idempotent. `exporter` (tests) replaces the X-Ray exporter with an in-memory one, exported synchronously."""
+    """Idempotent. `exporter` (tests) replaces the real exporters with an in-memory one, exported synchronously."""
     global _provider, _tracer
-    if _provider is not None or not (exporter or os.environ.get("OCI_TRACES") == "xray"):
+    xray = os.environ.get("OCI_TRACES") == "xray"
+    if _provider is not None or not (exporter or xray or PHOENIX):
         return
     try:
         from opentelemetry.sdk.resources import Resource
@@ -76,9 +87,15 @@ def setup(exporter=None):
                 return (int(time.time()) << 96) | random.getrandbits(96)
 
         provider = TracerProvider(id_generator=XRayIds(), resource=Resource.create({
-            "service.name": SERVICE, "deployment.environment.name": os.environ.get("OCI_STAGE") or "demo",
+            "service.name": SERVICE, "openinference.project.name": SERVICE,
+            "deployment.environment.name": os.environ.get("OCI_STAGE") or "demo",
             "cloud.provider": "aws", "cloud.region": REGION}))
-        provider.add_span_processor(SimpleSpanProcessor(exporter) if exporter else BatchSpanProcessor(_exporter()))
+        if exporter:
+            provider.add_span_processor(SimpleSpanProcessor(exporter))
+        else:
+            for on, make in ((xray, _exporter), (PHOENIX, _phoenix_exporter)):
+                if on:
+                    provider.add_span_processor(BatchSpanProcessor(make()))
         _tracer = provider.get_tracer("everytown-oci")
         _provider = provider
     except Exception:
@@ -154,10 +171,15 @@ def xray_id(trace_id):
     return "1-%s-%s" % (trace_id[:8], trace_id[8:]) if trace_id else None
 
 
+def cloudwatch_url(trace_id):
+    return ("https://%s.console.aws.amazon.com/cloudwatch/home?region=%s#xray:traces/%s"
+            % (REGION, REGION, xray_id(trace_id)) if trace_id else None)
+
+
 def trace_link(trace_id):
-    """{trace_id, project, url} for the assessment document: the trace in the CloudWatch console (AWS sign-in)."""
-    url = ("https://%s.console.aws.amazon.com/cloudwatch/home?region=%s#xray:traces/%s" % (REGION, REGION, xray_id(trace_id))
-           if trace_id else None)
+    """{trace_id, project, url} for the assessment document: the trace in Phoenix (its own sign-in) when configured,
+    else in the CloudWatch console (AWS sign-in)."""
+    url = "%s/redirects/traces/%s" % (PHOENIX, trace_id) if PHOENIX and trace_id else cloudwatch_url(trace_id)
     return {"trace_id": trace_id, "project": SERVICE, "url": url}
 
 

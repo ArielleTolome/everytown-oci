@@ -7,6 +7,8 @@
 #   0 skips it, needed where budgets:ModifyBudget is denied). Unset values keep the stack's previous setting.
 # Observability (account and Region settings CloudFormation cannot express, both idempotent): CloudWatch Transaction
 #   Search receives the app's OpenTelemetry spans, and Bedrock model invocation logging writes to the stack's log group.
+#   When infra/.phoenix.env exists (from scripts/deploy_observability.sh), its PHOENIX_URL and PHOENIX_API_KEY are
+#   passed to the app, which then also sends its traces to Phoenix; otherwise the stack keeps its previous settings.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -71,6 +73,11 @@ APP_PARAMS=(CodeBucket="$ARTIFACTS" CodeKey="$KEY" SecretKey="$(cat infra/.secre
   DbClusterArn="$DB_CLUSTER_ARN" DbSecretArn="$DB_SECRET_ARN" DbName="$DB_NAME")
 [ -n "${RESERVED_CONCURRENCY:-}" ] && APP_PARAMS+=(ReservedConcurrency="$RESERVED_CONCURRENCY")
 [ -n "${MONTHLY_BUDGET_USD:-}" ] && APP_PARAMS+=(MonthlyBudgetUsd="$MONTHLY_BUDGET_USD")
+if [ -s infra/.phoenix.env ]; then
+  # shellcheck source=/dev/null
+  APP_PARAMS+=("PhoenixEndpoint=$(. infra/.phoenix.env; printf %s "${PHOENIX_URL:-}")"
+    "PhoenixApiKey=$(. infra/.phoenix.env; printf %s "${PHOENIX_API_KEY:-}")")
+fi
 aws cloudformation deploy --stack-name "$STACK" --template-file infra/template.yaml \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset \
   --parameter-overrides "${APP_PARAMS[@]}"

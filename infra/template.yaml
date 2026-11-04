@@ -39,6 +39,15 @@ Parameters:
     Default: 100
     MinValue: 0
     Description: Monthly AWS cost budget in USD (tracking only, no alerts until a subscriber is added). 0 skips it, for accounts that deny budgets:ModifyBudget.
+  PhoenixEndpoint:
+    Type: String
+    Default: ""
+    Description: Arize Phoenix base URL (PhoenixUrl output of the everytown-oci-obs stack). Empty sends traces to CloudWatch only.
+  PhoenixApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Phoenix system API key for OTLP traces (created by scripts/deploy_observability.sh).
 
 Conditions:
   CreateBudget: !Not [!Equals [!Ref MonthlyBudgetUsd, 0]]
@@ -277,6 +286,8 @@ Resources:
           OCI_GUARDRAIL_ID: !GetAtt Guardrail.GuardrailId
           OCI_GUARDRAIL_VERSION: !GetAtt GuardrailVersion.Version
           OCI_TRACES: xray  # observability.py: OpenTelemetry spans to X-Ray (needs Transaction Search, see deploy.sh)
+          OCI_PHOENIX_ENDPOINT: !Ref PhoenixEndpoint  # and to Phoenix too, when set
+          OCI_PHOENIX_API_KEY: !Ref PhoenixApiKey
 
   AsyncConfig:
     Type: AWS::Lambda::EventInvokeConfig
