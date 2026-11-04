@@ -1273,3 +1273,238 @@ main h2[id] { scroll-margin-top: var(--space-lg); }
 .sq-last { padding-left: 1.25rem; }
 @media (max-width: 639px) { .sq-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); } .sq-kpis .kpi { padding: var(--space-sm) var(--space-md); } .sq-kpis .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } .sq-kpis .kpi__num { font-size: 1.75rem; } }
 /* == end v1.7 staff == */
+/* == v1.8 start == */
+/* Safe areas: Base.astro sets viewport-fit=cover, so sides and bottom keep clear of a notch or home bar (env() is 0 elsewhere). */
+.site-header__inner, .site-footer__inner, .wrap { padding-left: max(var(--space-md), env(safe-area-inset-left)); padding-right: max(var(--space-md), env(safe-area-inset-right)); }
+.site-footer__inner { padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom)); }
+/* Start page optional groups (details.m-more): open with no summary from 600px, so wider screens look as before; folded on phones. */
+.m-more__chevron { margin-left: auto; }
+@media (prefers-reduced-motion: no-preference) { .m-more__chevron { transition: transform 200ms var(--ease); } }
+@media (min-width: 600px) {
+  .m-more > summary { display: none; }
+  .area-more > .area-options { margin-top: var(--space-md); }
+}
+@media (max-width: 599px) {
+  /* Header: one band. Brand, then Display and Sign out as 44 px icon buttons whose names stay for screen readers; "Signed in as" below. */
+  .site-header__inner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 0 var(--space-sm); padding-block: var(--space-xs); }
+  .site-header__tools { display: contents; }
+  .brand { grid-area: 1 / 1; min-width: 0; }
+  .brand__org, .site-header .btn-ghost > span { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .brand__org { font-size: 0.875rem; }
+  .brand__name { font-size: 1.0625rem; }
+  .display-menu { grid-area: 1 / 2; }
+  .site-header [data-logout] { grid-area: 1 / 3; }
+  .site-header .btn-ghost { width: var(--target); padding: 0; }
+  .site-header .user-chip:not([hidden]) { display: block !important; grid-area: 2 / 1 / 3 / -1; min-width: 0; padding: 0 0 var(--space-xs) calc(1.75rem + var(--space-sm)); font-size: 0.875rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .site-header .display-menu__panel { left: var(--space-md); right: var(--space-md); width: auto; top: 100%; }
+  /* Closed details contain their content (content-visibility), so the panel would measure 36 px wide there: take it out. */
+  .display-menu:not([open]) .display-menu__panel { display: none; }
+  .site-footer__inner { padding-top: var(--space-md); padding-bottom: max(var(--space-md), env(safe-area-inset-bottom)); }
+
+  .m-more > summary { list-style: none; display: flex; align-items: center; gap: var(--space-sm); min-height: var(--target); padding: var(--space-sm) var(--space-md); border: 2px solid var(--color-border-strong); border-radius: var(--radius); background: var(--color-surface); color: var(--color-link); font-weight: 700; line-height: 1.3; }
+  .m-more > summary::-webkit-details-marker { display: none; }
+  .m-more > summary:hover { background: var(--color-selected-bg); }
+  .m-more[open] > summary { margin-bottom: var(--space-md); }
+  .m-more[open] > summary .m-more__chevron { transform: rotate(180deg); }
+
+  /* Sign in, start and resume: a shorter title band so the form starts on the first screen; small labels 14 px. */
+  main:has(#org-form, #login-form, #resume-form) .title-band { padding-block: var(--space-md) var(--space-lg); margin-bottom: var(--space-lg); }
+  main:has(#org-form, #login-form, #resume-form) h1 { font-size: 1.875rem; }
+  main:has(#org-form, #login-form, #resume-form) .lead { font-size: var(--text-base); }
+  main:has(#org-form, #login-form, #resume-form) :is(.eyebrow, .mini-label, .tag) { font-size: 0.875rem; }
+  /* The start page says who should fill it out, next to the role question. */
+  main:has(#login-form) .title-band .lead { display: none; }
+  .card--auth { padding: var(--space-md); }
+  #login-form { margin-top: var(--space-md); }
+  .resume-cta .hint { display: block; margin: 0; }
+
+  /* Start page: tighter cards and area list. */
+  .how { margin: var(--space-md) 0 var(--space-lg); }
+  .how > .mini-label { display: none; } /* the summary says "How it works" */
+  #org-form > * + *, #org-form .card.stack > * + * { margin-top: var(--space-md); }
+  #org-form .card { padding: var(--space-md); }
+  #domains .area-options { gap: var(--space-sm); }
+  #domains .area-option__card { padding-block: var(--space-sm); }
+  #domains .tag { text-transform: none; letter-spacing: 0; }
+  .area-more { margin-top: var(--space-sm); }
+  /* Start questionnaire stays in thumb reach. It lets go while a text field has focus (on-screen keyboard), and focus scrolling keeps clear of it. */
+  html:has(#org-form) { scroll-padding-bottom: 5.5rem; }
+  #org-form > .actions { position: sticky; bottom: 0; z-index: 5; margin-inline: calc(-1 * var(--space-md)); padding: var(--space-sm) var(--space-md) max(var(--space-sm), env(safe-area-inset-bottom)); background: var(--color-surface); border-top: 1px solid var(--color-border); box-shadow: 0 -4px 10px rgba(0, 28, 96, 0.08); }
+  #org-form:has(.input:focus) > .actions { position: static; }
+  #org-form > .actions .btn-primary { width: 100%; }
+}
+/* == end v1.8 start == */
+/* == v1.8 questionnaire == */
+/* Phones first: a compact head, progress on one line, answers right under the statement, tighter statement cards,
+   and a one-row bar with a short status (the full sentence stays in the live region). Desktop is unchanged. */
+.q-bar__short { display: none; }
+@media (hover: none) { #q-root .kbd-tips { display: none; } }
+@media (max-width: 599px) {
+  /* Secondary text 14 px or more */
+  #q-root .eyebrow, #q-root .q-progress__where, #q-root .stage-badge, #q-root .area-card__state, #q-root .answer__tag, #q-root .ladder-item__area, #q-root .quick__key { font-size: 0.875rem; }
+  #q-root .title-band { margin-bottom: var(--space-sm); padding-block: var(--space-sm); }
+  #q-root .title-band h1 { font-size: 1.625rem; margin-bottom: 0; }
+  #q-root .eyebrow { margin-bottom: 0; }
+  #q-root .area-stepper ol { margin-bottom: var(--space-sm); }
+  .q-progress, [data-view="quick"] .q-progress { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs) var(--space-sm); margin-bottom: var(--space-sm); }
+  #q-root .q-progress__where { flex: 1 0 100%; margin: 0; text-transform: none; letter-spacing: normal; }
+  .q-progress__meta { flex: 1 0 100%; margin: 0; }
+  .q-progress__label, .quick__count { flex: 0 1 auto; margin: 0; }
+  .q-progress progress, .quick__meter progress { flex: 1 1 4rem; width: auto; }
+  .quick__meter { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm); }
+  /* One at a time shows this area's count and bar right above the card; the overall count stays for screen readers
+     (and on screen in the other views). */
+  [data-view="quick"] .q-progress__label, [data-view="quick"] #overall-progress { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  /* Narrow phones (iPhone SE): the time estimate is left for screen readers, so Yes and No clear the bar. */
+  @media (max-width: 379px) {
+    [data-view="quick"] .q-progress__time { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+    [data-view="quick"] .q-progress__meta:has(.q-streak[hidden]) { margin-top: calc(-1 * var(--space-xs)); }
+  }
+
+  /* One at a time: Yes / No right under the statement; the optional word help follows them. */
+  .quick__card { display: flex; flex-direction: column; padding: 0.75rem var(--space-md) var(--space-md); }
+  .quick__cheer { align-self: flex-start; margin-bottom: var(--space-sm); }
+  .quick__kicker { margin-bottom: var(--space-xs); }
+  .quick__stmt { font-size: 1.25rem; margin-bottom: var(--space-sm); }
+  .quick__card .check-item__note { margin-bottom: var(--space-sm); }
+  .quick__answers { margin-top: 0; gap: var(--space-sm); }
+  .quick__btn { min-height: 3rem; padding-block: var(--space-xs); }
+  .quick__card > .q-help { order: 1; margin: var(--space-sm) 0 0; }
+  .quick__card > .quick__nav, .quick__card > .quick__keys { order: 2; }
+  .quick__nav { margin-top: var(--space-md); }
+  /* Spanish: the machine-translation note follows the card, so the statement still comes first */
+  [data-view="quick"] #questions { display: flex; flex-direction: column; }
+  [data-view="quick"] .q-es-note { order: 1; }
+
+  /* Area info, reassurance and the answer switches: same content, less space */
+  #q-root .about-card { margin: var(--space-sm) 0; }
+  #q-root .callout { gap: var(--space-sm); margin: var(--space-sm) 0; padding: var(--space-sm) var(--space-md); line-height: 1.45; }
+  #q-root .callout__icon { display: none; }
+  #q-root .callout__title { font-size: 1.0625rem; }
+  #q-root .draft-tools { margin: var(--space-sm) 0; }
+  #q-root .draft-tools__buttons { display: grid; grid-template-columns: 1fr 1fr; }
+  #q-root .draft-tools__buttons .btn { padding-inline: 0.5rem; }
+  .q-tools { gap: var(--space-sm); margin: var(--space-sm) 0; }
+  .seg, .seg__opts { width: 100%; }
+  .seg__opts { display: grid; grid-template-columns: 1fr 1fr; border-radius: var(--radius-lg); }
+  .seg__opt { justify-content: center; padding: 0.375rem 0.625rem; border-radius: var(--radius); text-align: center; }
+  .seg__opt:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  /* "Questions in" sits beside its two options when they fit */
+  .seg + .seg > legend { float: left; margin: 0 var(--space-sm) 0 0; line-height: 3.5rem; }
+  .seg + .seg .seg__opts { width: auto; }
+
+  /* Yes / No and Checklist: tighter cards and stage headers; answers stay 44 px+ and side by side */
+  .q-instruct { margin: var(--space-md) 0 var(--space-sm); }
+  .stage-group { margin-top: 0.75rem; }
+  .stage-group__head { margin-bottom: var(--space-sm); padding-bottom: var(--space-xs); }
+  .stage-group__head h2 { gap: var(--space-xs) var(--space-sm); font-size: 1.25rem; }
+  .stage-group__desc { line-height: 1.4; }
+  .question { margin-bottom: 0.375rem; padding: 0.625rem 0.75rem; }
+  .question > legend { margin-bottom: 0.125rem; font-size: 1.0625rem; line-height: 1.3; }
+  .questions { margin-bottom: var(--space-sm); }
+  .question .q-help { margin-bottom: var(--space-xs); }
+  #q-root .q-help > summary { padding-block: 0.75rem; line-height: 1.35; }
+  .q-pending { margin-bottom: var(--space-xs); line-height: 1.3; }
+  .answer { min-height: var(--target); padding-block: var(--space-xs); }
+  .wrap:has(> #q-root) { padding-bottom: var(--space-xl); }
+  .check-item { margin-bottom: 0.75rem; padding: 0; border: 0; background: none; box-shadow: none; }
+  .check-item__row { min-height: 3rem; padding: 0.625rem 0.75rem; font-size: 1.0625rem; line-height: 1.35; }
+  .check-item__note, .check-item__state { margin-top: var(--space-xs); }
+  .check-done { padding: var(--space-md); }
+
+  /* Bar: Back, a short status and Next in one row; home-indicator safe area below */
+  .q-bar { gap: var(--space-sm); margin-top: var(--space-md); padding: var(--space-sm) var(--space-md) calc(var(--space-sm) + env(safe-area-inset-bottom, 0px)); }
+  .q-bar__status { order: 0; flex: 1 1 0; min-width: 0; font-size: 0.875rem; line-height: 1.25; }
+  .q-bar .btn-primary { flex: 0 0 auto; padding-inline: 1rem; }
+  .q-bar #back-btn { padding-inline: 0.625rem; }
+  /* Long labels ("Review and finish", "See my results", "Send my answers back"; only "Next" carries .q-next-name):
+     on narrow phones the status takes its own line above, and the button keeps one line. */
+  @media (max-width: 379px) {
+    .q-bar:not(:has(.q-next-name)) .q-bar__status { order: -1; flex-basis: 100%; }
+    .q-bar:not(:has(.q-next-name)) .btn-primary { flex: 1 0 auto; }
+  }
+  .q-bar__full { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .q-bar__short { display: inline; }
+  .q-bar__status.is-warn { order: -1; flex-basis: 100%; }
+  .q-bar__status.is-warn .q-bar__full { position: static !important; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; clip-path: none; white-space: normal; }
+  .q-bar__status.is-warn .q-bar__short { display: none; }
+  /* Typing in the save or share panel: the bar returns to its place at the end of the form, so it never rides
+     above the on-screen keyboard or covers the field. Sticky keeps its space in the flow, so nothing else moves. */
+  #q-root:has(#draft-tools input[type="text"]:focus, #draft-tools textarea:focus) .q-bar { position: static; }
+}
+/* == end v1.8 questionnaire == */
+/* == v1.8 report == */
+/* Phone folds (report-ui.ts fold): long or optional parts sit behind a "Show ..." control under 600px. Wider screens
+   and print keep them open with the summary hidden, so the desktop layout is unchanged. */
+.m-fold > .m-fold__summary { display: none; }
+/* Start here and roadmap steps: the label wraps the box, so the whole row is one tap target (same look as before). */
+.checklist label, .rm-task__body .rm-task__check { display: flex; align-items: flex-start; gap: var(--space-sm); }
+.checklist label input, .rm-task__check input { margin-top: 0.05rem; }
+#results-root .checklist label:has(input:disabled) { cursor: default; }
+.rm-task--edit .rm-task__meta { padding-left: calc(1.5rem + var(--space-sm)); }
+@media (min-width: 600px) { .toc__jump, .rm-week__short { display: none; } }
+@media (max-width: 599px) {
+  .m-fold > .m-fold__summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); min-height: 3rem; padding: var(--space-sm) var(--space-md); border: 2px solid var(--color-border-strong); border-radius: var(--radius-lg); background: var(--color-surface); color: var(--color-link); font-weight: 700; }
+  .m-fold > .m-fold__summary::-webkit-details-marker { display: none; }
+  .m-fold > .m-fold__summary:hover { background: var(--color-selected-bg); }
+  .m-fold[open] > .m-fold__summary { margin-bottom: var(--space-sm); }
+  .m-fold[open] > .m-fold__summary .about-card__chevron { transform: rotate(180deg); }
+  .m-fold > .m-fold__summary + .mini-label, .m-fold > .m-fold__summary + .inset > .mini-label:first-child { display: none; } /* the summary already says it */
+  .m-fold + .m-fold, .truth .m-fold { margin-top: var(--space-sm); }
+  .focus-card > .m-fold { margin-bottom: var(--space-sm); }
+
+  /* "On this page": a sticky bar with a one-tap Start here link; the list opens over the content, never pushing it. */
+  #results-root .toc { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 15; display: flex; align-items: center; gap: var(--space-sm);
+    margin: 0 calc(-1 * max(var(--space-md), env(safe-area-inset-left))) var(--space-md);
+    padding: var(--space-xs) max(var(--space-md), env(safe-area-inset-right)) var(--space-xs) max(var(--space-md), env(safe-area-inset-left));
+    background: var(--color-surface); border-bottom: 1px solid var(--color-border-strong); box-shadow: 0 6px 12px rgba(0, 28, 96, 0.08); }
+  #results-root .toc[hidden] { display: none; }
+  #results-root .toc__details { flex: 1; min-width: 0; }
+  #results-root .toc__details > .toc__list { position: absolute; left: var(--space-sm); right: var(--space-sm); top: calc(100% + var(--space-xs)); max-height: 70vh; overflow-y: auto; overscroll-behavior: contain; padding-top: var(--space-xs); background: var(--color-surface); border: 2px solid var(--color-foreground); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+  #results-root .toc__jump { flex: none; }
+  #results-root .toc__details > summary { padding-inline: 0.75rem; white-space: nowrap; }
+  /* Focus and jumps land below the bar (WCAG 2.4.11). */
+  html:has(#results-root .toc:not([hidden])) { scroll-padding-top: 4.25rem; }
+
+  /* Tighter rhythm and cards on phones. */
+  #results-root .title-band h1, #plan-root .title-band h1 { font-size: 1.875rem; }
+  /* Compact section headers: the heading says it; the small label above it is decoration on a phone. */
+  #results-root .section-head .eyebrow, #plan-root .section-head .eyebrow { display: none; }
+  #results-root .feedback__group:first-child .choice__check { display: none; }
+  #results-root .section, #results-root .support, #results-root .reassess { margin-top: 2.5rem; }
+  #results-root .reassess { gap: var(--space-md); padding: var(--space-md); }
+  #results-root .reassess .btn { width: 100%; }
+  #results-root .layer > .section:first-child { margin-top: var(--space-lg); }
+  #results-root .card, #results-root .panel, #plan-root .card { padding: var(--space-md); }
+  #results-root .focus-list { gap: var(--space-md); }
+  #results-root .feedback__group:first-child .choice-row { grid-template-columns: 1fr 1fr; }
+  #results-root .feedback .choice, #results-root .optin .choice { padding-block: var(--space-sm); }
+  #results-root .peers__intro { margin-bottom: var(--space-sm); }
+
+  /* Thumb reach: main actions full width. */
+  #results-root .title-band .actions > .btn, #results-root .report-main > .actions > .btn, #results-root .rm-teaser__cta .btn,
+  #results-root .coach-form .actions > .btn, #plan-root .rm-week__actions .btn { flex: 1 1 100%; width: 100%; min-height: 3rem; }
+  #results-root .listen-player__controls > .btn { flex: 1 1 0; }
+  #results-root .coach-starter { width: 100%; }
+
+  /* Ticking a step: a tall row and a bigger box. */
+  #results-root .checklist label, #plan-root .rm-task__body .rm-task__check { min-height: 3rem; padding-block: 0.625rem; }
+  #results-root .checklist label input, #plan-root .rm-task__check input { width: 1.75rem; height: 1.75rem; margin-top: -0.125rem; }
+  #plan-root .rm-task--edit .rm-task__meta { padding-left: calc(1.75rem + var(--space-sm)); }
+
+  /* Roadmap: locked weeks one compact line (the title band says how weeks open); this week's steps near the top. */
+  #plan-root .rm-week--locked { padding: var(--space-sm) var(--space-md); }
+  #plan-root .rm-week--locked .rm-week__num { width: 2rem; height: 2rem; }
+  #plan-root .rm-week--locked h3 { margin: 0; }
+  #plan-root .rm-week__long, #plan-root #rm-weeks-title { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  #plan-root .section-head:has(#rm-weeks-title) { display: contents; }
+  #plan-root .title-band > .eyebrow { display: none; } /* the H1 already says "your roadmap" */
+  #results-root .title-band, #plan-root .title-band { padding-block: 1.25rem; }
+
+  /* Secondary text 14px or more. */
+  #results-root :is(.eyebrow, .mini-label, .toc__group-title, .learned__kind, .track__label, .tag, .rm-tag),
+  #plan-root :is(.eyebrow, .mini-label, .rm-tag, .rm-badge__state) { font-size: 0.875rem; }
+}
+/* iPhone SE width: the bar stays one line, so its two icons go (the words stay). */
+@media (max-width: 379px) { #results-root .toc__details > summary > .icon:first-child, #results-root .toc__jump > .icon { display: none; } }
+/* == end v1.8 report == */

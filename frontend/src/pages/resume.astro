@@ -14,7 +14,7 @@ import Icon from "../components/Icon.astro";
       <label for="resume-link">Your saved link</label>
       <p class="hint" id="resume-link-hint">It starts with this site's address and has <code>?d=</code> in it. The short resume code is only for checking: you need the whole link.</p>
       <p class="field-error" id="resume-link-error" hidden></p>
-      <input class="input" type="text" id="resume-link" name="link" autocomplete="off" spellcheck="false" aria-describedby="resume-link-hint">
+      <input class="input" type="url" id="resume-link" name="link" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="go" aria-describedby="resume-link-hint">
     </div>
     <div class="actions">
       <button type="submit" class="btn btn-primary"><span>Find my assessment</span><Icon name="arrow-right" /></button>

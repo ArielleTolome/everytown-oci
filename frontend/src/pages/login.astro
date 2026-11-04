@@ -25,12 +25,12 @@ import Icon from "../components/Icon.astro";
     <form class="stack" id="login-form" method="post" novalidate>
       <div class="field">
         <label for="username">Username</label>
-        <input class="input" type="text" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        <input class="input" type="text" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" enterkeyhint="next" required>
       </div>
       <div class="field">
         <label for="password">Password</label>
         <div class="input-group">
-          <input class="input" type="password" id="password" name="password" autocomplete="current-password" required>
+          <input class="input" type="password" id="password" name="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" enterkeyhint="go" required>
           <button type="button" class="btn btn-secondary btn-icon" id="toggle-password" aria-label="Show password" aria-pressed="false"><Icon name="eye" /></button>
         </div>
       </div>
@@ -94,6 +94,8 @@ import Icon from "../components/Icon.astro";
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    // Enter in Username with no password yet is "Next" on a phone keyboard: go to Password, no error.
+    if (document.activeElement === user && user.value.trim() && !pass.value) { pass.focus(); return; }
     if (!user.value.trim() || !pass.value) {
       showError("Enter your username and password.");
       (user.value.trim() ? pass : user).focus();

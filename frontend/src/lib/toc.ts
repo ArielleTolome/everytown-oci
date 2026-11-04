@@ -1,7 +1,9 @@
 // "On this page" section nav for the results page (CSF site pattern): sticky left column from 1100px, a disclosure on smaller screens.
+// On phones it is a sticky bar at the top with a one-tap "Start here" link; its list opens over the content.
 // Links are grouped by report layer (tab panel); following a link into a hidden layer opens that layer first.
 import { $$, esc } from "./dom";
 import { icon } from "./icons";
+import { PHONE } from "./report-ui";
 
 const SECTIONS: [string, string][] = [
   ["truth-title", "What's true about you"],
@@ -25,6 +27,11 @@ const WIDE = window.matchMedia("(min-width: 1100px)");
 let observer: IntersectionObserver | null = null;
 let bottomObserver: IntersectionObserver | null = null;
 let onWideChange: (() => void) | null = null;
+let tocDetails: HTMLDetailsElement | null = null;
+// Phones: a tap outside the open list closes it, like any menu.
+document.addEventListener("click", (e) => {
+  if (PHONE.matches && tocDetails?.open && !tocDetails.contains(e.target as Node)) tocDetails.open = false;
+});
 
 /** Fills `nav` with links to the sections present in `content` and highlights the current one (aria-current="true"). */
 export function wireToc(nav: HTMLElement, content: HTMLElement) {
@@ -45,11 +52,17 @@ export function wireToc(nav: HTMLElement, content: HTMLElement) {
       <ol class="toc__list" role="list">${groups.map((g) => g.title && g.items.some(([, label]) => label !== g.title)
         ? `<li class="toc__group"><span class="toc__group-title">${esc(g.title)}</span><ol class="toc__list" role="list">${links(g.items)}</ol></li>`
         : links(g.items, g.title ? "toc__solo" : "")).join("")}</ol>
-    </details>`;
+    </details>${present.some(([id]) => id === "focus-title") ? `<a class="btn btn-secondary btn-sm toc__jump" href="#focus-title" data-toc="focus-title">${icon("target")}<span>Start here</span></a>` : ""}`;
   const details = nav.querySelector<HTMLDetailsElement>("details")!;
+  tocDetails = details;
   onWideChange = () => { details.open = WIDE.matches; };
   onWideChange();
   WIDE.addEventListener("change", onWideChange);
+  nav.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || WIDE.matches || !details.open) return;
+    details.open = false;
+    details.querySelector("summary")!.focus();
+  });
 
   // Scroll to the heading and move focus there too, so screen reader and keyboard users land in the section.
   nav.addEventListener("click", (e) => {
@@ -66,7 +79,7 @@ export function wireToc(nav: HTMLElement, content: HTMLElement) {
     if (!WIDE.matches) details.open = false;
   });
 
-  const anchors = $$<HTMLAnchorElement>("a[data-toc]", nav);
+  const anchors = $$<HTMLAnchorElement>(".toc__list a[data-toc]", nav);
   const headings = present.map(([id]) => content.querySelector<HTMLElement>(`#${id}`)!);
   const update = () => {
     // Current = last visible heading above the top 30% of the viewport (or the first visible one); hidden layers are skipped.

@@ -6,7 +6,7 @@ import { feedbackSection } from "./feedback";
 import { optinSection } from "./optin";
 import { icon, type IconName } from "./icons";
 import { fillRoadmapTeaser, roadmapTeaser, setRoadmapTask, shortDate, type Roadmap } from "./roadmap";
-import { errorText } from "./report-ui";
+import { errorText, fold } from "./report-ui";
 import { traceLinks } from "./staff-bi";
 
 /** v1.0 document fields (all optional; older documents lack them). Kept local so api.ts stays conflict-free. */
@@ -123,14 +123,14 @@ export function stagesSection(sub: Assessment, meta: Meta): string {
     ${sectionHead("stages-title", "Where you are today", "Your stages", undefined, "en",
       `Each area has five stages, from ${esc(names[0] ?? "Seeding")} to ${esc(names[names.length - 1] ?? "Transformational")}. Your stage is the highest one where every statement is already in place. Every stage is a normal place to be.`)}
     <ul class="tracks" role="list">${tracks}</ul>
-    <div class="table-wrap" role="region" aria-labelledby="scores-caption" tabindex="0">
+    ${fold("Show the table of scores", `<div class="table-wrap" role="region" aria-labelledby="scores-caption" tabindex="0">
       <table>
         <caption id="scores-caption">Capacity by area. Stages are estimated from your answers by a fixed scoring method.</caption>
         <thead><tr><th scope="col">Area</th><th scope="col">Estimated stage</th><th scope="col" class="num">Capacity</th><th scope="col" class="num">Growth priorities</th><th scope="col" class="num">High priority</th></tr></thead>
         <tbody>${sub.domains.map((d) => `<tr><th scope="row">${esc(d.domain_name)}</th><td>${esc(d.estimated_stage)}</td><td class="num">${pct(d.score_pct)}</td><td class="num">${d.gap_count} of ${d.total_questions}</td><td class="num">${d.high_count}</td></tr>`).join("")}</tbody>
         ${o ? `<tfoot><tr><th scope="row">All areas</th><td></td><td class="num">${pct(o.favorable_pct)}</td><td class="num">${o.total_gaps} of ${o.total_questions}</td><td class="num">${o.high}</td></tr></tfoot>` : ""}
       </table>
-    </div>
+    </div>`)}
   </section>`;
 }
 
@@ -172,7 +172,7 @@ function basis(ids: string[], gaps: Map<string, Gap>, open = false): string {
   const rows = ids.map((id) => `<li>${icon("circle-dashed")}<span><span class="chip">${esc(id)}</span> ${esc(gaps.get(id)?.question_text ?? "Statement not found")}</span></li>`).join("");
   return `<div class="basis" lang="en">
     ${open
-      ? `<p class="mini-label">Based on your answers to these statements</p><ul class="basis__list" role="list">${rows}</ul>`
+      ? fold(`Based on your answers to ${plural(ids.length, "statement", "statements")}`, `<p class="mini-label">Based on your answers to these statements</p><ul class="basis__list" role="list">${rows}</ul>`)
       : `<details class="about"><summary>Based on your answers to ${plural(ids.length, "statement", "statements")}</summary><ul class="basis__list" role="list">${rows}</ul></details>`}
   </div>`;
 }
@@ -206,16 +206,16 @@ function focusSection(items: Focus[], gaps: Map<string, Gap>, lang: string): str
             <p class="focus-card__status" id="focus-status-${i}" data-status="none"></p>
           </div>
         </div>
-        <div class="inset">
+        ${fold("Why this comes first", `<div class="inset">
           <p class="mini-label">Why this comes first</p>
           <p ${L}>${esc(f.why)}</p>
-        </div>
+        </div>`)}
         ${basis(f.gap_ids, gaps, true)}
         ${f.steps.length ? `<fieldset class="checklist">
           <legend class="mini-label">What to do</legend>
           <ul role="list" ${L}>${f.steps.map((s, j) => `
-            <li><input type="checkbox" id="focus-${i}-step-${j}" data-focus="${i}" data-step="${j}" aria-describedby="focus-status-${i}" disabled>
-              <label for="focus-${i}-step-${j}">${esc(s)}<span class="checklist__later" id="focus-${i}-later-${j}" lang="en" hidden></span></label></li>`).join("")}
+            <li><label><input type="checkbox" id="focus-${i}-step-${j}" data-focus="${i}" data-step="${j}" aria-describedby="focus-status-${i}" disabled>
+              <span>${esc(s)}<span class="checklist__later" id="focus-${i}-later-${j}" lang="en" hidden></span></span></label></li>`).join("")}
           </ul>
         </fieldset>
         <p class="field-error" id="focus-error-${i}" role="alert" hidden></p>` : ""}
@@ -254,7 +254,7 @@ function planSection(plan: PlanItem[], gaps: Map<string, Gap>, lang: string): st
   if (!cards) return "";
   return `<section class="section" aria-labelledby="plan-title">
     ${sectionHead("plan-title", "30 / 60 / 90 day plan", "Your next 90 days", "plan", lang, "A realistic order for a small team over the next three months.")}
-    <ol class="horizons" id="plan-body" role="list">${cards}</ol>
+    ${fold(`Show the 90-day plan (${plural(plan.length, "action", "actions")})`, `<ol class="horizons" id="plan-body" role="list">${cards}</ol>`)}
   </section>`;
 }
 
@@ -277,7 +277,7 @@ function gapsSection(sub: Assessment, meta: Meta): string {
   const body = sub.domains.map((d) => {
     const dg = sub.gaps.filter((g) => g.domain_id === d.domain_id);
     const info = meta.domains.find((m) => m.id === d.domain_id);
-    const list = dg.length ? `<ul class="gaps" role="list">${dg.map((g) => gapItem(g)).join("")}</ul>`
+    const list = dg.length ? fold(`Show ${plural(dg.length, "growth priority", "growth priorities")}`, `<ul class="gaps" role="list">${dg.map((g) => gapItem(g)).join("")}</ul>`)
       : `<p class="notice">${icon("circle-check")}<span>No growth priorities in this area. Your answers show these practices are in place.</span></p>`;
     return `<section class="gap-domain" aria-labelledby="gaps-${esc(d.domain_id)}">
       <h3 id="gaps-${esc(d.domain_id)}">${esc(d.domain_name)} <span class="count">${plural(dg.length, "growth priority", "growth priorities")}</span></h3>
@@ -345,8 +345,9 @@ function supportBody(sub: Assessment, editing: boolean): string {
 function supportSection(sub: Assessment): string {
   return `<section class="section support" aria-labelledby="support-title" data-no-print>
     ${sectionHead("support-title", "Ask the Community Safety Fund for support", "Training and coaching", undefined, "en",
-      "The Everytown Community Safety Fund plans its Community Training Institute trainings and coaching around what grantees ask for. Choose the areas where your team would like help. We share only the areas you choose and your organization's name with Community Safety Fund staff.")}
-    <div class="card support__card" id="support-body">${supportBody(sub, !sub.support)}</div>
+      "The Community Safety Fund plans its Community Training Institute trainings and coaching around what grantees ask for. We share only the areas you choose and your organization's name with Community Safety Fund staff.")}
+    ${sub.support ? `<div class="card support__card" id="support-body">${supportBody(sub, false)}</div>`
+      : fold("Choose areas and send a request", `<div class="card support__card" id="support-body">${supportBody(sub, true)}</div>`)}
   </section>`;
 }
 
@@ -447,7 +448,7 @@ function peersSection(sub: Assessment, staff: boolean): string {
     <div class="card peers__card">
       <div class="peers__intro">${icon("users", "peers__icon")}
         <div><p>The Community Safety Fund can introduce you to organizations like yours: a similar program model, a similar size, and the same growth priorities.</p>
-        <p class="hint">Community Safety Fund staff make the match. They share names only with consent, from both groups. You will never see other organizations' results here.</p></div>
+        <p class="hint">Community Safety Fund staff make the match and share names only with consent from both groups. You will never see other organizations' results here.</p></div>
       </div>
       <div id="peers-body">${peersBody(sub, staff)}</div>
     </div>
@@ -622,9 +623,10 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
   // Layer 1: the short, conversational version.
   const plan: string[] = [];
   if (r) {
+    const paras = r.summary.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${esc(p)}</p>`);
     plan.push(`<section class="section" aria-labelledby="truth-title">
       ${sectionHead("truth-title", "What's true about you", "In plain words", "summary", lang)}
-      <div class="card truth"><div class="prose" id="truth-body" lang="${esc(lang)}">${r.summary.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join("")}</div>
+      <div class="card truth"><div class="prose" id="truth-body" lang="${esc(lang)}">${paras[0] ?? ""}${paras.length > 1 ? fold(`Read the rest (${plural(paras.length - 1, "more paragraph", "more paragraphs")})`, paras.slice(1).join("")) : ""}</div>
         ${r.reading_grade != null ? `<details class="about reading-level"><summary>Reading level: about grade ${Math.round(r.reading_grade)}</summary><p>Measured by a fixed formula (Flesch-Kincaid). We aim for grade 8 or lower.</p></details>` : ""}</div>
     </section>`);
     plan.push(researchSection(sub), focusSection(r.focus ?? [], gaps, lang));
@@ -657,7 +659,7 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
     if (r.conversation?.length) {
       details.push(`<section class="section" aria-labelledby="conversation-title">
         ${sectionHead("conversation-title", "Team conversation guide", "Talk it through", "conversation", lang, "Use these questions at your next team or board meeting.")}
-        <ol class="prose conversation" id="conversation-body" lang="${esc(lang)}">${r.conversation.map((q) => `<li>${esc(q)}</li>`).join("")}</ol>
+        ${fold(`Show ${plural(r.conversation.length, "question", "questions")}`, `<ol class="prose conversation" id="conversation-body" lang="${esc(lang)}">${r.conversation.map((q) => `<li>${esc(q)}</li>`).join("")}</ol>`)}
       </section>`);
     }
   }
@@ -665,7 +667,7 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
   if (r?.sources?.length) {
     details.push(`<section class="section" aria-labelledby="sources-title">
       ${sectionHead("sources-title", "Sources consulted", "Where this comes from")}
-      <ul class="sources" lang="${esc(lang)}">${r.sources.map((s) => `<li><a href="${esc(safeUrl(s.url))}" rel="noopener">${esc(s.title)}</a> <span class="url-domain">(${esc(hostOf(s.url))})</span></li>`).join("")}</ul>
+      ${fold(`Show ${plural(r.sources.length, "source", "sources")}`, `<ul class="sources" lang="${esc(lang)}">${r.sources.map((s) => `<li><a href="${esc(safeUrl(s.url))}" rel="noopener">${esc(s.title)}</a> <span class="url-domain">(${esc(hostOf(s.url))})</span></li>`).join("")}</ul>`)}
     </section>`);
   }
 

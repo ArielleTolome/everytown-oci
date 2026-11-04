@@ -14,11 +14,14 @@ import Icon from "../components/Icon.astro";
 
   <section class="how" aria-labelledby="how-title">
     <h2 id="how-title" class="mini-label">How it works</h2>
-    <ol class="how__steps" role="list">
-      <li><span class="how__icon" aria-hidden="true"><Icon name="clipboard" /></span><span><strong>1. Answer</strong> Yes or No to each statement. There are no wrong answers.</span></li>
-      <li><span class="how__icon" aria-hidden="true"><Icon name="chart" /></span><span><strong>2. We score it</strong> with a fixed method. The same answers always give the same stages.</span></li>
-      <li><span class="how__icon" aria-hidden="true"><Icon name="target" /></span><span><strong>3. You get a plan:</strong> 1 or 2 growth priorities to start with, a 12-week roadmap and a PDF to share.</span></li>
-    </ol>
+    <details class="m-more" open>
+      <summary>How it works: 3 steps<Icon name="chevron-down" class="m-more__chevron" /></summary>
+      <ol class="how__steps" role="list">
+        <li><span class="how__icon" aria-hidden="true"><Icon name="clipboard" /></span><span><strong>1. Answer</strong> Yes or No to each statement. There are no wrong answers.</span></li>
+        <li><span class="how__icon" aria-hidden="true"><Icon name="chart" /></span><span><strong>2. We score it</strong> with a fixed method. The same answers always give the same stages.</span></li>
+        <li><span class="how__icon" aria-hidden="true"><Icon name="target" /></span><span><strong>3. You get a plan:</strong> 1 or 2 growth priorities to start with, a 12-week roadmap and a PDF to share.</span></li>
+      </ol>
+    </details>
   </section>
 
   <div class="error-summary" id="error-summary" tabindex="-1" aria-labelledby="error-summary-title" hidden>
@@ -35,15 +38,20 @@ import Icon from "../components/Icon.astro";
         <p class="field-error" id="respondent_role-error" hidden></p>
         <div class="choice-row" id="role-options"><p class="loading"><Icon name="loader" class="spin" />Loading</p></div>
       </fieldset>
-      <div class="field">
-        <label for="resp_title">Your job title <span class="optional">(optional)</span></label>
-        <input class="input" type="text" id="resp_title" name="resp_title" autocomplete="organization-title" maxlength="100">
-      </div>
-      <div class="field">
-        <label for="resp_name">Your name <span class="optional">(optional)</span></label>
-        <p class="hint" id="resp_name-hint">Shown only on your own report. We never send your name to the AI.</p>
-        <input class="input" type="text" id="resp_name" name="resp_name" autocomplete="name" maxlength="100" aria-describedby="resp_name-hint">
-      </div>
+      <details class="m-more" id="more-you" open>
+        <summary>Add your job title and name (optional)<Icon name="chevron-down" class="m-more__chevron" /></summary>
+        <div class="stack">
+          <div class="field">
+            <label for="resp_title">Your job title <span class="optional">(optional)</span></label>
+            <input class="input" type="text" id="resp_title" name="resp_title" autocomplete="organization-title" autocapitalize="words" enterkeyhint="go" maxlength="100">
+          </div>
+          <div class="field">
+            <label for="resp_name">Your name <span class="optional">(optional)</span></label>
+            <p class="hint" id="resp_name-hint">Shown only on your own report. We never send your name to the AI.</p>
+            <input class="input" type="text" id="resp_name" name="resp_name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="go" maxlength="100" aria-describedby="resp_name-hint">
+          </div>
+        </div>
+      </details>
     </section>
 
     <section class="card stack" aria-labelledby="org-title">
@@ -51,44 +59,55 @@ import Icon from "../components/Icon.astro";
       <div class="field" data-field="org_name">
         <label for="org_name">Organization name</label>
         <p class="field-error" id="org_name-error" hidden></p>
-        <input class="input" type="text" id="org_name" name="org_name" autocomplete="organization" maxlength="200" required>
+        <input class="input" type="text" id="org_name" name="org_name" autocomplete="organization" autocapitalize="words" enterkeyhint="go" maxlength="200" required>
       </div>
 
-      <div class="field" data-field="org_url">
-        <label for="org_url">Website <span class="optional">(optional)</span></label>
-        <p class="hint" id="org_url-hint">We read your public website so your plan fits your work. For example: https://example.org</p>
-        <p class="field-error" id="org_url-error" hidden></p>
-        <input class="input" type="url" id="org_url" name="org_url" inputmode="url" autocomplete="url" spellcheck="false" maxlength="500" aria-describedby="org_url-hint">
-      </div>
+      <details class="m-more" id="more-links" open>
+        <summary>Add your website and social media (optional)<Icon name="chevron-down" class="m-more__chevron" /></summary>
+        <div class="stack">
+          <div class="field" data-field="org_url">
+            <label for="org_url">Website <span class="optional">(optional)</span></label>
+            <p class="hint" id="org_url-hint">We read your public website so your plan fits your work. For example: https://example.org</p>
+            <p class="field-error" id="org_url-error" hidden></p>
+            <input class="input" type="url" id="org_url" name="org_url" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" enterkeyhint="go" maxlength="500" aria-describedby="org_url-hint">
+          </div>
 
-      <fieldset class="field" data-field="social" id="social" aria-describedby="social-hint">
-        <legend>Social media links <span class="optional">(optional, up to 5)</span></legend>
-        <p class="hint" id="social-hint">For example, Facebook or Instagram, or any web address. We read these and look for news stories about your group. What we find only changes the wording of your plan, never your scores.</p>
-        <p class="field-error" id="social-error" hidden></p>
-        <ul class="social-links" id="social-list" role="list"></ul>
-        <button type="button" class="btn btn-secondary btn-sm" id="social-add"><Icon name="plus" /><span>Add a social media link</span></button>
-      </fieldset>
-
-      <fieldset class="field">
-        <legend>Report language</legend>
-        <p class="hint" id="language-hint">Questions and your report can be in English or Spanish.</p>
-        <div class="choice-row">
-          <label class="choice">
-            <input type="radio" name="language" value="en" aria-describedby="language-hint" checked>
-            <span class="choice__text">English</span><Icon name="check" class="choice__check" />
-          </label>
-          <label class="choice">
-            <input type="radio" name="language" value="es" aria-describedby="language-hint">
-            <span class="choice__text" lang="es">Español</span><Icon name="check" class="choice__check" />
-          </label>
+          <fieldset class="field" data-field="social" id="social" aria-describedby="social-hint">
+            <legend>Social media links <span class="optional">(optional, up to 5)</span></legend>
+            <p class="hint" id="social-hint">For example, Facebook or Instagram, or any web address. We read these and look for news stories about your group. What we find only changes the wording of your plan, never your scores.</p>
+            <p class="field-error" id="social-error" hidden></p>
+            <ul class="social-links" id="social-list" role="list"></ul>
+            <button type="button" class="btn btn-secondary btn-sm" id="social-add"><Icon name="plus" /><span>Add a social media link</span></button>
+          </fieldset>
         </div>
-      </fieldset>
+      </details>
+
+      <details class="m-more" id="more-lang" open>
+        <summary><span>Report language: <span id="lang-now">English</span></span><Icon name="chevron-down" class="m-more__chevron" /></summary>
+        <fieldset class="field">
+          <legend>Report language</legend>
+          <p class="hint" id="language-hint">Questions and your report can be in English or Spanish.</p>
+          <div class="choice-row">
+            <label class="choice">
+              <input type="radio" name="language" value="en" aria-describedby="language-hint" checked>
+              <span class="choice__text">English</span><Icon name="check" class="choice__check" />
+            </label>
+            <label class="choice">
+              <input type="radio" name="language" value="es" aria-describedby="language-hint">
+              <span class="choice__text" lang="es">Español</span><Icon name="check" class="choice__check" />
+            </label>
+          </div>
+        </fieldset>
+      </details>
     </section>
 
     <section class="card stack" aria-labelledby="about-org-title" aria-describedby="about-org-hint">
       <h2 id="about-org-title" class="org-meta__title">More about your organization</h2>
       <p class="hint" id="about-org-hint">This helps us fit your plan to your work and connect you with groups like yours. It does not change your scores.</p>
-      <div id="org-meta" class="stack"><p class="loading"><Icon name="loader" class="spin" />Loading</p></div>
+      <details class="m-more" id="more-org" open>
+        <summary>Add details (optional): programs, staff size, budget, state<Icon name="chevron-down" class="m-more__chevron" /></summary>
+        <div id="org-meta" class="stack"><p class="loading"><Icon name="loader" class="spin" />Loading</p></div>
+      </details>
     </section>
 
     <fieldset class="card stack" id="domains" data-field="domains" aria-describedby="domains-hint">
@@ -111,6 +130,10 @@ import Icon from "../components/Icon.astro";
       <p class="field-error" id="samples-error" role="alert" hidden></p>
     </details>
   </form>
+  <script is:inline>
+    // Phones: optional groups start folded, before first paint. Wider screens hide their summaries and keep them open.
+    if (matchMedia("(max-width: 599px)").matches) document.querySelectorAll("details.m-more").forEach(function (d) { d.open = false; });
+  </script>
 </Base>
 
 <script>
@@ -132,6 +155,9 @@ import Icon from "../components/Icon.astro";
   const MAX_SOCIAL = 5;
   const URL_ERROR = "Enter a full web address, like https://example.org, or leave it blank";
   const SOCIAL_ERROR = "Enter each social media link as a full web address, like https://instagram.com/yourgroup, or remove it";
+  // Phones fold optional groups (details.m-more). Wider screens hide their summaries, so a group folded on a phone opens there.
+  const phone = matchMedia("(max-width: 599px)");
+  phone.addEventListener("change", () => { if (!phone.matches) $$<HTMLDetailsElement>("details.m-more").forEach((d) => { d.open = true; }); });
 
   type Field = "respondent_role" | "org_name" | "org_url" | "social" | "domains";
   const FIELDS: Field[] = ["respondent_role", "org_name", "org_url", "social", "domains"];
@@ -158,6 +184,8 @@ import Icon from "../components/Icon.astro";
       socialInputs().forEach((i) => { if (bad.has(i)) i.setAttribute("aria-invalid", "true"); else i.removeAttribute("aria-invalid"); });
     }
     if (msg) {
+      const fold = wrap.closest("details");
+      if (fold) fold.open = true; // an error inside a folded group: show it
       err.innerHTML = `${icon("alert")}<span>${esc(msg)}</span>`;
       err.hidden = false;
       if (!GROUPS.has(field)) control.setAttribute("aria-invalid", "true");
@@ -231,7 +259,7 @@ import Icon from "../components/Icon.astro";
       <li class="social-links__item">
         <label for="social-${i}">Link ${i + 1}</label>
         <div class="input-group">
-          <input class="input" type="url" id="social-${i}" inputmode="url" autocomplete="url" spellcheck="false" maxlength="500" value="${esc(v)}">
+          <input class="input" type="url" id="social-${i}" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" enterkeyhint="go" maxlength="500" value="${esc(v)}">
           <button type="button" class="btn btn-secondary btn-sm social-links__remove" data-remove="${i}" aria-label="Remove link ${i + 1}">${icon("x")}<span class="social-links__remove-text" aria-hidden="true">Remove</span></button>
         </div>
       </li>`).join("");
@@ -260,21 +288,23 @@ import Icon from "../components/Icon.astro";
 
   /** Checkbox cards with a "Recommended" tag (Airwallex "Primary interest"), statement count and time estimate. */
   function renderDomains(domains: Domain[], selected: string[]) {
-    const ordered = [...domains.filter((d) => d.priority), ...domains.filter((d) => !d.priority)];
-    $("#domain-groups")!.innerHTML = `<ul class="area-options" role="list">${ordered.map((d) => {
-      const minutes = areaMinutes(d);
-      return `
+    const card = (d: Domain) => `
       <li class="area-option">
         <label class="choice area-option__card">
           <input type="checkbox" name="domains" value="${esc(d.id)}" id="domain-${esc(d.id)}" ${selected.includes(d.id) ? "checked" : ""}>
           <span class="choice__text">
             <span class="area-option__name">${esc(d.name)}${d.priority ? ' <span class="tag">Recommended</span>' : ""}</span>
-            <span class="choice__meta">${d.questions.length} statements, about ${plural(minutes, "minute", "minutes")}</span>
+            <span class="choice__meta">${d.questions.length} statements, about ${plural(areaMinutes(d), "minute", "minutes")}</span>
           </span>${icon("check", "choice__check")}
         </label>
         <details class="about"><summary>About ${esc(d.name)}</summary><p>${esc(d.about)}</p></details>
       </li>`;
-    }).join("")}</ul>`;
+    const rest = domains.filter((d) => !d.priority);
+    // Phones fold the areas not marked Recommended, unless one of them is picked.
+    const open = !phone.matches || rest.some((d) => selected.includes(d.id));
+    $("#domain-groups")!.innerHTML = `<ul class="area-options" role="list">${domains.filter((d) => d.priority).map(card).join("")}</ul>`
+      + (rest.length ? `<details class="m-more area-more" ${open ? "open" : ""}><summary>More areas you can add: ${esc(rest.map((d) => d.name).join(", "))}${icon("chevron-down", "m-more__chevron")}</summary>
+        <ul class="area-options" role="list">${rest.map(card).join("")}</ul></details>` : "");
     // The intro's time estimate is the sum of the area estimates, so the two always agree.
     const total = () => { $("#time-total")!.textContent = plural(domains.filter((d) => chosen().includes(d.id)).reduce((s, d) => s + areaMinutes(d), 0), "minute", "minutes"); };
     total();
@@ -351,6 +381,14 @@ import Icon from "../components/Icon.astro";
     renderRoles(options.respondent_roles, draft?.respondent?.role);
     renderDomains(meta.domains, selected);
     renderOrgMeta(options, draft?.org_meta);
+    // Saved values never sit in a folded group, and the language summary names the language picked.
+    const unfold: [string, unknown][] = [["more-you", titleEl.value || personEl.value], ["more-links", urlEl.value || draft?.org_links?.social.length],
+      ["more-lang", language() === "es"], ["more-org", draft?.org_meta]];
+    for (const [id, has] of unfold) if (has) $<HTMLDetailsElement>(`#${id}`)!.open = true;
+    const langNow = $("#lang-now")!;
+    const showLang = () => { const es = language() === "es"; langNow.textContent = es ? "Español" : "English"; langNow.lang = es ? "es" : "en"; };
+    showLang();
+    $$("input[name=language]").forEach((r) => r.addEventListener("change", showLang));
 
     // A half-finished assessment on this device: say so, so nobody starts over by mistake.
     const mine = meta.domains.filter((d) => draft?.domain_ids.includes(d.id)).flatMap((d) => d.questions);

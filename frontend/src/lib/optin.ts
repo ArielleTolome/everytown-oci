@@ -3,7 +3,7 @@
 import { api, ApiError, type ApiErrorBody, type Assessment } from "./api";
 import { esc, focusEl, announce } from "./dom";
 import { icon } from "./icons";
-import { errorText } from "./report-ui";
+import { errorText, fold } from "./report-ui";
 
 export interface Optin { training: boolean; updates: boolean; name: string | null; email: string | null; created: string; updated: string }
 
@@ -16,7 +16,7 @@ const EN = {
   training: "Invite me to CSF trainings", updates: "Send me occasional updates",
   name: "Your name", optional: "(optional)", email: "Email",
   emailBad: "Enter an email address, like name@example.org.",
-  save: "Save", cancel: "Cancel", change: "Change",
+  save: "Save", cancel: "Cancel", change: "Change", show: "Sign up for trainings or updates",
   items: ["CSF trainings", "occasional updates"], and: " and ",
   saved: (list: string, email: string) => `You signed up for ${list}. We will write to ${email}.`,
   withdrawn: "Saved. You are not signed up, so we will not write to you.",
@@ -30,7 +30,7 @@ const ES: typeof EN = {
   training: "Invítenme a las capacitaciones del CSF", updates: "Envíenme noticias de vez en cuando",
   name: "Su nombre", optional: "(opcional)", email: "Correo electrónico",
   emailBad: "Escriba un correo electrónico, por ejemplo nombre@example.org.",
-  save: "Guardar", cancel: "Cancelar", change: "Cambiar",
+  save: "Guardar", cancel: "Cancelar", change: "Cambiar", show: "Inscribirse para capacitaciones o noticias",
   items: ["capacitaciones del CSF", "noticias de vez en cuando"], and: " y ",
   saved: (list: string, email: string) => `Se inscribió para recibir ${list}. Le escribiremos a ${email}.`,
   withdrawn: "Guardado. No está inscrito, así que no le escribiremos.",
@@ -69,12 +69,12 @@ function formHtml(t: typeof EN, o: Optin | null, note = ""): string {
     <div class="optin__contact" id="optin-contact"${on ? "" : " hidden"}>
       <div class="field">
         <label for="optin-name">${esc(t.name)} <span class="optional">${esc(t.optional)}</span></label>
-        <input class="input" id="optin-name" name="name" type="text" maxlength="100" autocomplete="name" value="${esc(o?.name ?? "")}">
+        <input class="input" id="optin-name" name="name" type="text" maxlength="100" autocomplete="name" autocapitalize="words" enterkeyhint="next" value="${esc(o?.name ?? "")}">
       </div>
       <div class="field">
         <label for="optin-email">${esc(t.email)}</label>
         <p class="field-error" id="optin-email-error" hidden></p>
-        <input class="input" id="optin-email" name="email" type="email" maxlength="200" autocomplete="email" spellcheck="false" value="${esc(o?.email ?? "")}">
+        <input class="input" id="optin-email" name="email" type="email" maxlength="200" autocomplete="email" autocapitalize="none" enterkeyhint="done" spellcheck="false" value="${esc(o?.email ?? "")}">
       </div>
     </div>
     <p class="field-error" id="optin-error" role="alert" hidden></p>
@@ -111,7 +111,7 @@ export function wireOptin(sub: Assessment, root: ParentNode, staff: boolean) {
       if (!optin) { section.remove(); return; }
       body.innerHTML = `<p class="support__sent">${icon("circle-check")}<span>This organization signed up for ${esc(picked(EN, optin))}. Contact: ${esc([optin.name, optin.email].filter(Boolean).join(", "))}. Updated ${esc(optin.updated)}.</span></p>`;
     } else {
-      body.innerHTML = optin ? savedHtml(t, optin) : formHtml(t, null);
+      body.innerHTML = optin ? savedHtml(t, optin) : fold(esc(t.show), formHtml(t, null));
     }
     section.hidden = false;
   }).catch(() => section.remove()); // 403: not the owner; 404 or offline: nothing to offer

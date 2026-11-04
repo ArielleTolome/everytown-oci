@@ -24,5 +24,16 @@ export default {
       maxModelCalls: 40,
     },
   },
-  targets: [{ name: 'web', engine: web(), app: { url: process.env.APP_URL ?? 'http://127.0.0.1:8092' } }],
+  targets: [
+    { name: 'web', engine: web(), app: { url: process.env.APP_URL ?? 'http://127.0.0.1:8092' } },
+    // Organization leaders often answer on a phone: every test also runs at an iPhone 13's visible size and agent.
+    {
+      name: 'phone',
+      engine: web({
+        viewport: { width: 390, height: 664 },
+        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+      }),
+      app: { url: process.env.APP_URL ?? 'http://127.0.0.1:8092' },
+    },
+  ],
 } satisfies E2EConfig;

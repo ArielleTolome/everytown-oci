@@ -219,7 +219,7 @@ import Icon from "../components/Icon.astro";
         <p class="field-error" id="submit-error" role="alert" hidden></p>
         <div class="q-bar" id="q-bar">
           <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span class="q-bar__back-label">Back${n === 1 ? '<span class="visually-hidden"> to your organization</span>' : ""}</span></button>
-          <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span>Saved on this device</span></p>
+          <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span class="q-bar__full">Saved on this device</span>${shortStatus(d)}</p>
           <button type="submit" class="btn btn-primary" id="next-btn">${last ? "<span>Review and finish</span>" : nextHtml(nextName)}${icon("arrow-right")}</button>
         </div>
       </form>`;
@@ -373,16 +373,25 @@ import Icon from "../components/Icon.astro";
       : "Answer for how your organization works today, not how you hope it will be. Every No is simply a place to grow.";
   }
 
+  /** Phones show a short status in the bar row; the full sentence stays in the live region for screen readers. */
+  const shortStatus = (d: Domain) =>
+    `<span class="q-bar__short" aria-hidden="true">Saved: ${d.questions.filter((q) => draft.answers[q.id]).length} of ${d.questions.length}</span>`;
+
   /** Update progress and the bar's polite status (the only live region for answer changes). */
   function saved(d: Domain, wasComplete: boolean, prefix = "") {
     updateProgress();
     const done = d.questions.filter((q) => draft.answers[q.id]).length;
-    const msg = !savedLocally()
+    const ok = savedLocally();
+    const msg = !ok
       ? "Your browser did not let us save on this device. Keep this page open until you finish."
       : !wasComplete && done === d.questions.length
         ? cheerFor(d)
         : `Saved on this device. ${done} of ${d.questions.length} answered in this area.`;
-    $("#save-status span")!.textContent = prefix + msg;
+    const status = $("#save-status")!;
+    status.querySelector(".q-bar__full")!.textContent = prefix + msg;
+    status.querySelector(".q-bar__short")!.textContent = `Saved: ${done} of ${d.questions.length}`;
+    // Not saved: phones show the full warning, not the short line.
+    status.classList.toggle("is-warn", !ok);
   }
 
   /** Keep scroll-padding equal to the sticky bar so focused controls are never hidden behind it (WCAG 2.4.11). */
@@ -482,7 +491,7 @@ import Icon from "../components/Icon.astro";
         <p class="field-error" id="submit-error" role="alert" hidden></p>
         <div class="q-bar" id="q-bar">
           <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span class="q-bar__back-label">Back<span class="visually-hidden"> to ${esc(lastName)}</span></span></button>
-          <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span>Saved on this device. All ${t} statements answered.</span></p>
+          <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span class="q-bar__full">Saved on this device. All ${t} statements answered.</span><span class="q-bar__short" aria-hidden="true">Saved: ${t} of ${t}</span></p>
           <button type="submit" class="btn btn-primary" id="next-btn"><span>See my results</span>${icon("arrow-right")}</button>
         </div>
       </form>`;

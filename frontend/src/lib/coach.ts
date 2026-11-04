@@ -3,7 +3,7 @@
 import { api, ApiError, type Assessment, type Resource } from "./api";
 import { esc, hostOf, safeUrl } from "./dom";
 import { icon } from "./icons";
-import { errorText } from "./report-ui";
+import { errorText, fold } from "./report-ui";
 
 interface Turn { question: string; answer: string; gap_ids: string[]; resources: Resource[] }
 interface AskResponse extends Turn { remaining: number }
@@ -30,7 +30,7 @@ export function coachBody(sub: Assessment): string {
   const lang = esc(sub.language || "en");
   return `<p class="notice">${icon("shield")}<span>Answers are written with AI from your report and the CVI library, so check them with your team. Asking never changes your scores.</span></p>
     <div class="coach-log" id="coach-log" role="log" aria-live="polite" aria-label="Your questions and answers"></div>
-    <form class="card coach-form" id="coach-form" novalidate>
+    ${fold("Ask a question", `<form class="card coach-form" id="coach-form" novalidate>
       <p class="mini-label" id="coach-starters-label">Try one of these</p>
       <ul class="coach-starters" role="list" aria-labelledby="coach-starters-label" lang="${lang}">${starters(sub).map((q) => `
         <li><button type="button" class="btn btn-secondary btn-sm coach-starter" data-question="${esc(q)}">${esc(q)}</button></li>`).join("")}
@@ -39,13 +39,13 @@ export function coachBody(sub: Assessment): string {
         <label for="coach-question">Your question</label>
         <p class="hint" id="coach-hint">Up to ${MAX_CHARS} characters. <span id="coach-remaining"></span></p>
         <p class="field-error" id="coach-error" role="alert" hidden></p>
-        <textarea class="input coach-form__input" id="coach-question" name="question" rows="3" maxlength="${MAX_CHARS}" aria-describedby="coach-hint"></textarea>
+        <textarea class="input coach-form__input" id="coach-question" name="question" rows="3" maxlength="${MAX_CHARS}" aria-describedby="coach-hint" enterkeyhint="send"></textarea>
       </div>
       <div class="actions actions--start">
         <button type="submit" class="btn btn-primary">${icon("message")}<span>Ask</span></button>
         <p class="coach-form__status" id="coach-status" role="status"></p>
       </div>
-    </form>`;
+    </form>`)}`;
 }
 
 function turnHtml(t: Turn, sub: Assessment): string {
@@ -81,7 +81,7 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
   };
   const closed = (msg: string) => {
     const hadFocus = form.contains(document.activeElement);
-    form.outerHTML = `<p class="notice" id="coach-closed" tabindex="-1">${icon("info")}<span>${esc(msg)}</span></p>`;
+    (form.closest("[data-fold]") ?? form).outerHTML = `<p class="notice" id="coach-closed" tabindex="-1">${icon("info")}<span>${esc(msg)}</span></p>`;
     if (hadFocus) root.querySelector<HTMLElement>("#coach-closed")?.focus();
   };
   const setRemaining = (n: number) => {
@@ -104,6 +104,16 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
     input.value = chip.dataset.question!;
     form.requestSubmit();
   });
+
+  // On-screen keyboards: the Send key sends (Shift+Enter still breaks a line), and Ask stays above the keyboard.
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing && matchMedia("(pointer: coarse)").matches) { e.preventDefault(); form.requestSubmit(); }
+  });
+  input.addEventListener("focus", () => window.visualViewport?.addEventListener("resize", () => {
+    const vv = window.visualViewport!;
+    const below = submit.getBoundingClientRect().bottom + 8 - (vv.offsetTop + vv.height);
+    if (below > 0) window.scrollBy(0, below);
+  }, { once: true }));
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();

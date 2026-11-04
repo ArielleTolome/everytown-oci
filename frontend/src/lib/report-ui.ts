@@ -9,6 +9,16 @@ export function errorText(ex: unknown, fallback: string): string {
   return ex instanceof ApiError && ex.body.error ? ex.body.error : fallback;
 }
 
+/** Phones (under 600px) get long or optional parts behind a "Show ..." control; wider screens and print always show
+ *  them open, with the summary hidden by CSS, so the desktop layout does not change. */
+export const PHONE = window.matchMedia("(max-width: 599px)");
+export function fold(summary: string, body: string): string {
+  return `<details class="m-fold" data-fold${PHONE.matches ? "" : " open"}><summary class="m-fold__summary"><span>${summary}</span>${icon("chevron-down", "about-card__chevron")}</summary>${body}</details>`;
+}
+const openFolds = () => document.querySelectorAll<HTMLDetailsElement>("details[data-fold]").forEach((d) => { d.open = true; });
+PHONE.addEventListener("change", () => { if (!PHONE.matches) openFolds(); });
+window.addEventListener("beforeprint", openFolds);
+
 /** PDF links ([data-download]) stay plain links without JS. With JS the file is fetched first, so a slow PDF shows
  *  "Preparing" and a failed one shows an inline error instead of saving a broken file. */
 export function wireDownloads(root: ParentNode) {

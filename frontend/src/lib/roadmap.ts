@@ -3,7 +3,7 @@
 import { api, ApiError, type Assessment, type Resource } from "./api";
 import { $, $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
 import { icon } from "./icons";
-import { errorText, wireDownloads } from "./report-ui";
+import { errorText, fold, PHONE, wireDownloads } from "./report-ui";
 
 export interface RoadmapTask { id: string; text: string; gap_ids: string[]; owner: string; lang: string; done: boolean; retake?: boolean }
 export interface RoadmapWeek {
@@ -115,10 +115,11 @@ function weekHead(w: RoadmapWeek, current: boolean): string {
 function taskItem(t: RoadmapTask, w: RoadmapWeek, r: Roadmap, editable: boolean): string {
   const based = t.gap_ids.filter((g) => r.statements[g]);
   const label = t.retake ? `${esc(t.text)} <a href="/">(start a new assessment)</a>` : esc(t.text);
-  return `<li class="rm-task${t.done ? " is-done" : ""}">
-      ${editable ? `<input type="checkbox" id="task-${esc(t.id)}" data-task="${esc(t.id)}" data-week="${w.n}" ${t.done ? "checked" : ""} aria-describedby="week-${w.n}-status">` : `<span class="rm-task__mark">${icon(t.done ? "circle-check" : "circle")}<span class="visually-hidden">${t.done ? "Done" : "Not done"}</span></span>`}
+  // The whole row (box and text) is one label, so a tap anywhere on the step ticks it.
+  return `<li class="rm-task${t.done ? " is-done" : ""}${editable ? " rm-task--edit" : ""}">
+      ${editable ? "" : `<span class="rm-task__mark">${icon(t.done ? "circle-check" : "circle")}<span class="visually-hidden">${t.done ? "Done" : "Not done"}</span></span>`}
       <div class="rm-task__body">
-        ${editable ? `<label for="task-${esc(t.id)}" lang="${esc(t.lang)}">${label}</label>` : `<p lang="${esc(t.lang)}">${label}</p>`}
+        ${editable ? `<label class="rm-task__check"><input type="checkbox" id="task-${esc(t.id)}" data-task="${esc(t.id)}" data-week="${w.n}" ${t.done ? "checked" : ""} aria-describedby="week-${w.n}-status"><span lang="${esc(t.lang)}">${label}</span></label>` : `<p lang="${esc(t.lang)}">${label}</p>`}
         <div class="rm-task__meta">
           <span class="role-chip">${icon("user")}<span class="visually-hidden">Owner: </span><span lang="${esc(w.lang)}">${esc(t.owner)}</span></span>
           ${based.length ? `<details class="about rm-basis"><summary>Based on your answers to ${plural(based.length, "statement", "statements")}</summary><ul class="basis__list" role="list" lang="en">${based.map((g) => `<li>${icon("circle-dashed")}<span>${esc(r.statements[g])}</span></li>`).join("")}</ul></details>` : ""}
@@ -129,12 +130,14 @@ function taskItem(t: RoadmapTask, w: RoadmapWeek, r: Roadmap, editable: boolean)
 
 function weekBody(w: RoadmapWeek, r: Roadmap, editable: boolean): string {
   const tasks = w.tasks ?? [];
-  return `
-    ${w.why ? `<div class="inset"><p class="mini-label">Why this matters</p><p lang="${esc(w.lang)}">${esc(w.why)}</p></div>` : ""}
-    <fieldset class="rm-tasks">
+  const why = w.why ? `<div class="inset"><p class="mini-label">Why this matters</p><p lang="${esc(w.lang)}">${esc(w.why)}</p></div>` : "";
+  const steps = `<fieldset class="rm-tasks">
       <legend class="mini-label">This week's steps</legend>
       <ul role="list">${tasks.map((t) => taskItem(t, w, r, editable)).join("")}</ul>
-    </fieldset>
+    </fieldset>`;
+  // Phones: the steps come first, so this week's checkboxes are near the top of the screen.
+  return `
+    ${PHONE.matches ? steps + why : why + steps}
     <p class="field-error rm-week__error" id="week-${w.n}-error" role="alert" hidden></p>
     ${w.resource?.url ? `<p class="resource-link">${icon("book")}<span><span class="visually-hidden">Resource: </span><a href="${esc(safeUrl(w.resource.url))}" rel="noopener" lang="${esc(w.lang)}">${esc(w.resource.title)}</a> <span class="url-domain">(${esc(hostOf(w.resource.url))})</span></span></p>` : ""}
     <p class="rm-week__actions"><a class="btn btn-secondary btn-sm" href="/api${path(r.assessment_id)}/week/${w.n}.pdf" download data-download>${icon("download")}<span>Download week ${w.n} (PDF)</span></a></p>`;
@@ -148,7 +151,7 @@ function weekCard(w: RoadmapWeek, r: Roadmap): string {
         <span class="rm-week__num rm-week__num--locked" aria-hidden="true">${icon("lock")}</span>
         <div>
           <h3 id="week-${w.n}-title" tabindex="-1">Week ${w.n}: <span class="visually-hidden">coming up, </span><span lang="${esc(w.lang)}">${esc(w.title)}</span></h3>
-          <p class="rm-week__status">Coming up. Opens on ${esc(shortDate(w.unlocks_on))}, or sooner when you finish week ${w.n - 1}.</p>
+          <p class="rm-week__status"><span class="rm-week__long">Coming up. Opens on ${esc(shortDate(w.unlocks_on))}, or sooner when you finish week ${w.n - 1}.</span><span class="rm-week__short" aria-hidden="true">Opens on ${esc(shortDate(w.unlocks_on))}</span></p>
         </div>
       </div>
       ${r.staff && w.tasks ? `<details class="about"><summary>Staff view: see the ${plural(w.task_count, "step", "steps")}</summary>${weekBody(w, r, false)}</details>` : ""}
@@ -166,14 +169,14 @@ function weekCard(w: RoadmapWeek, r: Roadmap): string {
 function badges(list: Badge[]): string {
   const earned = list.filter((b) => b.earned).length;
   return `<p class="section-lead">You have earned ${earned} of ${list.length} badges.</p>
-    <ul class="rm-badges" role="list">${list.map((b) => `
+    ${fold(`Show all ${list.length} badges`, `<ul class="rm-badges" role="list">${list.map((b) => `
       <li class="rm-badge${b.earned ? " is-earned" : ""}">
         <span class="rm-badge__medal">${svg(b.id)}</span>
         <span class="rm-badge__name">${esc(b.name)}</span>
         <span class="rm-badge__state">${b.earned ? `${icon("check")}Earned` : "Not yet"}</span>
         <span class="rm-badge__desc">${esc(b.description)}</span>
       </li>`).join("")}
-    </ul>`;
+    </ul>`)}`;
 }
 
 function summary(r: Roadmap): string {
@@ -205,17 +208,18 @@ function page(r: Roadmap, cheer: string): string {
   if (!r.weeks.length) {
     return `${head}<p class="notice">${icon("circle-check")}<span>There is nothing on this roadmap yet. The answers show no growth priorities in the areas assessed, so there are no weekly steps to plan. Keep doing what works, and take the assessment again in 90 days.</span></p>${back}`;
   }
-  // The work comes first; badges follow it, because they only count the steps.
-  return `${head}
-    <section class="section rm-section" aria-labelledby="rm-progress-title">
+  // The work comes first; badges follow it, because they only count the steps. Phones put this week before the totals.
+  const progress = `<section class="section rm-section" aria-labelledby="rm-progress-title">
       <h2 id="rm-progress-title" class="visually-hidden">Your progress</h2>
       ${summary(r)}
-    </section>
-    <section class="section rm-section" aria-labelledby="rm-weeks-title">
+    </section>`;
+  const weeks = `<section class="section rm-section" aria-labelledby="rm-weeks-title">
       <div class="section-head"><div><span class="eyebrow">${r.ai ? "From your report" : "From your answers"}</span><h2 id="rm-weeks-title">Week by week</h2></div></div>
       <div class="rm-cheer" id="rm-cheer" ${cheer ? "" : "hidden"}>${cheer}</div>
       <ol class="rm-weeks" role="list">${r.weeks.map((w) => weekCard(w, r)).join("")}</ol>
-    </section>
+    </section>`;
+  return `${head}
+    ${PHONE.matches ? weeks + progress : progress + weeks}
     <section class="section rm-section" aria-labelledby="rm-badges-title">
       <div class="section-head"><div><span class="eyebrow">For follow-through</span><h2 id="rm-badges-title">Your badges</h2></div></div>
       ${badges(r.badges)}
