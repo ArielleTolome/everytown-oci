@@ -4,7 +4,7 @@
 // Nothing here scores: the engine still receives one yes or no per statement.
 
 import type { Domain, Question } from "./api";
-import { $, esc, focusEl, plural } from "./dom";
+import { $, announce, esc, focusEl, plural } from "./dom";
 import { icon } from "./icons";
 
 export interface Ladder {
@@ -107,7 +107,19 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
     bar.textContent = `${Math.round((n / m) * 100)}%`;
   }
 
-  const prevBtn = () => (seen.length ? `<button type="button" class="btn btn-secondary btn-sm" id="quick-prev">${icon("arrow-left")}<span>${tr("Previous", "Anterior")}</span></button>` : "");
+  /** #30: every question card has Previous on the left and Next on the right. One with nowhere to go yet stays in its
+   * place, marked unavailable (aria-disabled, so it is still focusable and its reason is its description); pressing it
+   * shows the reason. `next` is the forward button's HTML for cards that move on another way. */
+  function nav(fwdWhy: string | null, next?: string): string {
+    const why = (id: string, text: string | null) => (text ? ` aria-disabled="true" aria-describedby="${id}-why"` : "");
+    const prevWhy = seen.length ? null : tr("This is the first question in this area.", "Esta es la primera pregunta de esta área.");
+    return `<div class="quick__nav">
+        <button type="button" class="btn btn-secondary btn-sm" id="quick-prev"${why("quick-prev", prevWhy)}>${icon("arrow-left")}<span>${tr("Previous", "Anterior")}</span></button>
+        ${next ?? `<button type="button" class="btn btn-secondary btn-sm" id="quick-fwd"${why("quick-fwd", fwdWhy)}><span>${tr("Next", "Siguiente")}</span>${icon("arrow-right")}</button>`}
+      </div>
+      ${prevWhy ? `<p class="quick__why" id="quick-prev-why" hidden>${icon("info")}<span>${prevWhy}</span></p>` : ""}
+      ${fwdWhy ? `<p class="quick__why" id="quick-fwd-why" hidden>${icon("info")}<span>${fwdWhy}</span></p>` : ""}`;
+  }
 
   function stmtStep(q: Question): string {
     const cur = a[q.id];
@@ -122,7 +134,7 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
       ${q.reverse ? `<p class="check-item__note">${icon("info")}<span>${tr("A Yes here counts as a growth priority.", "Un Sí aquí cuenta como prioridad de crecimiento.")}</span></p>` : ""}
       ${ctx.helpFor(q)}
       <div class="quick__answers" role="group" aria-labelledby="quick-focus">${btn("yes")}${btn("no")}</div>
-      <div class="quick__nav">${prevBtn()}${cur ? `<button type="button" class="btn btn-secondary btn-sm" id="quick-fwd"><span>${tr("Next", "Siguiente")}</span>${icon("arrow-right")}</button>` : ""}</div>
+      ${nav(cur ? null : tr("Choose Yes or No to go on.", "Elija Sí o No para seguir."))}
       <p class="quick__keys">${tr("Keyboard: press Y for Yes, N for No, or the left arrow to go back.", "Teclado: pulse S para Sí, N para No, o la flecha izquierda para volver.")}</p>`;
   }
 
@@ -142,28 +154,30 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
         ${l.choices.map((c, i) => `<button type="button" class="quick__choice" data-choice="${i}" aria-pressed="${i === picked}">
           <span>${esc(ctx.spanish() ? c.label_es : c.label)}</span><span class="answer__tag quick__tag" aria-hidden="true">${icon("check")}${tr("Selected", "Seleccionada")}</span></button>`).join("")}
       </div>
-      <div class="quick__nav">${prevBtn()}</div>`;
+      ${nav(l.statements.every((id) => a[id]) ? null : tr("Choose one answer to go on.", "Elija una respuesta para seguir."))}`;
   }
 
-  const ansText = (id: string) => `${icon(a[id] === "yes" ? "circle-check" : "circle-x")}<strong>${yesNo(a[id])}</strong>`;
-  const flipText = (id: string) => (ctx.spanish() ? `Cambiar a ${a[id] === "yes" ? "No" : "Sí"}` : `Change to ${a[id] === "yes" ? "No" : "Yes"}`);
-
+  /** #29: the answers a choice filled in, each as the same Yes / No pair as the rest of the questionnaire, already selected. */
   function confirmStep(l: Ladder): string {
     return `
-      <h2 class="quick__stmt" id="quick-focus" tabindex="-1">${tr("Based on your choice, we recorded:", "Según su elección, registramos:")}</h2>
-      <p class="hint">${tr("Most organizations grow through these in order, but not all do. If one is not true for you, change it.", "La mayoría de las organizaciones avanzan en este orden, pero no todas. Si alguna no es cierta para ustedes, cámbiela.")}</p>
+      <h2 class="quick__stmt" id="quick-focus" tabindex="-1">${tr("Your choice filled in these answers", "Su elección llenó estas respuestas")}</h2>
+      <p class="hint">${tr("We picked Yes or No for each statement below from your choice. Most groups grow through these in order, but not all do. If one is not right for you, choose the other answer.",
+        "Marcamos Sí o No en cada afirmación según su elección. La mayoría de los grupos avanzan en este orden, pero no todos. Si alguna no es correcta para ustedes, elija la otra respuesta.")}</p>
       <ul class="ladder-list" role="list">${l.statements.map((id) => {
         const { q, area } = ctx.byId.get(id)!;
-        return `<li class="ladder-item">
-          <p class="ladder-item__text" id="lt-${esc(id)}"><span class="ladder-item__area">${esc(area)}</span> ${ctx.stmt(q)}</p>
-          <p class="ladder-item__ans is-${a[id]}" id="la-${esc(id)}">${ansText(id)}</p>
-          <button type="button" class="btn btn-secondary btn-sm ladder-item__flip" data-flip="${esc(id)}" aria-describedby="lt-${esc(id)}">${icon("pencil")}<span${ctx.spanish() ? ' lang="es"' : ""}>${flipText(id)}</span></button>
-        </li>`;
+        return `<li class="ladder-item"><fieldset class="ladder-item__set">
+          <legend class="ladder-item__text"><span class="ladder-item__area">${esc(area)}</span> ${ctx.stmt(q)}</legend>
+          <div class="answer-row">${(["yes", "no"] as const).map((v) => `
+            <label class="answer">
+              <input type="radio" name="lad-${esc(id)}" value="${v}" data-lad="${esc(id)}"${a[id] === v ? " checked" : ""}>
+              <span class="answer__text">${yesNo(v)}</span>
+              <span class="answer__tag" aria-hidden="true">${icon("check")}${tr("Selected", "Seleccionada")}</span>
+            </label>`).join("")}
+          </div>
+        </fieldset></li>`;
       }).join("")}</ul>
-      <div class="quick__nav">${prevBtn()}
-        <button type="button" class="btn btn-secondary btn-sm" id="quick-rechoose">${icon("refresh")}<span>${tr("Choose a different answer", "Elegir otra respuesta")}</span></button>
-        <button type="button" class="btn btn-primary" id="quick-continue"><span>${tr("Looks right, continue", "Está bien, continuar")}</span>${icon("arrow-right")}</button>
-      </div>`;
+      <p class="quick__alt"><button type="button" class="btn btn-secondary btn-sm" id="quick-rechoose">${icon("refresh")}<span>${tr("Choose a different answer", "Elegir otra respuesta")}</span></button></p>
+      ${nav(null, `<button type="button" class="btn btn-primary" id="quick-continue"><span>${tr("Looks right, continue", "Está bien, continuar")}</span>${icon("arrow-right")}</button>`)}`;
   }
 
   function doneStep(): string {
@@ -249,22 +263,26 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
   card.addEventListener("click", (e) => {
     const el = (e.target as Element).closest<HTMLElement>("button");
     if (!el) return;
+    const why = el.getAttribute("aria-disabled") === "true" && document.getElementById(`${el.id}-why`);
+    if (why) { why.hidden = false; announce(why.textContent ?? ""); return; }
     if (el.dataset.answer) answer(el.dataset.answer as Answer);
     else if (el.dataset.choice) choose(Number(el.dataset.choice));
-    else if (el.dataset.flip) {
-      const id = el.dataset.flip;
-      const v: Answer = a[id] === "yes" ? "no" : "yes";
-      ctx.change(() => { a[id] = v; }, ctx.spanish() ? `Cambiado a ${v === "yes" ? "Sí" : "No"}. ` : `Changed to ${v === "yes" ? "Yes" : "No"}. `);
-      const ans = document.getElementById(`la-${id}`)!;
-      ans.className = `ladder-item__ans is-${v}`;
-      ans.innerHTML = ansText(id);
-      el.querySelector("span")!.textContent = flipText(id);
-    } else if (el.id === "quick-prev") back();
+    else if (el.id === "quick-prev") back();
+    // Next on a multiple-choice question picked again shows what its answers are now, like a new choice does.
+    else if (el.id === "quick-fwd" && steps[pos]?.kind === "ladder") { confirm = true; show(true); }
     else if (el.id === "quick-fwd" || el.id === "quick-continue") leave(advance);
     else if (el.id === "quick-rechoose") { confirm = false; show(true); }
     else if (el.id === "quick-review") { reviewing = true; jump(0); }
     // A real submit, so the teammate hand-off in draft.ts can take over.
     else if (el.id === "quick-next") $<HTMLFormElement>("#area-form")?.requestSubmit();
+  });
+  // A recorded answer flipped on "Your choice filled in these answers".
+  card.addEventListener("change", (e) => {
+    const input = e.target as HTMLInputElement;
+    const id = input.dataset.lad;
+    if (!id) return;
+    const v = input.value as Answer;
+    ctx.change(() => { a[id] = v; }, ctx.spanish() ? `Cambiado a ${v === "yes" ? "Sí" : "No"}. ` : `Changed to ${v === "yes" ? "Yes" : "No"}. `);
   });
 
   // Single-key shortcuts work only while focus is inside the card (WCAG 2.1.4).
@@ -275,7 +293,7 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
       if (steps[pos]?.kind !== "stmt") return;
       e.preventDefault();
       answer(k === "n" ? "no" : "yes");
-    } else if (e.key === "ArrowLeft") {
+    } else if (e.key === "ArrowLeft" && !(e.target as HTMLElement).matches("input")) { // arrows move between radios
       e.preventDefault();
       back();
     }

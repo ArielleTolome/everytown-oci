@@ -11,10 +11,10 @@ test('Previous retraces the cards seen in Planning and Next walks them again', {
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA History Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'One at a time').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
-  await expect(screen.getByRole('radio', 'One at a time')).toBeChecked();
 
-  // A card's heading plus the first "we recorded" statement (both multiple-choice questions share the heading).
+  // A card's heading plus the first "filled in" statement (both multiple-choice questions share the heading).
   const card = () => browser.evaluate(() => {
     const c = document.querySelector('#quick-card')!;
     const kind = c.querySelector('.quick__choices') ? 'choose' : c.querySelector('.ladder-list') ? 'confirm' : 'stmt';
@@ -36,15 +36,15 @@ test('Previous retraces the cards seen in Planning and Next walks them again', {
   }
   expect(seen.filter((c) => c.kind === 'confirm')).toHaveLength(2);
   expect(seen.at(-1)!.kind).toBe('stmt');
-  // Going back, a multiple-choice question shows its "Based on your choice" step, the step that was shown last.
+  // Going back, a multiple-choice question shows its "Your choice filled in these answers" step, the step shown last.
   const shown = seen.filter((c) => c.kind !== 'choose').map((c) => c.text);
 
-  // Previous, card by card, in reverse; nothing to go back to on the first card.
+  // Previous, card by card, in reverse; on the first card Previous stays in place but is unavailable (#30).
   for (let i = shown.length - 2; i >= 0; i--) {
     await next(press('#quick-prev'));
     expect((await card()).text).toBe(shown[i]);
   }
-  expect(await browser.evaluate(() => !!document.querySelector('#quick-prev'))).toBe(false);
+  expect(await browser.evaluate(() => document.querySelector('#quick-prev')?.getAttribute('aria-disabled'))).toBe('true');
 
   // Forward again through the same cards: Next on an answered statement, "Looks right, continue" on a recorded choice.
   for (let i = 1; i < shown.length; i++) {

@@ -1,11 +1,11 @@
 // HTML builders and small behaviors for the results page. Every API string goes through esc(); URLs through safeUrl().
-import { api, ApiError, type Assessment, type Focus, type Gap, type Meta, type PlanItem, type Step, type Support } from "./api";
+import { api, ApiError, type Assessment, type Focus, type Gap, type Meta, type Step, type Support } from "./api";
 import { $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
-import { coachBody } from "./coach";
+import { coachCard, coachChat } from "./coach";
 import { feedbackSection } from "./feedback";
 import { optinSection } from "./optin";
 import { icon, type IconName } from "./icons";
-import { fillRoadmapTeaser, roadmapTeaser, setRoadmapTask, shortDate, type Roadmap } from "./roadmap";
+import { celebrateWeek, fillRoadmapTeaser, roadmapTeaser, setRoadmapTask, shortDate, type Roadmap, type RoadmapWeek } from "./roadmap";
 import { errorText, fold } from "./report-ui";
 import { traceLinks } from "./staff-bi";
 
@@ -35,7 +35,14 @@ const STATE_ICON: Record<Step["state"], string> = {
   pending: icon("circle"), running: icon("loader", "spin"), done: icon("circle-check"), error: icon("circle-x"),
 };
 
-const pct = (n: number) => `${Math.round(n)}%`;
+/** Small visible note under a section heading saying where its content comes from (#32). */
+const SOURCE: Record<"ai" | "answers" | "web", [IconName, string]> = {
+  ai: ["pencil", "Written by AI from your answers"],
+  answers: ["clipboard", "Built from your answers"],
+  web: ["globe", "Found on public web pages"],
+};
+export const sourceTag = (kind: keyof typeof SOURCE, text = SOURCE[kind][1]) =>
+  `<p class="source-tag source-tag--${kind}">${icon(SOURCE[kind][0])}<span>${esc(text)}</span></p>`;
 
 export const pdfUrl = (sub: Assessment) => `/api/assessments/${encodeURIComponent(sub.id)}/report.pdf`;
 export function pdfButton(sub: Assessment): string {
@@ -51,8 +58,8 @@ function listen(section: "summary" | "focus" | "plan" | "strengths" | "conversat
   </button>`;
 }
 
-function sectionHead(id: string, title: string, eyebrow: string, listenSection?: Parameters<typeof listen>[0], lang = "en", lead = ""): string {
-  return `<div class="section-head"><div><span class="eyebrow">${esc(eyebrow)}</span><h2 id="${id}">${esc(title)}</h2></div>${listenSection ? listen(listenSection, lang) : ""}</div>${lead ? `<p class="section-lead">${lead}</p>` : ""}`;
+function sectionHead(id: string, title: string, eyebrow: string, listenSection?: Parameters<typeof listen>[0], lang = "en", lead = "", source = ""): string {
+  return `<div class="section-head"><div><span class="eyebrow">${esc(eyebrow)}</span><h2 id="${id}">${esc(title)}</h2>${source}</div>${listenSection ? listen(listenSection, lang) : ""}</div>${lead ? `<p class="section-lead">${lead}</p>` : ""}`;
 }
 
 export function stepItems(steps: Step[]): string {
@@ -70,9 +77,9 @@ export function statusPanel(sub: Assessment): string {
     return `<section class="panel panel--ready" aria-labelledby="ready">
       <h2 id="ready" tabindex="-1">${icon("circle-check")}Your report is ready</h2>
       ${sub.report
-        ? `<p>Start with what is true about you${n ? `, then your ${n === 1 ? "top priority" : "top priorities"}` : ""}. Share the PDF so your team can talk it through together.</p>
-      <p class="hint">This is a learning tool, not a grade. Your stages come from a fixed scoring method. The plan is written with AI from your answers and the CVI resource library, so talk it over with your team before you act.</p>`
-        : `<p>Your stages and growth priorities are below. This is a learning tool, not a grade: every stage is a normal place to be.</p>`}
+        ? `<p>Start with the summary about your organization${n ? `, then your roadmap and your ${n === 1 ? "top priority" : "top priorities"}` : ""}. The PDF also has your scores by area and the full plan, so your team can talk it through together.</p>
+      <p class="hint">This is a learning tool, not a grade. A small label under each heading says what came from your answers and what AI wrote. Talk the AI parts over with your team before you act.</p>`
+        : `<p>Open "Explore any area" below to see what is in place and what to work on next in each area. This is a learning tool, not a grade: every stage is a normal place to be.</p>`}
     </section>`;
   }
   const failed = sub.steps.find((s) => s.state === "error");
@@ -80,18 +87,18 @@ export function statusPanel(sub: Assessment): string {
   return `<section class="panel ${isError ? "panel--error" : ""}" id="processing" aria-labelledby="processing-title" aria-busy="${isError ? "false" : "true"}" data-no-print>
     ${isError
       ? `<h2 id="processing-title" tabindex="-1">${icon("alert")}We could not finish your recommendations</h2>
-         <p>${failed ? `The step "${esc(failed.label)}" did not finish. ` : ""}Your answers and stages are saved, so you do not need to answer the questions again. Try again now, or come back to this page later.</p>
+         <p>${failed ? `The step "${esc(failed.label)}" did not finish. ` : ""}Your answers are saved, so you do not need to answer the questions again. Try again now, or come back to this page later.</p>
          ${sub.error ? `<p class="hint">Details: ${esc(sub.error)}</p>` : ""}`
       : `<h2 id="processing-title" tabindex="-1">${icon("loader", "spin")}Building your recommendations</h2>
-         <p>This usually takes under a minute. Your stages are ready now in "Your results in detail" below, so you can read them while you wait.</p>
-         <p class="hint" id="processing-slow" hidden>This is taking longer than usual. Your answers and stages are saved. You can keep this page open, or come back to this link later.</p>`}
+         <p>This usually takes under a minute. While you wait, you can open "Explore any area" below.</p>
+         <p class="hint" id="processing-slow" hidden>This is taking longer than usual. Your answers are saved. You can keep this page open, or come back to this link later.</p>`}
     <ol class="step-list" role="list" id="step-list">${stepItems(sub.steps)}</ol>
     ${isError ? `<p class="field-error" id="retry-error" role="alert" hidden></p>
       <button type="button" class="btn btn-primary" id="retry-btn">${icon("refresh")}<span>Try again</span></button>` : ""}
   </section>`;
 }
 
-/* ---------- Where you are today: stage tracks (Stitch) + accessible table ---------- */
+/* ---------- Stage track (Explore any area) ---------- */
 
 /** Five-segment stage track for one area (filled + bold current label, so not color alone). */
 function track(d: Assessment["domains"][number], names: string[]): string {
@@ -102,66 +109,6 @@ function track(d: Assessment["domains"][number], names: string[]): string {
           <span class="track__label"><span class="track__full">${esc(st)}</span><span class="track__short" aria-hidden="true">${i + 1}</span>${i === cur ? '<span class="visually-hidden"> (current stage)</span>' : ""}</span>
         </li>`).join("")}
       </ol>`;
-}
-
-export function stagesSection(sub: Assessment, meta: Meta): string {
-  const stages = [...meta.stages].sort((a, b) => a.n - b.n);
-  const names = stages.map((s) => s.name);
-  const tracks = sub.domains.map((d) => {
-    const desc = stages[names.indexOf(d.estimated_stage)]?.description;
-    return `<li class="card track-card">
-      <div class="track-card__head">
-        <h3>${esc(d.domain_name)}</h3>
-        <span class="stage-pill">Current stage: ${esc(d.estimated_stage)}</span>
-      </div>
-      ${track(d, names)}
-      ${desc ? `<p class="track-card__desc"><strong>${esc(d.estimated_stage)}:</strong> ${esc(desc)}</p>` : ""}
-    </li>`;
-  }).join("");
-  const o = sub.overall;
-  return `<section class="section" aria-labelledby="stages-title">
-    ${sectionHead("stages-title", "Where you are today", "Your stages", undefined, "en",
-      `Each area has five stages, from ${esc(names[0] ?? "Seeding")} to ${esc(names[names.length - 1] ?? "Transformational")}. Your stage is the highest one where every statement is already in place. Every stage is a normal place to be.`)}
-    <ul class="tracks" role="list">${tracks}</ul>
-    ${fold("Show the table of scores", `<div class="table-wrap" role="region" aria-labelledby="scores-caption" tabindex="0">
-      <table>
-        <caption id="scores-caption">Capacity by area. Stages are estimated from your answers by a fixed scoring method.</caption>
-        <thead><tr><th scope="col">Area</th><th scope="col">Estimated stage</th><th scope="col" class="num">Capacity</th><th scope="col" class="num">Growth priorities</th><th scope="col" class="num">High priority</th></tr></thead>
-        <tbody>${sub.domains.map((d) => `<tr><th scope="row">${esc(d.domain_name)}</th><td>${esc(d.estimated_stage)}</td><td class="num">${pct(d.score_pct)}</td><td class="num">${d.gap_count} of ${d.total_questions}</td><td class="num">${d.high_count}</td></tr>`).join("")}</tbody>
-        ${o ? `<tfoot><tr><th scope="row">All areas</th><td></td><td class="num">${pct(o.favorable_pct)}</td><td class="num">${o.total_gaps} of ${o.total_questions}</td><td class="num">${o.high}</td></tr></tfoot>` : ""}
-      </table>
-    </div>`)}
-  </section>`;
-}
-
-export function progressSection(sub: Assessment): string {
-  const p = sub.progress;
-  if (!p) return "";
-  const closed = p.closed ?? [], fresh = p.new ?? [], moves = p.stages ?? [];
-  const changed = moves.filter((m) => m.from !== m.to);
-  const item = (g: { id: string; text: string }) => `<li><span class="chip">${esc(g.id)}</span> ${esc(g.text)}</li>`;
-  let body: string;
-  if (!closed.length && !fresh.length && !changed.length) {
-    body = `<p class="notice">${icon("info")}<span>Your answers match your assessment on ${esc(p.previous_created)}.</span></p>`;
-  } else {
-    body = `<ul class="stat-grid" role="list">
-        <li class="card stat">${icon("circle-check")}<span><span class="stat__num">${closed.length}</span><span class="stat__label">growth ${closed.length === 1 ? "priority" : "priorities"} now in place</span></span></li>
-        <li class="card stat">${icon("sprout")}<span><span class="stat__num">${fresh.length}</span><span class="stat__label">new growth ${fresh.length === 1 ? "priority" : "priorities"}</span></span></li>
-      </ul>
-      ${moves.length ? `<h3>Stage changes by area</h3>
-      <ul class="stage-moves" role="list">${moves.map((m) => m.from === m.to
-        ? `<li class="stage-move is-same"><span class="stage-move__name">${esc(m.domain_name)}</span><span class="stage-move__change">${esc(m.to)}: No change</span></li>`
-        : `<li class="stage-move"><span class="stage-move__name">${esc(m.domain_name)}</span><span class="stage-move__change">${esc(m.from)} ${icon("arrow-right")}<span class="visually-hidden"> to </span> ${esc(m.to)}</span></li>`).join("")}
-      </ul>` : ""}
-      ${closed.length ? `<details class="about"><summary>Show growth priorities now in place (${closed.length})</summary><ul>${closed.map(item).join("")}</ul></details>` : ""}
-      ${fresh.length ? `<details class="about"><summary>Show new growth priorities (${fresh.length})</summary><ul>${fresh.map(item).join("")}</ul></details>` : ""}`;
-  }
-  return `<section class="section" aria-labelledby="progress-title">
-    ${sectionHead("progress-title", `Progress since your last assessment (${p.previous_created})`, "Your progress")}
-    ${body}
-    <p class="hint">In this demo, progress compares only with assessments from the same sign-in.</p>
-    ${p.previous_id ? `<p><a href="/results/?id=${encodeURIComponent(p.previous_id)}">View previous report</a></p>` : ""}
-  </section>`;
 }
 
 /* ---------- AI sections ---------- */
@@ -190,13 +137,16 @@ function checklistStatus(done: number, total: number): string {
   return `${icon("clock")}<span>${done} of ${total} steps done</span>`;
 }
 
+/** Start here: the one or two priorities that make up roadmap weeks 1 to 4, side by side on wide screens (#36).
+ *  Only steps of open weeks show; wireChecklists hides the rest and says when the next ones open. */
 function focusSection(items: Focus[], gaps: Map<string, Gap>, lang: string): string {
   if (!items.length) return "";
   const L = `lang="${esc(lang)}"`;
   const one = items.length === 1;
   return `<section class="section" aria-labelledby="focus-title">
-    ${sectionHead("focus-title", one ? "Start here: your top priority" : "Start here: your top priorities", "Do these first", "focus", lang,
-      `You do not have to do everything at once. Out of everything you could work on, ${one ? "this is the one priority" : "these are the two priorities"} to start with. ${one ? "Its steps are weeks 1 and 2" : "Their steps are weeks 1 to 4"} of your 12-week roadmap. Tick them off here or on your roadmap. Each week's steps open in turn.`)}
+    ${sectionHead("focus-title", one ? "Start here: weeks 1 and 2 of your roadmap" : "Start here: weeks 1 to 4 of your roadmap", one ? "Your top priority" : "Your top priorities", "focus", lang,
+      `You do not have to do everything at once. Out of everything you could work on, ${one ? "this is the one priority to start with. Its steps are weeks 1 and 2" : "these are the two priorities to start with. Priority 1 is weeks 1 and 2"} of the roadmap above${one ? "" : ", and priority 2 is weeks 3 and 4"}. New steps show up here as each week opens. Tick them here or on your roadmap.`,
+      sourceTag("answers", "Picked from your answers. Steps written by AI."))}
     <ol class="focus-list" id="focus-body" role="list">${items.map((f, i) => `
       <li class="card focus-card" data-focus="${i}">
         <div class="focus-card__head">
@@ -215,46 +165,14 @@ function focusSection(items: Focus[], gaps: Map<string, Gap>, lang: string): str
           <legend class="mini-label">What to do</legend>
           <ul role="list" ${L}>${f.steps.map((s, j) => `
             <li><label><input type="checkbox" id="focus-${i}-step-${j}" data-focus="${i}" data-step="${j}" aria-describedby="focus-status-${i}" disabled>
-              <span>${esc(s)}<span class="checklist__later" id="focus-${i}-later-${j}" lang="en" hidden></span></span></label></li>`).join("")}
+              <span>${esc(s)}</span></label></li>`).join("")}
           </ul>
+          <p class="focus-card__next" id="focus-next-${i}" lang="en" hidden></p>
         </fieldset>
         <p class="field-error" id="focus-error-${i}" role="alert" hidden></p>` : ""}
         ${resource(f.resource, lang)}
       </li>`).join("")}
     </ol>
-  </section>`;
-}
-
-function planSection(plan: PlanItem[], gaps: Map<string, Gap>, lang: string): string {
-  const L = `lang="${esc(lang)}"`;
-  const groups: [30 | 60 | 90, string, string, Parameters<typeof icon>[0]][] = [
-    [30, "Days 1 to 30", "First 30 days", "flag"], [60, "Days 31 to 60", "Next 30 days", "clock"], [90, "Days 61 to 90", "Last 30 days", "trending"],
-  ];
-  const cards = groups.map(([h, range, title, ic]) => {
-    const items = plan.filter((p) => p.horizon === h);
-    if (!items.length) return "";
-    return `<li class="card horizon-card">
-      <div class="horizon-card__head">
-        <div><span class="mini-label mini-label--blue">${range}</span><h3>${title}</h3></div>${icon(ic, "horizon-card__icon")}
-      </div>
-      <ul class="actions-list" role="list">${items.map((a) => `
-        <li class="action">
-          <div class="action__head">
-            <h4 ${L}>${esc(a.title)}</h4>
-            ${a.owner ? `<span class="role-chip">${icon("user")}<span class="visually-hidden">Owner: </span><span ${L}>${esc(a.owner)}</span></span>` : ""}
-          </div>
-          <p ${L}>${esc(a.why)}</p>
-          ${a.steps.length ? `<ol class="steps-list" ${L}>${a.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}
-          ${basis(a.gap_ids, gaps)}
-          ${resource(a.resource, lang)}
-        </li>`).join("")}
-      </ul>
-    </li>`;
-  }).join("");
-  if (!cards) return "";
-  return `<section class="section" aria-labelledby="plan-title">
-    ${sectionHead("plan-title", "30 / 60 / 90 day plan", "Your next 90 days", "plan", lang, "A realistic order for a small team over the next three months.")}
-    ${fold(`Show the 90-day plan (${plural(plan.length, "action", "actions")})`, `<ol class="horizons" id="plan-body" role="list">${cards}</ol>`)}
   </section>`;
 }
 
@@ -271,25 +189,6 @@ function gapItem(g: Gap): string {
         <p class="gap__text">${esc(g.question_text)}</p>
         ${steps.length ? `<p class="label">Next steps</p><ul class="steps-list">${steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
       </li>`;
-}
-
-function gapsSection(sub: Assessment, meta: Meta): string {
-  const body = sub.domains.map((d) => {
-    const dg = sub.gaps.filter((g) => g.domain_id === d.domain_id);
-    const info = meta.domains.find((m) => m.id === d.domain_id);
-    const list = dg.length ? fold(`Show ${plural(dg.length, "growth priority", "growth priorities")}`, `<ul class="gaps" role="list">${dg.map((g) => gapItem(g)).join("")}</ul>`)
-      : `<p class="notice">${icon("circle-check")}<span>No growth priorities in this area. Your answers show these practices are in place.</span></p>`;
-    return `<section class="gap-domain" aria-labelledby="gaps-${esc(d.domain_id)}">
-      <h3 id="gaps-${esc(d.domain_id)}">${esc(d.domain_name)} <span class="count">${plural(dg.length, "growth priority", "growth priorities")}</span></h3>
-      ${info ? `<details class="about"><summary>About ${esc(d.domain_name)}</summary><p>${esc(info.about)}</p>${info.connects ? `<p>${esc(info.connects)}</p>` : ""}</details>` : ""}
-      ${list}
-    </section>`;
-  }).join("");
-  return `<section class="section" aria-labelledby="gaps-title">
-    ${sectionHead("gaps-title", "All growth priorities", "Everything you could work on", undefined, "en",
-      "These are the statements that are not in place yet, ordered by priority within each area. The priority comes from the fixed scoring method, not from AI.")}
-    ${body}
-  </section>`;
 }
 
 /** Codecademy-style "take it again" callout with a client-generated calendar reminder. */
@@ -415,7 +314,7 @@ function researchSection(sub: Assessment): string {
   const found = !withheld && res.strength !== "none" && res.sources.some((s) => s.used);
   const status = (s: ResearchSource) => (withheld ? "Not used this time" : s.used ? "Used for your plan" : "We could not read this one");
   return `<section class="section" aria-labelledby="learned-title">
-    ${sectionHead("learned-title", "What we learned about you", "Personalized for you")}
+    ${sectionHead("learned-title", "What we learned about you", "Personalized for you", undefined, "en", "", sourceTag("web"))}
     <div class="card learned">
       <p class="learned__headline">${icon(found ? "sprout" : "info")}<span>${esc(withheld ? "We could not use what we found online this time, so this plan is based on your answers." : researchHeadline(res))}</span></p>
       ${res.sources.length ? `<ul class="learned__sources" role="list">${res.sources.map((s) => `
@@ -526,7 +425,7 @@ export function areaDetail(sub: Assessment, meta: Meta, id: string): string {
     ${r ? `<h4 class="explore-area__sub">In your plan</h4>
     ${items.length
       ? `<ul class="explore-plan" role="list">${items.map(([label, f]) => `<li><span class="mini-label mini-label--blue">${esc(label)}</span><span lang="${esc(lang)}">${esc(f.title)}</span></li>`).join("")}</ul>`
-      : `<p>Your plan does not cover this area yet. That is on purpose: the plan starts with what unlocks the most. You can ask about it in "Ask about your report"${sub.status === "done" ? ", or ask the Community Safety Fund for support" : ""}.</p>`}` : ""}`;
+      : `<p>Your plan does not cover this area yet. That is on purpose: the plan starts with what unlocks the most. You can ask about it in "Chat about your report"${sub.status === "done" ? ", or ask the Community Safety Fund for support" : ""}.</p>`}` : ""}`;
 }
 
 function exploreSection(sub: Assessment, meta: Meta): string {
@@ -537,7 +436,8 @@ function exploreSection(sub: Assessment, meta: Meta): string {
   const one = sub.domains.length === 1;
   return `<section class="section" aria-labelledby="explore-title">
     ${sectionHead("explore-title", "Explore any area", "Deep dive", undefined, "en",
-      one ? "See your stage, what is already in place, and what to work on next." : "Pick any area you assessed, not just the ones we pulled out for you. See your stage, what is already in place, and what to work on next.")}
+      one ? "See your stage, what is already in place, and what to work on next." : "Pick any area you assessed, not just the ones we pulled out for you. See your stage, what is already in place, and what to work on next.",
+      sourceTag("answers", "From your answers"))}
     ${one ? "" : `<fieldset class="area-picker">
       <legend class="mini-label">Choose an area</legend>
       <ul class="area-picker__list" role="list">${sub.domains.map((d) => `
@@ -563,12 +463,11 @@ export function wireExplore(sub: Assessment, meta: Meta, root: ParentNode) {
   });
 }
 
-/* ---------- Layers: "Your plan" first, then any area, then all the numbers ---------- */
+/* ---------- Layers: "Your plan" first, then any area ---------- */
 
 export const LAYERS = [
   ["plan", "Your plan", "Where to start", "target"],
   ["explore", "Explore any area", "Deep dive on one area", "search"],
-  ["details", "Your results in detail", "Stages, scores, full plan", "layers"],
 ] as const satisfies readonly (readonly [string, string, string, IconName])[];
 export type Layer = (typeof LAYERS)[number][0];
 
@@ -583,7 +482,7 @@ function layered(panels: Record<Layer, string>, current: Layer): string {
   </div>`;
 }
 
-/** ARIA tabs (automatic activation): arrows, Home, End; the URL hash (#plan, #explore, #details) keeps the layer on reload. */
+/** ARIA tabs (automatic activation): arrows, Home, End; the URL hash (#plan, #explore) keeps the layer on reload. */
 export function wireLayers(root: ParentNode) {
   const tabs = $$<HTMLButtonElement>('[role="tab"]', root as HTMLElement);
   const select = (tab: HTMLButtonElement, focus: boolean) => {
@@ -608,7 +507,7 @@ export function wireLayers(root: ParentNode) {
   });
 }
 
-/** Everything below the status panel: three layers, in the order the Everytown rep asked for. */
+/** Everything below the status panel: two layers, then the feedback card and the chat (#32: scores live in the PDF). */
 export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolean; support: boolean; staff: boolean }): string {
   const lang = sub.language || "en";
   const gaps = new Map(sub.gaps.map((g) => [g.question_id, g]));
@@ -620,70 +519,42 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
   // The AI and scoring note lives in the ready panel (statusPanel), so it is said once.
   if (opts.staff) top.push(traceLinks(v10(sub).trace?.url, v10(sub).trace?.cloudwatch_url));
 
-  // Layer 1: the short, conversational version.
+  // Layer 1: the short, conversational version. Order (#35, #36): summary, roadmap, Start here, ..., research last.
   const plan: string[] = [];
   if (r) {
     const paras = r.summary.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${esc(p)}</p>`);
     plan.push(`<section class="section" aria-labelledby="truth-title">
-      ${sectionHead("truth-title", "What's true about you", "In plain words", "summary", lang)}
-      <div class="card truth"><div class="prose" id="truth-body" lang="${esc(lang)}">${paras[0] ?? ""}${paras.length > 1 ? fold(`Read the rest (${plural(paras.length - 1, "more paragraph", "more paragraphs")})`, paras.slice(1).join("")) : ""}</div>
-        ${r.reading_grade != null ? `<details class="about reading-level"><summary>Reading level: about grade ${Math.round(r.reading_grade)}</summary><p>Measured by a fixed formula (Flesch-Kincaid). We aim for grade 8 or lower.</p></details>` : ""}</div>
+      ${sectionHead("truth-title", "Summary about your organization", "In plain words", "summary", lang, "", sourceTag("ai"))}
+      <div class="card truth"><div class="prose" id="truth-body" lang="${esc(lang)}">${paras[0] ?? ""}${paras.length > 1 ? fold(`Read the rest (${plural(paras.length - 1, "more paragraph", "more paragraphs")})`, paras.slice(1).join("")) : ""}</div></div>
     </section>`);
-    plan.push(researchSection(sub), focusSection(r.focus ?? [], gaps, lang));
     const teaser = roadmapTeaser(sub);
-    if (teaser) plan.push(`<section class="section" aria-labelledby="roadmap-title" id="roadmap-section">${sectionHead("roadmap-title", "Your 12-week roadmap", "A little each week")}${teaser}</section>`);
-    plan.push(`<section class="section coach" aria-labelledby="coach-title" data-no-print>
-      ${sectionHead("coach-title", "Ask about your report", "Questions and answers", undefined, "en", "Ask a question in your own words, like you would ask a coach.")}
-      ${coachBody(sub)}
-    </section>`);
+    if (teaser) plan.push(`<section class="section" aria-labelledby="roadmap-title" id="roadmap-section">${sectionHead("roadmap-title", "Your 12-week roadmap", "A little each week", undefined, "en", "", sourceTag("answers"))}${teaser}</section>`);
+    plan.push(focusSection(r.focus ?? [], gaps, lang), coachCard());
     if (opts.support) plan.push(supportSection(sub));
     if (!opts.staff || v10(sub).peer_request) plan.push(peersSection(sub, opts.staff));
     plan.push(optinSection(sub, opts.staff));
   } else if (sub.status === "done") {
-    plan.push(`<p class="notice section-gap">${icon("info")}<span>AI recommendations were not generated for this synthetic seed record. Open "Explore any area" or "Your results in detail" for the stages and growth priorities.</span></p>`);
+    plan.push(`<p class="notice section-gap">${icon("info")}<span>AI recommendations were not generated for this synthetic seed record. Open "Explore any area" for the stage and growth priorities in each area.</span></p>`);
   } else {
-    plan.push(`<p class="notice section-gap">${icon("clock")}<span>Your plan appears here when your recommendations are ready. Your stages are ready now in "Your results in detail".</span></p>`);
+    plan.push(`<p class="notice section-gap">${icon("clock")}<span>Your plan appears here when your recommendations are ready. While you wait, open "Explore any area".</span></p>`);
   }
   if (sub.status === "done" && opts.reminder) plan.push(reassessCallout());
-
-  // Layer 3: every number behind the plan. Strengths come before the plan (strength first).
-  const details: string[] = [stagesSection(sub, meta), progressSection(sub)];
-  if (r) {
-    if (r.strengths?.length) {
-      details.push(`<section class="section" aria-labelledby="strengths-title">
-        ${sectionHead("strengths-title", "What you already do well", "Your strengths", "strengths", lang)}
-        <ul class="check-list prose" id="strengths-body" lang="${esc(lang)}" role="list">${r.strengths.map((s) => `<li>${icon("circle-check")}<span>${esc(s)}</span></li>`).join("")}</ul>
-      </section>`);
-    }
-    details.push(planSection(r.plan ?? [], gaps, lang));
-    if (r.conversation?.length) {
-      details.push(`<section class="section" aria-labelledby="conversation-title">
-        ${sectionHead("conversation-title", "Team conversation guide", "Talk it through", "conversation", lang, "Use these questions at your next team or board meeting.")}
-        ${fold(`Show ${plural(r.conversation.length, "question", "questions")}`, `<ol class="prose conversation" id="conversation-body" lang="${esc(lang)}">${r.conversation.map((q) => `<li>${esc(q)}</li>`).join("")}</ol>`)}
-      </section>`);
-    }
-  }
-  details.push(gapsSection(sub, meta));
-  if (r?.sources?.length) {
-    details.push(`<section class="section" aria-labelledby="sources-title">
-      ${sectionHead("sources-title", "Sources consulted", "Where this comes from")}
-      ${fold(`Show ${plural(r.sources.length, "source", "sources")}`, `<ul class="sources" lang="${esc(lang)}">${r.sources.map((s) => `<li><a href="${esc(safeUrl(s.url))}" rel="noopener">${esc(s.title)}</a> <span class="url-domain">(${esc(hostOf(s.url))})</span></li>`).join("")}</ul>`)}
-    </section>`);
-  }
+  if (r) plan.push(researchSection(sub));
 
   const hash = location.hash.slice(1);
-  const current: Layer = LAYERS.some(([k]) => k === hash) ? (hash as Layer) : r ? "plan" : "details";
-  const out = top.join("") + layered({ plan: plan.join(""), explore: exploreSection(sub, meta), details: details.join("") }, current);
+  const current: Layer = LAYERS.some(([k]) => k === hash) ? (hash as Layer) : r ? "plan" : "explore";
+  const out = top.join("") + layered({ plan: plan.join(""), explore: exploreSection(sub, meta) }, current);
   // One "Does this feel right?" card for the whole report, under every layer (v1.7).
   const feedback = r ? feedbackSection(sub, opts.staff) : "";
-  return sub.status === "done" ? `${out}${feedback}<div class="actions section-gap">${pdfButton(sub)}</div>` : out;
+  return sub.status === "done" ? `${out}${feedback}<div class="actions section-gap">${pdfButton(sub)}</div>${r ? coachChat(sub) : ""}` : out;
 }
 
 /* ---------- Behaviors ---------- */
 
 /** Start-here checklists: each step is a task in roadmap weeks 1-2 (priority 1) and 3-4 (priority 2), so the roadmap
- *  is the only store. Steps of a week that has not opened stay disabled and say when they open; a viewer who may not
- *  use the roadmap (the API answers 403) sees the steps without checkboxes. Announce the new count politely. */
+ *  is the only store. Steps of a week that has not opened are hidden, and one line says how many open next and when
+ *  (#36); a viewer who may not use the roadmap (the API answers 403) sees every step without checkboxes. Announce the
+ *  new count politely. */
 export function wireChecklists(sub: Assessment, root: ParentNode, roadmap: Promise<Roadmap> | null) {
   const focus = sub.report?.focus ?? [];
   const boxes = $$<HTMLInputElement>("input[data-focus][data-step]", root);
@@ -702,23 +573,29 @@ export function wireChecklists(sub: Assessment, root: ParentNode, roadmap: Promi
     // Priority i owns focus weeks 2i+1 and 2i+2 (features/milestones.py build_roadmap); match its steps by text.
     const tasks = new Map(r.weeks.filter((w) => w.focus).flatMap((w) =>
       (w.tasks ?? []).map((t) => [`${Math.floor((w.n - 1) / 2)}:${t.text.trim().toLowerCase()}`, t] as const)));
+    const next = new Map<number, { week: RoadmapWeek; n: number }>();
     boxes.forEach((box) => {
       const i = Number(box.dataset.focus), j = Number(box.dataset.step);
       const t = tasks.get(`${i}:${(focus[i]?.steps[j] ?? "").trim().toLowerCase()}`);
       box.dataset.task = t?.id ?? "";
       box.checked = !!t?.done;
       box.disabled = !t;
-      // Locked weeks send no tasks, only counts; the server splits a priority's steps over its two weeks in order.
+      // The server splits a priority's steps over its two weeks in order; a step of a locked week stays hidden.
       let k = j;
-      const week = t ? undefined : r.weeks.filter((w) => w.focus && Math.floor((w.n - 1) / 2) === i).find((w) => (k -= w.task_count) < 0);
-      const later = root.querySelector<HTMLElement>(`#focus-${i}-later-${j}`);
-      if (later) {
-        const locked = week?.state === "locked";
-        later.textContent = locked ? `Opens in week ${week.n}, on ${shortDate(week.unlocks_on)} or sooner.` : "";
-        later.hidden = !locked;
-      }
+      const week = r.weeks.filter((w) => w.focus && Math.floor((w.n - 1) / 2) === i).find((w) => (k -= w.task_count) < 0);
+      const locked = week?.state === "locked";
+      box.closest("li")!.hidden = locked;
+      if (locked && (next.get(i)?.week ?? week) === week) next.set(i, { week, n: (next.get(i)?.n ?? 0) + 1 });
     });
-    focus.forEach((_, i) => refresh(i));
+    focus.forEach((_, i) => {
+      refresh(i);
+      const el = root.querySelector<HTMLElement>(`#focus-next-${i}`);
+      const nx = next.get(i);
+      if (!el) return;
+      el.hidden = !nx;
+      const shown = boxes.some((b) => Number(b.dataset.focus) === i && !b.closest("li")!.hidden);
+      el.innerHTML = nx ? `${icon("lock")}<span>${shown ? plural(nx.n, "more step opens", "more steps open") : plural(nx.n, "step opens", "steps open")} in week ${nx.week.n}, on ${esc(shortDate(nx.week.unlocks_on))} or sooner.</span>` : "";
+    });
   };
   roadmap.then(sync).catch(() => boxes.forEach((box) => box.remove()));
   let chain = Promise.resolve();
@@ -730,9 +607,13 @@ export function wireChecklists(sub: Assessment, root: ParentNode, roadmap: Promi
     announce(`Priority ${i + 1}: ${refresh(i)} of ${total} steps done.`);
     chain = chain.then(async () => {
       try {
+        const hidden = () => boxes.filter((b) => b.closest("li")!.hidden).length, before = hidden();
         const r = await setRoadmapTask(sub.id, task, done);
         sync(r);
         fillRoadmapTeaser(root, r);
+        const opened = before - hidden();
+        if (opened > 0) announce(`${plural(opened, "new step is", "new steps are")} open in Start here.`);
+        celebrateWeek(sub.id, r, box); // the same badge pop-up as /plan/ when this tick finished a week
       } catch (ex) {
         box.checked = !done;
         refresh(i);

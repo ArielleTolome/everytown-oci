@@ -1,4 +1,6 @@
 """Render a submission (scores, gaps, AI report) to an accessible PDF with fpdf2."""
+import functools
+import io
 import os
 
 from fpdf import FPDF
@@ -17,10 +19,68 @@ HEAD_FILL = (225, 232, 242)
 CALLOUT_FILL = (242, 245, 250)
 STAGE_NAMES = ["Seeding", "Emerging", "Developing", "Strengthening", "Transformational"]
 HORIZON_LABEL = {30: "First 30 days", 60: "Days 31 to 60", 90: "Days 61 to 90"}
+# (closing clause at the end of each PDF, footer line with the page number), by report language or "staff".
+CONFIDENTIAL = {
+    "en": ("Confidential. This report contains proprietary information about your organization. Do not share it "
+           "outside your organization and Everytown's Community Safety Fund.",
+           "Confidential: for your organization and the Community Safety Fund only.   Page %d of {nb}"),
+    "es": ("Confidencial. Este informe contiene información privada sobre su organización. No lo compartan fuera "
+           "de su organización y del Community Safety Fund de Everytown.",
+           "Confidencial: solo para su organización y el Community Safety Fund.   Página %d de {nb}"),
+    "staff": ("Confidential. This report contains proprietary information about organizations in the Community "
+              "Safety Fund network. Do not share it outside Everytown's Community Safety Fund.",
+              "Confidential: for Community Safety Fund staff only.   Page %d of {nb}"),
+}
 
 
-class _PDF(FPDF):
+@functools.lru_cache(maxsize=1)
+def _watermark():
+    """A light diagonal "Everytown" as a PNG: drawn behind the content and kept out of the text a reader selects."""
+    from PIL import Image, ImageDraw, ImageFont
+    font = ImageFont.truetype(os.path.join(FONT_DIR, "AtkinsonHyperlegible-Bold.ttf"), 220)  # about 200 dpi printed
+    left, top, right, bottom = font.getbbox("Everytown")
+    img = Image.new("RGBA", (right - left, bottom - top), (0, 0, 0, 0))
+    ImageDraw.Draw(img).text((-left, -top), "Everytown", font=font, fill=ACCENT + (16,))  # navy at about 6%
+    img = img.rotate(52, expand=True, resample=Image.BICUBIC)
+    out = io.BytesIO()
+    img.save(out, "PNG", optimize=True)
+    return out.getvalue(), img.height / img.width
+
+
+class Branded(FPDF):
+    """Every PDF the app makes: the Everytown mark behind each page, a confidentiality footer and closing clause.
+    `notice` picks the CONFIDENTIAL entry; by default the document language."""
+    notice = None
+
+    def _notice(self):
+        return CONFIDENTIAL.get(self.notice or self.lang, CONFIDENTIAL["en"])
+
     def header(self):
+        png, ratio = _watermark()
+        w = self.w * 0.8
+        self.image(io.BytesIO(png), x=(self.w - w) / 2, y=(self.h - w * ratio) / 2, w=w)
+
+    def footer(self):
+        self.set_y(-14)
+        self.set_font(FONT, "", 9)
+        self.set_text_color(*MUTED)
+        self.cell(0, 8, self._notice()[1] % self.page_no(), align="C")
+        self.set_text_color(*INK)
+
+    def confidential(self):
+        """The closing clause: the last words of the PDF."""
+        if self.will_page_break(20):
+            self.add_page()
+        self.ln(6)
+        self.set_font(FONT, "B", 10)
+        self.set_text_color(*MUTED)
+        self.multi_cell(0, 5.5, self._notice()[0], align="L", new_x="LMARGIN", new_y="NEXT")
+        self.set_text_color(*INK)
+
+
+class _PDF(Branded):
+    def header(self):
+        super().header()
         if self.page_no() == 1:
             return
         self.set_font(FONT, "", 9)
@@ -29,13 +89,6 @@ class _PDF(FPDF):
         self.set_draw_color(*ACCENT)
         self.line(self.l_margin, self.get_y(), self.w - self.r_margin, self.get_y())
         self.ln(4)
-        self.set_text_color(*INK)
-
-    def footer(self):
-        self.set_y(-14)
-        self.set_font(FONT, "", 9)
-        self.set_text_color(*MUTED)
-        self.cell(0, 8, "Page %d of {nb}" % self.page_no(), align="C")
         self.set_text_color(*INK)
 
     # Layout helpers
@@ -136,7 +189,7 @@ LETTER = {
         "title": "A letter to %s", "dear": "Dear %s team,",
         "intro": "Thank you for taking the Organizational Capacity Index. Here is what I learned about you, what "
                  "you already do well, and where I would start. Your detailed results come after this letter.",
-        "learned": "What we learned about you", "truth": "What's true about you",
+        "learned": "What we learned about you", "truth": "Summary about your organization",
         "strong": "What you already do well", "start": "If I were you, I would start with",
         "todo": "What to do", "based": "Based on your answers to", "resource": "Resource: ",
         "weeks": "Your next 12 weeks",
@@ -167,7 +220,7 @@ LETTER = {
         "intro": "Gracias por completar el Índice de Capacidad Organizacional. Aquí está lo que aprendí sobre "
                  "ustedes, lo que ya hacen bien y por dónde yo empezaría. Sus resultados detallados vienen después "
                  "de esta carta.",
-        "learned": "Lo que aprendimos sobre ustedes", "truth": "Lo que es cierto sobre ustedes",
+        "learned": "Lo que aprendimos sobre ustedes", "truth": "Resumen de su organización",
         "strong": "Lo que ya hacen bien", "start": "Si yo fuera ustedes, empezaría con",
         "todo": "Qué hacer", "based": "Según sus respuestas a", "resource": "Recurso: ",
         "weeks": "Sus próximas 12 semanas",
@@ -277,7 +330,8 @@ def _letter_head(pdf, text):
 
 
 def _letter(pdf, sub, t):
-    """Pages 2 to 3: what we learned, what's true, strengths, where to start, the first weeks, how CSF helps."""
+    """Pages 2 to 3: summary, strengths, where to start, the first weeks, how CSF helps, then what we learned
+    online (last, so the plan comes first)."""
     report = sub.get("report") or {}
     org = sub["org_name"]
     para = lambda text, **kw: pdf.para(text, **{"size": LS, "h": LH, **kw})
@@ -294,12 +348,6 @@ def _letter(pdf, sub, t):
     pdf.ln(2)
     para(t["dear"] % org, style="B")
     para(t["intro"])
-
-    _letter_head(pdf, t["learned"])
-    para(research_line(sub, sub.get("language") or "en"))
-    blurb = _profile_blurb(sub)
-    if blurb:
-        para(blurb, size=10, color=MUTED, h=5.4)
 
     _letter_head(pdf, t["truth"])
     if report.get("summary"):
@@ -374,6 +422,12 @@ def _letter(pdf, sub, t):
     para(t["sign"])
     para(t["signer"], style="B")
 
+    _letter_head(pdf, t["learned"])
+    para(research_line(sub, sub.get("language") or "en"))
+    blurb = _profile_blurb(sub)
+    if blurb:
+        para(blurb, size=10, color=MUTED, h=5.4)
+
 
 def build_pdf(sub, stage_descriptions):
     report = sub.get("report") or None
@@ -436,9 +490,6 @@ def build_pdf(sub, stage_descriptions):
              "scores by area, the full 30 / 60 / 90 day plan, every growth priority with next steps, a team "
              "conversation guide, and a record of every answer. Scores come from a fixed scoring method.")
     pdf.ln(2)
-    if report and report.get("summary") and report.get("reading_grade") is not None:  # English only
-        pdf.para("Reading level of your letter: about grade %d (Flesch-Kincaid formula). We aim for grade 8 or "
-                 "lower." % round(report["reading_grade"]), size=10, color=MUTED)
 
     # 2b. Progress since the previous assessment
     prog = sub.get("progress")
@@ -589,4 +640,5 @@ def build_pdf(sub, stage_descriptions):
                          "Growth priority" if a == q["trigger_on"] else "Yes"])
         pdf.grid(["ID", "Statement", "Answer", "Stage", "Favorable"], rows, (14, 96, 18, 14, 26))
 
+    pdf.confidential()
     return bytes(pdf.output())

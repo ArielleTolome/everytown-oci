@@ -10,8 +10,8 @@ test('Yes / No answers follow the question language', { session: 'demo' }, async
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Spanish Answers Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'Yes / No for each').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
-  await screen.getByRole('radio', 'Yes / No for each').check();
   await screen.getByRole('radio', 'Español').check();
   await expect(screen.getByRole('radio', 'Sí').first()).toBeVisible();
   await expect(screen.getByText('Sin responder todavía').first()).toBeVisible();

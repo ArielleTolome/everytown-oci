@@ -25,7 +25,7 @@ interface Funnel {
 interface Ctx { bi: () => Bi; stateName: (code: string) => string }
 
 const SECTION: Record<string, string> = {
-  overall: "Whole report", truths: "What's true about you", start_here: "Start here", plan: "Your plan", roadmap: "Roadmap", coach: "Ask about your report",
+  overall: "Whole report", truths: "Summary about your organization", start_here: "Start here", plan: "Your plan", roadmap: "Roadmap", coach: "Chat about your report",
 };
 const ISSUE: Record<string, string> = {
   wrong_facts: "Wrong facts", too_big_for_size: "Too big for their size", unclear: "Unclear", tone: "Tone", other: "Other",

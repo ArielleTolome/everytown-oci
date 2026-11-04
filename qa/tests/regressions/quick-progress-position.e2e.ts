@@ -11,6 +11,7 @@ test('One at a time progress follows the card, also back with Previous', { sessi
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Progress Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'One at a time').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
 
   const where = () => browser.evaluate(() => {

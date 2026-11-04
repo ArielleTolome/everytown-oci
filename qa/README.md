@@ -48,21 +48,25 @@ an instance role, so on EC2 run `eval "$(aws configure export-credentials --form
 | `tests/mobile/intake-start-errors.e2e.ts` | Phone bug bash: one edit (paste, autofill) clears a start-page field's red error bar; the time estimate never says 0 minutes. v1.8.2: job title and name are required, never folded on a phone, and shown as missing on `/?check=1`. |
 | `tests/mobile/intake-cards-above-bar.e2e.ts` | #10 (phone target): every One at a time card in Planning shows its question and first answer above the bottom bar. |
 | `tests/mobile/intake-link-box-resize.e2e.ts` | #15: the save link box re-fits the whole link when the window turns (390 -> 700 -> 390). |
-| `tests/mobile/report-plan-rotate-order.e2e.ts` | #15: the roadmap switches between the phone order and the desktop order when the width crosses 600 px. |
+| `tests/mobile/report-plan-rotate-order.e2e.ts` | #15, #38: the chosen week opens under its timeline row on phones and under the whole timeline from 600 px, and "Why this matters" follows the width. |
 | `tests/regressions/intake-spanish-controls.e2e.ts` | #14: with Español, the questionnaire's bar, area navigation and save tools are in Spanish. |
 | `tests/regressions/spanish-answer-controls.e2e.ts` | #19: with Español, the Yes / No and Checklist answer controls are in Spanish. |
 | `tests/regressions/resume-error-alert.e2e.ts` | #20: a wrong resume link sent with Enter is announced (the error is an alert). |
 | `tests/regressions/login-empty-field-error.e2e.ts` | #17: sign-in names the empty field and marks only that field invalid. |
 | `tests/regressions/peer-groups-left-out.e2e.ts` | #16: staff Peers says how many organizations are in no group and why. |
 | `tests/regressions/peers-card-link-target.e2e.ts` | #18: report links in "Asked to be connected" cards meet the 24 px target size. |
-| `tests/regressions/quick-previous-history.e2e.ts` | #24, #27: an answered card says Next; Previous retraces the cards seen in Planning (including multiple-choice questions) and Next walks them again. |
+| `tests/regressions/quick-previous-history.e2e.ts` | #24, #27: an answered card says Next; Previous retraces the cards seen in Planning (including multiple-choice questions) and Next walks them again; the first card's Previous is present but unavailable. |
 | `tests/regressions/quick-progress-position.e2e.ts` | #26: "Question N of M" and its bar follow the card on screen (a multiple-choice question is one card; Previous lowers both); on phones the bar takes most of the row. |
 | `tests/regressions/language-switch.e2e.ts` | #25: Español in the top-right switch gives Spanish questions with nothing else to do; the questionnaire switch sets the draft (report) language; a submit carries `language: "es"` (the POST is intercepted, no report is made). |
-| `tests/regressions/start-several-states.e2e.ts` | #23: two states or territories added on the start page come back, in order, from the draft. |
+| `tests/regressions/start-several-states.e2e.ts` | #23, #31: two states or territories added on the start page show as chips on one row, one can be removed, and they come back, in order, from the draft. |
+| `tests/regressions/answer-style-chooser.e2e.ts` | #28: before the first question, one sample statement in all three answer styles; the choice sticks and "Change how I answer" switches later. |
+| `tests/regressions/quick-ladder-filled-in.e2e.ts` | #29: after a multiple-choice question, "Your choice filled in these answers" shows selected Yes / No pairs that flip with one tap. |
+| `tests/regressions/quick-nav-every-card.e2e.ts` | #30: every One at a time card has Previous and Next in the same place; an unavailable one stays and says why. |
+| `tests/regressions/report-plan-layout.e2e.ts` | #32 to #37: Your plan reads Summary about your organization, the roadmap, then Start here, and Start here shows only the steps of open weeks. |
+| `tests/regressions/roadmap-timeline-badge.e2e.ts` | #38: the roadmap opens on a 12-week timeline with points and badges first and no step count; picking a week shows it (a locked week says when it opens); finishing a week pops up a badge dialog once (Escape returns focus); the report's roadmap card names this week without a count. Ticks are answered in the page. |
 | `tests/mobile/intake-resume-link.e2e.ts` | Phone bug bash (phone target): the save and teammate links show in full in their box (an iPhone SE showed about 10 characters). Makes one "QA Phone" draft. |
-| `tests/mobile/report-coach-answer.e2e.ts` | Phone bug bash: after Ask about your report, the new answer is on screen (it landed above it). The POST is stubbed in the page. |
+| `tests/mobile/report-coach-answer.e2e.ts` | Phone bug bash, #37: Chat about your report opens as a dialog and the new answer is on screen. The POST is stubbed in the page. |
 | `tests/mobile/report-larger-text-bar.e2e.ts` | Phone bug bash: with Larger text, the report's sticky "On this page" bar stays on one line. |
-| `tests/mobile/report-scores-caption.e2e.ts` | Phone bug bash: the scores table caption stays inside its scroll frame, also after swiping the table. |
 | `tests/mobile/report-week-done-cheer.e2e.ts` | Phone bug bash: finishing a roadmap week shows "Week N done!" where focus lands (it was off screen). The POST is answered in the page, so Riverbend is unchanged. |
 | `tests/demo/demo-path.e2e.ts` | Tag `demo`: the demo script's on-stage path. Leader: one-click Southside sample to "Your report is ready", Start here, PDF. Staff: Training needs, Ask the data preset, Peers, the Southside drawer's CloudWatch trace link. |
 

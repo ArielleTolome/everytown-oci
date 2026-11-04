@@ -394,10 +394,9 @@ def staff_roadmaps():
 def build_week_pdf(sub, week, state):
     """One printable page: the week's steps with empty boxes, owners, the resource and progress so far."""
     import os
-    from fpdf import FPDF
     import report
 
-    pdf = FPDF(format="Letter")
+    pdf = report.Branded(format="Letter")
     for style, suffix in (("", "Regular"), ("B", "Bold"), ("I", "Italic")):
         pdf.add_font(report.FONT, style, os.path.join(report.FONT_DIR, "AtkinsonHyperlegible-%s.ttf" % suffix))
     pdf.add_font("NotoMath", "", os.path.join(report.FONT_DIR, "NotoSansMath-Regular.ttf"))
@@ -409,7 +408,7 @@ def build_week_pdf(sub, week, state):
     pdf.set_creator("OCI Capacity Coach")
     pdf.set_lang(lang)
     pdf.set_margins(20, 16, 20)
-    pdf.set_auto_page_break(True, margin=16)
+    pdf.set_auto_page_break(True, margin=20)  # clears the confidentiality footer
     pdf.add_page()
     width = pdf.w - pdf.l_margin - pdf.r_margin
 
@@ -471,6 +470,7 @@ def build_week_pdf(sub, week, state):
     pdf.ln(2)
     text("Check off steps on your roadmap page to track your progress. Generated from synthetic data for the AWS "
          "Breaking Barriers demo.", 9, color=report.MUTED, h=5)
+    pdf.confidential()
     return bytes(pdf.output())
 
 

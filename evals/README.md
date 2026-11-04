@@ -1,6 +1,6 @@
 # Evals: test the AI steps before a release
 
-The OCI app has four AI steps: the report writer (with its plain-language rewrite), the report coach ("Ask about
+The OCI app has four AI steps: the report writer (with its plain-language rewrite), the report coach ("Chat about
 your report") and staff "Ask the data". Scores never come from the model, but the text around them does. This
 package tests that text on fixed, synthetic datasets, with code checks (exact rules) and LLM judges (qualities
 code cannot measure), and publishes every run to Amazon CloudWatch (metrics plus one log event per example) so two

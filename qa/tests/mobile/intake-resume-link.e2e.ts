@@ -11,6 +11,7 @@ test('the whole resume link is readable on a phone', { session: 'demo' }, async 
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Phone Resume Link Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'One at a time').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
   await screen.getByRole('button', 'Save and finish later').tap();
   await expect(screen.getByLabel('Your resume link')).toBeVisible({ timeout: 15_000 });

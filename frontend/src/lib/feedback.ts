@@ -12,12 +12,12 @@ const MAX = 1000;
 const PARTS = ["truths", "start_here", "plan", "roadmap", "coach"] as const;
 /** English names match the report headings; staff always read English. */
 const PART_EN: Record<FeedbackSection, string> = {
-  overall: "The report as a whole", truths: "What's true about you", start_here: "Start here",
-  plan: "Your plan", roadmap: "Your 12-week roadmap", coach: "Ask about your report",
+  overall: "The report as a whole", truths: "Summary about your organization", start_here: "Start here",
+  plan: "Your plan", roadmap: "Your 12-week roadmap", coach: "Chat about your report",
 };
 const PART_ES: Record<FeedbackSection, string> = {
-  overall: "El informe en general", truths: "Lo que es cierto sobre ustedes", start_here: "Por dónde empezar",
-  plan: "Su plan", roadmap: "Su plan de 12 semanas", coach: "Preguntas sobre su informe",
+  overall: "El informe en general", truths: "Resumen de su organización", start_here: "Por dónde empezar",
+  plan: "Su plan", roadmap: "Su plan de 12 semanas", coach: "Chat sobre su informe",
 };
 
 const EN = {

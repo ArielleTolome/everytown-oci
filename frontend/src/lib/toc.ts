@@ -5,22 +5,16 @@ import { $$, esc } from "./dom";
 import { icon } from "./icons";
 import { PHONE } from "./report-ui";
 
+// In page order (#35, #36): the summary, roadmap, Start here, chat, forms, then the research; then the Explore layer.
 const SECTIONS: [string, string][] = [
-  ["truth-title", "What's true about you"],
-  ["learned-title", "What we learned about you"],
-  ["focus-title", "Start here"],
+  ["truth-title", "Summary about your organization"],
   ["roadmap-title", "Your 12-week roadmap"],
-  ["coach-title", "Ask about your report"],
+  ["focus-title", "Start here"],
+  ["coach-title", "Chat about your report"],
   ["support-title", "Ask for support"],
   ["peers-title", "Connect with similar groups"],
+  ["learned-title", "What we learned about you"],
   ["explore-title", "Explore any area"],
-  ["stages-title", "Where you are today"],
-  ["progress-title", "Progress"],
-  ["strengths-title", "Strengths"],
-  ["plan-title", "30 / 60 / 90 day plan"],
-  ["conversation-title", "Conversation guide"],
-  ["gaps-title", "All growth priorities"],
-  ["sources-title", "Sources"],
 ];
 
 const WIDE = window.matchMedia("(min-width: 1100px)");

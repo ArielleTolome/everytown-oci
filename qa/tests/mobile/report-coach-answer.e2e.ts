@@ -3,35 +3,44 @@ import { expect } from 'e2e';
 
 const ID = process.env.OCI_REPORT_ID ?? '5c818adc-0e76-483c-84be-9da91bd5cc09';
 
-// v1.8 phone bug bash (owner check): after "Ask" on a phone the answer was added above the tall question form, about a
-// screen above the view, so nothing seemed to happen. The answer request is stubbed in the page: no AI cost, and the
+// #37 (v1.10 user test): "Ask about your report" is now a chat behind a floating "Chat about your report" button.
+// The panel is a modal dialog: the earlier conversation loads on open, Enter sends, the new answer is on screen,
+// Escape closes it and focus returns to the button. The ask requests are stubbed in the page: no AI cost, and the
 // shared report's question log is unchanged.
-test('a new coach answer is on screen after Ask', { session: 'staff' }, async ({ app, screen, browser }) => {
-  // The question log is stubbed before the page loads too, so the test never depends on how many of the shared
-  // report's 15 questions earlier runs and explorers used up.
+test('the chat opens from the floating button, answers on screen, and Escape returns focus', { session: 'staff' }, async ({ app, screen, browser }) => {
   await browser.addInitScript(() => {
     const real = window.fetch;
     const json = (body: unknown) => Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } }));
     window.fetch = (input: RequestInfo | URL, init?: RequestInit) => !String(input).endsWith('/ask') ? real(input, init)
       : init?.method === 'POST' ? json({ answer: 'QA stub answer: list every funding source first.', gap_ids: [], resources: [], remaining: 5 })
-      : json({ messages: [], remaining: 15 });
+      : json({ messages: [{ question: 'QA earlier question?', answer: 'QA stub earlier answer.', gap_ids: [], resources: [] }], remaining: 6 });
   });
   await app.open(`/results/?id=${ID}`);
-  await expect(screen.getByRole('heading', 'Ask about your report')).toBeVisible({ timeout: 15_000 });
-  await browser.evaluate(() => {
-    document.querySelector('#coach-form')!.closest('details')?.setAttribute('open', ''); // phones: "Ask a question"
+  await expect(screen.getByRole('link', 'Open my roadmap')).toBeVisible({ timeout: 15_000 });
+  // The floating button sits at the bottom right, inside the screen and clear of the phone's sticky bar.
+  const fab = await browser.evaluate(() => {
+    const r = document.querySelector('.chat-fab')!.getBoundingClientRect(), bar = document.querySelector('#toc')!.getBoundingClientRect();
+    return { right: Math.round(innerWidth - r.right), bottom: Math.round(innerHeight - r.bottom), top: Math.round(r.top), barBottom: Math.round(bar.bottom), phone: innerWidth < 600 };
   });
-  await screen.getByLabel('Your question').fill('What is the first step this week?');
-  // Ask from where a reader types: the question box in the middle of the screen.
-  await browser.evaluate(() => {
-    document.querySelector('#coach-question')!.scrollIntoView({ block: 'center' });
-    document.querySelector<HTMLFormElement>('#coach-form')!.requestSubmit();
-  });
+  expect(fab.right).toBeGreaterThanOrEqual(8);
+  expect(fab.bottom).toBeGreaterThanOrEqual(8);
+  if (fab.phone) expect(fab.top).toBeGreaterThan(fab.barBottom); // the phone's sticky "On this page" bar
+  await screen.getByRole('button', 'Chat about your report').tap();
+  await expect(screen.getByRole('dialog', 'Chat about your report')).toBeVisible();
+  await expect(screen.getByText('QA stub earlier answer.')).toBeVisible();
+  await expect(screen.getByRole('button', 'What is the first step this week?')).toBeVisible();
+  await screen.getByLabel('Your question').fill('What should we do in week 5?');
+  await browser.evaluate(() => document.querySelector<HTMLElement>('#coach-question')!.focus());
+  await browser.keyboard.press('Enter');
   await expect(screen.getByText('QA stub answer: list every funding source first.')).toBeVisible();
-  const top = await browser.evaluate(() => {
-    const turns = document.querySelectorAll('.coach-turn');
-    return Math.round(turns[turns.length - 1].getBoundingClientRect().top);
+  const seen = await browser.evaluate(() => {
+    const turns = document.querySelectorAll('#coach-log .coach-turn');
+    const a = turns[turns.length - 1].querySelector('.coach-turn__a')!.getBoundingClientRect();
+    const box = document.querySelector('#chat-scroll')!.getBoundingClientRect();
+    return { turns: turns.length, inside: a.top >= box.top - 1 && a.top < box.bottom, typing: document.querySelector('#coach-status')!.textContent };
   });
-  expect(top).toBeGreaterThanOrEqual(0);
-  expect(top).toBeLessThan(await browser.evaluate(() => innerHeight));
+  expect(seen).toEqual({ turns: 2, inside: true, typing: '' });
+  await browser.keyboard.press('Escape');
+  await expect(screen.getByRole('dialog', 'Chat about your report')).not.toBeVisible();
+  expect(await browser.evaluate(() => document.activeElement?.classList.contains('chat-fab'))).toBe(true);
 });

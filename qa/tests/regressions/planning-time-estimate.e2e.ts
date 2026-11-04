@@ -13,6 +13,7 @@ test('Planning time estimate matches between intake and questionnaire', { sessio
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Time Estimate Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'One at a time').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
   await expect(screen.getByText(/left in Planning$/)).toHaveText(`About ${minutes} minutes left in Planning`);
 });

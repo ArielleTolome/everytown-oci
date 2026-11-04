@@ -362,7 +362,7 @@ import Icon from "../components/Icon.astro";
   }
 
   /** Issue #23: several states or territories. A select plus an Add button (adding on change would add every state a
-   *  keyboard user arrows past), a list of chosen ones with their own Remove buttons, focus kept on a control. */
+   *  keyboard user arrows past), the chosen ones as chips with their own remove button (#31), focus kept on a control. */
   const MAX_STATES = 10;
   let pickedStates: string[] = [];
   function wireStates(all: { code: string; name: string }[], saved: string[]) {
@@ -372,7 +372,7 @@ import Icon from "../components/Icon.astro";
     const render = () => {
       list.innerHTML = pickedStates.map((c) => `
         <li class="state-picks__item"><span>${esc(name.get(c)!)}</span>
-          <button type="button" class="btn btn-secondary btn-sm" data-state-remove="${esc(c)}" aria-label="Remove ${esc(name.get(c)!)}">${icon("x")}<span class="state-picks__remove-text" aria-hidden="true">Remove</span></button></li>`).join("");
+          <button type="button" class="state-picks__remove" data-state-remove="${esc(c)}" aria-label="Remove ${esc(name.get(c)!)}">${icon("x")}</button></li>`).join("");
       for (const opt of sel.options) opt.disabled = !!opt.value && pickedStates.includes(opt.value);
       $("#state-add")!.hidden = pickedStates.length >= MAX_STATES;
     };
@@ -471,6 +471,7 @@ import Icon from "../components/Icon.astro";
         org_meta: orgMeta(),
         respondent: respondent(),
         org_links: social.length ? { social } : null,
+        view: draft?.view, // #28: how they chose to answer, so editing these details does not ask again
       });
       location.assign("/questionnaire/");
     });

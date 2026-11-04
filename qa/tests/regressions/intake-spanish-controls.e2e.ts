@@ -10,6 +10,7 @@ test('with questions in Español the bar, area nav and save button read in Spani
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Spanish Bar Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'One at a time').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
   await screen.getByRole('radio', 'Español').check();
   await expect(screen.getByRole('button', /^Siguiente\b.*Recaudación de fondos/)).toBeVisible();

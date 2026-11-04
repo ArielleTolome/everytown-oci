@@ -9,8 +9,8 @@ test('a finished area is not labelled In progress in the area nav', { session: '
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Area Nav Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', "Checklist: tick what's true").tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
-  await screen.getByRole('radio', "Checklist: tick what's true").check();
   await screen.getByRole('button', "Done: everything I didn't tick is a No").tap();
   await browser.reload(); // what a revisit renders
   await expect(screen.getByText('Planning is done')).toBeVisible();

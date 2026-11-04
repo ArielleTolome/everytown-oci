@@ -18,13 +18,22 @@ const layout = (): Layout => ({
     .map((e) => `${e.id || e.getAttribute('name')} ${getComputedStyle(e).fontSize}`),
 });
 
-async function startQuestionnaire({ app, screen }: { app: App; screen: Screen }) {
+// #28: a new draft first asks how to answer (one card per view); "Change how I answer" reopens the same choice.
+type View = (typeof VIEWS)[number];
+async function startQuestionnaire({ app, screen }: { app: App; screen: Screen }, view: View = 'One at a time') {
   await app.open('/');
   await screen.getByLabel('Executive director').check();
   await screen.getByLabel('Your job title').fill('QA Lead');
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill(ORG);
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', view).tap();
+  await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
+}
+
+async function changeView(screen: Screen, view: View) {
+  await screen.getByRole('button', 'Change how I answer').tap();
+  await screen.getByRole('button', view).tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
 }
 
@@ -41,9 +50,12 @@ test('the start page, resume page and every questionnaire view never scroll side
     expect(await browser.evaluate(layout), path).toMatchObject({ overflow: 0, smallFields: [] });
   }
   await startQuestionnaire({ app, screen });
+  await screen.getByRole('button', 'Change how I answer').tap();
+  await expect(screen.getByRole('heading', 'How would you like to answer?', { level: 1 })).toBeVisible();
+  expect(await browser.evaluate(layout), 'How would you like to answer?').toMatchObject({ overflow: 0, smallFields: [] });
+  await screen.getByRole('button', 'One at a time').tap();
   for (const view of VIEWS) {
-    await screen.getByRole('radio', view).check();
-    await expect(screen.getByRole('radio', view)).toBeChecked();
+    await changeView(screen, view);
     expect(await browser.evaluate(layout), view).toMatchObject({ overflow: 0, smallFields: [] });
   }
 });
@@ -71,12 +83,12 @@ test('phone: the start page shows Start questionnaire on the first screen and fo
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill(ORG);
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'One at a time').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
 });
 
 test('phone: One at a time shows the first statement with Yes and No above the sticky bar', { session: 'demo' }, async ({ app, screen, browser }) => {
   await startQuestionnaire({ app, screen });
-  await expect(screen.getByRole('radio', 'One at a time')).toBeChecked();
   await expect(screen.getByRole('button', /^Yes/)).toBeVisible();
   const first = await browser.evaluate(() => {
     scrollTo(0, 0);
@@ -90,9 +102,7 @@ test('phone: One at a time shows the first statement with Yes and No above the s
 });
 
 test('the sticky bar never covers the focused answer', { session: 'demo' }, async ({ app, screen, browser }) => {
-  await startQuestionnaire({ app, screen });
-  await screen.getByRole('radio', 'Yes / No for each').check();
-  await expect(screen.getByRole('radio', 'Yes / No for each')).toBeChecked();
+  await startQuestionnaire({ app, screen }, 'Yes / No for each');
   const covered: string[] = [];
   let answers = 0;
   // Tab through the first 15 statements as a keyboard or switch user would (each Yes / No pair is one tab stop).
@@ -116,8 +126,7 @@ test('the sticky bar never covers the focused answer', { session: 'demo' }, asyn
 test('every answer target is at least 44 by 44 px in all three views', { session: 'demo' }, async ({ app, screen, browser }) => {
   await startQuestionnaire({ app, screen });
   for (const view of VIEWS) {
-    await screen.getByRole('radio', view).check();
-    await expect(screen.getByRole('radio', view)).toBeChecked();
+    await changeView(screen, view);
     // One at a time buttons, or the label around each radio / checkbox (the label is the target).
     const targets = await browser.evaluate(() => [...document.querySelectorAll<HTMLElement>('.quick__answers button, #area-form input[type=radio], #area-form input[type=checkbox]')]
       .map((e) => e.closest<HTMLElement>('label, button') ?? e)
@@ -134,7 +143,8 @@ test('report and roadmap fit the screen; each Start here step row is one tap tar
   // The label around each checkbox is the target: 44 px on phones (48 px rows), WCAG 2.2 AA's 24 px elsewhere.
   const results = await browser.evaluate(() => {
     const min = innerWidth > 599 ? 24 : 44;
-    const rows = [...document.querySelectorAll<HTMLElement>('#focus-body input[type=checkbox]')].map((e) => (e.closest('label') ?? e).getBoundingClientRect());
+    // Steps of weeks not open yet are hidden (#36); every step that shows must be a full tap target.
+    const rows = [...document.querySelectorAll<HTMLElement>('#focus-body input[type=checkbox]')].filter((e) => e.getClientRects().length).map((e) => (e.closest('label') ?? e).getBoundingClientRect());
     return {
       overflow: document.documentElement.scrollWidth - innerWidth,
       rows: rows.length,

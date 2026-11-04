@@ -1,13 +1,16 @@
-// "Ask about your report" (v0.9). Questions go to POST /api/assessments/<id>/ask, where one fixed AI step answers from
-// the report and the CVI library. Starter questions are written by code from the report. Answers never change scores.
+// "Chat about your report" (v1.10, #37; was "Ask about your report", v0.9). Questions go to POST /api/assessments/<id>/ask,
+// where one fixed AI step answers from the whole report and the CVI library. Starter questions are written by code from
+// the report. Answers never change scores. The chat is a native modal <dialog>: the page behind is inert, Escape closes it
+// and focus returns to the button that opened it.
 import { api, ApiError, type Assessment, type Resource } from "./api";
 import { esc, hostOf, safeUrl } from "./dom";
 import { icon } from "./icons";
-import { errorText, fold } from "./report-ui";
+import { errorText } from "./report-ui";
 
 interface Turn { question: string; answer: string; gap_ids: string[]; resources: Resource[] }
 interface AskResponse extends Turn { remaining: number }
 const MAX_CHARS = 500;
+const SCOPE = "your summary, your top priorities, your roadmap, your 90-day plan or any area";
 
 /** Four starter questions built from the report itself, in the report's language. */
 export function starters(sub: Assessment): string[] {
@@ -25,27 +28,48 @@ export function starters(sub: Assessment): string[] {
   return out;
 }
 
-/** Inner markup of the section (results.ts adds the section heading). */
-export function coachBody(sub: Assessment): string {
+/** The short in-page card on "Your plan"; it opens the same chat as the floating button. */
+export function coachCard(): string {
+  return `<section class="section coach" aria-labelledby="coach-title" data-no-print>
+    <div class="section-head"><div><span class="eyebrow">Questions and answers</span><h2 id="coach-title">Chat about your report</h2></div></div>
+    <div class="card chat-card">
+      <p>Ask about ${SCOPE}, in your own words, like you would ask a coach.</p>
+      <button type="button" class="btn btn-primary" data-chat-open aria-haspopup="dialog">${icon("message")}<span>Open the chat</span></button>
+    </div>
+  </section>`;
+}
+
+/** Floating button plus the chat dialog (side panel from 600px, full-height sheet on phones). */
+export function coachChat(sub: Assessment): string {
   const lang = esc(sub.language || "en");
-  return `<p class="notice">${icon("shield")}<span>Answers are written with AI from your report and the CVI library, so check them with your team. Asking never changes your scores.</span></p>
-    <div class="coach-log" id="coach-log" role="log" aria-live="polite" aria-label="Your questions and answers"></div>
-    ${fold("Ask a question", `<form class="card coach-form" id="coach-form" novalidate>
+  return `<button type="button" class="chat-fab" data-chat-open aria-haspopup="dialog" data-no-print>${icon("message")}<span>Chat about your report</span></button>
+  <dialog class="drawer chat" id="chat-panel" aria-labelledby="chat-title">
+    <div class="chat__head">
+      <div>
+        <h2 id="chat-title" tabindex="-1">Chat about your report</h2>
+        <p class="source-tag source-tag--ai">${icon("pencil")}<span>Written by AI from your report. Check answers with your team.</span></p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm chat__close" data-chat-close>${icon("x")}<span>Close</span></button>
+    </div>
+    <div class="chat__scroll" id="chat-scroll">
+      <div class="coach-turn__a chat__hello"><p>Hi. I can answer questions about ${SCOPE}. Asking never changes your scores.</p></div>
       <p class="mini-label" id="coach-starters-label">Try one of these</p>
       <ul class="coach-starters" role="list" aria-labelledby="coach-starters-label" lang="${lang}">${starters(sub).map((q) => `
         <li><button type="button" class="btn btn-secondary btn-sm coach-starter" data-question="${esc(q)}">${esc(q)}</button></li>`).join("")}
       </ul>
-      <div class="field">
-        <label for="coach-question">Your question</label>
-        <p class="hint" id="coach-hint">Up to ${MAX_CHARS} characters. <span id="coach-remaining"></span></p>
-        <p class="field-error" id="coach-error" role="alert" hidden></p>
-        <textarea class="input coach-form__input" id="coach-question" name="question" rows="3" maxlength="${MAX_CHARS}" aria-describedby="coach-hint" enterkeyhint="send"></textarea>
+      <div class="coach-log" id="coach-log" role="log" aria-live="polite" aria-label="Your conversation"></div>
+      <p class="chat__status" id="coach-status" role="status"></p>
+    </div>
+    <form class="chat__composer" id="coach-form" novalidate>
+      <p class="field-error" id="coach-error" role="alert" hidden></p>
+      <label class="visually-hidden" for="coach-question">Your question</label>
+      <div class="chat__row">
+        <textarea class="input chat__input" id="coach-question" name="question" rows="2" maxlength="${MAX_CHARS}" placeholder="Type your question" aria-describedby="coach-hint" enterkeyhint="send"></textarea>
+        <button type="submit" class="btn btn-primary chat__send">${icon("arrow-right")}<span>Send</span></button>
       </div>
-      <div class="actions actions--start">
-        <button type="submit" class="btn btn-primary">${icon("message")}<span>Ask</span></button>
-        <p class="coach-form__status" id="coach-status" role="status"></p>
-      </div>
-    </form>`)}`;
+      <p class="hint" id="coach-hint">Enter sends. Shift and Enter starts a new line.</p>
+    </form>
+  </dialog>`;
 }
 
 function turnHtml(t: Turn, sub: Assessment): string {
@@ -53,8 +77,8 @@ function turnHtml(t: Turn, sub: Assessment): string {
   const gaps = new Map(sub.gaps.map((g) => [g.question_id, g]));
   const paras = t.answer.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join("");
   return `<div class="coach-turn">
-    <div class="coach-turn__q"><p class="mini-label">You asked</p><p>${esc(t.question)}</p></div>
-    <div class="coach-turn__a"><p class="mini-label mini-label--blue">Answer</p><div class="coach-turn__text" lang="${lang}">${paras}</div>
+    <div class="coach-turn__q"><p class="visually-hidden">You asked:</p><p>${esc(t.question)}</p></div>
+    <div class="coach-turn__a"><p class="visually-hidden">Answer:</p><div class="coach-turn__text" lang="${lang}">${paras}</div>
       ${t.gap_ids.length ? `<div class="basis" lang="en"><p class="mini-label">Based on your answers to</p><ul class="basis__list" role="list">${t.gap_ids.map((id) =>
         `<li>${icon("circle-dashed")}<span><span class="chip">${esc(id)}</span> ${esc(gaps.get(id)?.question_text ?? "")}</span></li>`).join("")}</ul></div>` : ""}
       ${t.resources.map((r) => `<p class="resource-link">${icon("book")}<span><span class="visually-hidden">Resource: </span><a href="${esc(safeUrl(r.url))}" rel="noopener">${esc(r.title)}</a> <span class="url-domain">(${esc(hostOf(r.url))})</span></span></p>`).join("")}
@@ -63,14 +87,18 @@ function turnHtml(t: Turn, sub: Assessment): string {
 }
 
 export function wireCoach(sub: Assessment, root: ParentNode) {
-  const form = root.querySelector<HTMLFormElement>("#coach-form");
-  const log = root.querySelector<HTMLElement>("#coach-log");
-  if (!form || !log) return;
-  const url = `/assessments/${encodeURIComponent(sub.id)}/ask`;
+  const dialog = root.querySelector<HTMLDialogElement>("#chat-panel");
+  if (!dialog) return;
+  const form = dialog.querySelector<HTMLFormElement>("#coach-form")!;
+  const log = dialog.querySelector<HTMLElement>("#coach-log")!;
+  const scroller = dialog.querySelector<HTMLElement>("#chat-scroll")!;
   const input = form.querySelector<HTMLTextAreaElement>("#coach-question")!;
   const submit = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
-  const status = form.querySelector<HTMLElement>("#coach-status")!;
+  const status = dialog.querySelector<HTMLElement>("#coach-status")!;
   const err = form.querySelector<HTMLElement>("#coach-error")!;
+  const url = `/assessments/${encodeURIComponent(sub.id)}/ask`;
+  let opener: HTMLElement | null = null;
+  let loaded = false;
   let busy = false;
 
   const showError = (msg: string) => {
@@ -79,41 +107,56 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
     input.setAttribute("aria-invalid", msg ? "true" : "false");
     input.setAttribute("aria-describedby", msg ? "coach-hint coach-error" : "coach-hint");
   };
+  // A limit was hit (or this viewer may not ask): the composer and starters give way to one plain message.
   const closed = (msg: string) => {
+    if (!form.isConnected) return;
     const hadFocus = form.contains(document.activeElement);
-    (form.closest("[data-fold]") ?? form).outerHTML = `<p class="notice" id="coach-closed" tabindex="-1">${icon("info")}<span>${esc(msg)}</span></p>`;
-    if (hadFocus) root.querySelector<HTMLElement>("#coach-closed")?.focus();
+    dialog.querySelector(".coach-starters")?.remove();
+    dialog.querySelector("#coach-starters-label")?.remove();
+    form.outerHTML = `<p class="notice chat__closed" id="coach-closed" tabindex="-1">${icon("info")}<span>${esc(msg)}</span></p>`;
+    if (hadFocus) dialog.querySelector<HTMLElement>("#coach-closed")?.focus();
   };
-  const setRemaining = (n: number) => {
-    form.querySelector("#coach-remaining")!.textContent = `You can ask ${n} more ${n === 1 ? "question" : "questions"} about this report.`;
-    if (n <= 0) closed("You have used all your questions for this report. Talk the rest through with your team, or ask the Community Safety Fund for support.");
+  const LIMIT = "You have used all your questions for this report. Talk the rest through with your team, or ask the Community Safety Fund for support.";
+
+  // The conversation so far, loaded on first open and filled quietly so screen readers don't hear it all again.
+  const load = () => {
+    if (loaded) return;
+    loaded = true;
+    log.setAttribute("aria-live", "off");
+    api.get<{ messages: Turn[]; remaining: number }>(url).then((res) => {
+      log.innerHTML = res.messages.map((t) => turnHtml(t, sub)).join("");
+      scroller.scrollTop = scroller.scrollHeight;
+      if (res.remaining <= 0) closed(LIMIT);
+    }).catch((ex) => {
+      if (ex instanceof ApiError && ex.status === 403) closed("Only the person who submitted this assessment, or Everytown staff, can ask about it.");
+      else loaded = false; // try again on the next open
+    }).finally(() => window.setTimeout(() => log.setAttribute("aria-live", "polite"), 100));
   };
 
-  // Earlier questions from this report; filled quietly so screen readers don't hear the whole history again.
-  log.setAttribute("aria-live", "off");
-  api.get<{ messages: Turn[]; remaining: number }>(url).then((res) => {
-    log.innerHTML = res.messages.map((t) => turnHtml(t, sub)).join("");
-    setRemaining(res.remaining);
-  }).catch((ex) => {
-    if (ex instanceof ApiError && ex.status === 403) closed("Only the person who submitted this assessment, or Everytown staff, can ask about it.");
-  }).finally(() => window.setTimeout(() => log.setAttribute("aria-live", "polite"), 100));
-
-  form.addEventListener("click", (e) => {
+  root.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-chat-open]");
+    if (!btn) return;
+    opener = btn;
+    dialog.showModal();
+    // Touch screens: land on the heading, so the on-screen keyboard does not cover the starters at once.
+    const field = dialog.querySelector<HTMLTextAreaElement>("#coach-question");
+    (field && !matchMedia("(pointer: coarse)").matches ? field : dialog.querySelector<HTMLElement>("#chat-title")!).focus();
+    load();
+  });
+  dialog.querySelector("[data-chat-close]")!.addEventListener("click", () => dialog.close());
+  dialog.addEventListener("close", () => opener?.focus());
+  dialog.addEventListener("click", (e) => {
+    // A click on the backdrop (the dialog box itself, outside its content) closes it, like Escape.
+    if (e.target === dialog) { dialog.close(); return; }
     const chip = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-question]");
-    if (!chip) return;
+    if (!chip || !dialog.contains(form)) return;
     input.value = chip.dataset.question!;
     form.requestSubmit();
   });
 
-  // On-screen keyboards: the Send key sends (Shift+Enter still breaks a line), and Ask stays above the keyboard.
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey && !e.isComposing && matchMedia("(pointer: coarse)").matches) { e.preventDefault(); form.requestSubmit(); }
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
   });
-  input.addEventListener("focus", () => window.visualViewport?.addEventListener("resize", () => {
-    const vv = window.visualViewport!;
-    const below = submit.getBoundingClientRect().bottom + 8 - (vv.offsetTop + vv.height);
-    if (below > 0) window.scrollBy(0, below);
-  }, { once: true }));
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -123,20 +166,23 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
     showError("");
     busy = true;
     submit.setAttribute("aria-disabled", "true");
-    status.innerHTML = `${icon("loader", "spin")}<span>Looking at your report…</span>`;
+    // The question shows at once as the reader's bubble; the typing dots stand in for the answer.
+    log.insertAdjacentHTML("beforeend", `<div class="coach-turn" data-pending><div class="coach-turn__q"><p class="visually-hidden">You asked:</p><p>${esc(question)}</p></div></div>`);
+    const pending = log.lastElementChild as HTMLElement;
+    input.value = "";
+    status.innerHTML = `<span class="chat__typing" aria-hidden="true"><i></i><i></i><i></i></span><span>Looking at your report…</span>`;
+    status.scrollIntoView({ block: "nearest" });
     try {
       const res = await api.post<AskResponse>(url, { question });
-      log.insertAdjacentHTML("beforeend", turnHtml({ ...res, question }, sub));
-      // The log sits above the form; on phones the form is taller than the screen, so a new answer can land off screen
-      // (above it, or below it when the page moved meanwhile): bring it into view only then, so desktop never moves.
-      const turn = log.lastElementChild!;
-      const at = turn.getBoundingClientRect().top;
-      if (at < 0 || at > innerHeight - 80) turn.scrollIntoView({ block: "start" });
-      input.value = "";
+      pending.outerHTML = turnHtml({ ...res, question }, sub);
       status.textContent = "";
-      setRemaining(res.remaining);
+      // Bring the start of the new turn into view, so a long answer is read from its first line.
+      log.lastElementChild!.scrollIntoView({ block: "start" });
+      if (res.remaining <= 0) closed(LIMIT);
     } catch (ex) {
+      pending.remove();
       status.textContent = "";
+      input.value = question;
       const msg = errorText(ex, "We could not answer right now. Please try again in a minute.");
       if (ex instanceof ApiError && (ex.status === 429 || ex.status === 403)) { closed(msg); return; }
       showError(msg);

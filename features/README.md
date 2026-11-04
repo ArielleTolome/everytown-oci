@@ -8,7 +8,7 @@ Optional feature modules for the Flask API. Each `<name>.py` defines a Flask Blu
 |---|---|
 | `__init__.py` | `blueprints()`: imports every module in this folder (sorted by name) and yields its `bp`. |
 | `bi.py` | Staff BI from stored engine results: training needs, gaps by domain, common gaps, change over time. `GET /api/staff/bi`, `POST /api/staff/ask` ("Ask the data": one Claude call picks a pre-built analysis from fixed lists, code runs it, a second call words the answer), `GET /api/staff/network-report.pdf`. |
-| `coach.py` | "Ask about your report": one fixed Claude call per question, answer ids checked against the report's priorities and the resource catalog. `GET, POST /api/assessments/<sid>/ask`. |
+| `coach.py` | "Chat about your report": one fixed Claude call per question with the report and the 12-week roadmap, answer ids checked against the report's priorities and the resource catalog. `GET, POST /api/assessments/<sid>/ask`. |
 | `coach.sql` | Table `coach_messages` (questions and answers per assessment). |
 | `drafts.py` | Save and resume, and "send this area to a teammate" via random capability tokens. Answers only merge. `POST /api/drafts`, `GET /api/drafts/<token>`, `POST /api/drafts/<token>`, `POST /api/drafts/<token>/share`. |
 | `drafts.sql` | Tables `drafts` and `draft_shares`. |

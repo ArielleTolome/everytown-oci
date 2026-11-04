@@ -3,7 +3,7 @@
 import { api, ApiError, type Assessment, type Resource } from "./api";
 import { $, $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
 import { icon } from "./icons";
-import { errorText, fold, PHONE, wireDownloads } from "./report-ui";
+import { errorText, PHONE, wireDownloads } from "./report-ui";
 
 export interface RoadmapTask { id: string; text: string; gap_ids: string[]; owner: string; lang: string; done: boolean; retake?: boolean }
 export interface RoadmapWeek {
@@ -44,10 +44,6 @@ export function shortDate(iso: string): string {
   return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-function bar(pct: number, label: string): string {
-  return `<div class="rm-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${esc(label)}"><span class="rm-bar__fill" style="width:${pct}%"></span></div>`;
-}
-
 const where = (r: Roadmap) => r.current_week ?? (r.weeks_done === r.weeks.length ? r.weeks.length : r.next_unlock?.week ?? 1);
 
 // ---------- results page teaser (placed by results.ts inside its own <section> and <h2>) ----------
@@ -76,18 +72,16 @@ export function fillRoadmapTeaser(root: ParentNode, r: Roadmap): void {
   if (!box) return;
   const now = where(r);
   const week = r.weeks.find((w) => w.n === now);
-  const todo = (week?.tasks ?? []).filter((t) => !t.done).slice(0, 3);
   const allDone = r.weeks_done === r.weeks.length;
+  // #38: one line on what this week is; the step count and its bar confused first-time readers.
   box.innerHTML = `
     <div class="rm-teaser__head">
-      <h3>${allDone ? "All 12 weeks done" : `Week ${now} of ${r.weeks.length}`}<span class="visually-hidden">, </span><span class="rm-teaser__count">${r.done_tasks} of ${plural(r.total_tasks, "step", "steps")} done</span></h3>
+      <h3>${allDone ? "All 12 weeks done" : `Week ${now} of ${r.weeks.length}`}</h3>
       <span class="rm-chip">${svg("first-step")}${esc(r.level)} · ${r.points} points</span>
     </div>
-    ${bar(r.pct, "Roadmap progress")}
     ${allDone ? `<p>You finished every step. Take the assessment again to see how far you have come.</p>`
       : r.current_week === null && r.next_unlock ? `<p class="rm-teaser__note">${icon("lock")}<span>This week is done. Week ${r.next_unlock.week} opens on ${esc(shortDate(r.next_unlock.date))}.</span></p>`
-      : week?.focus && todo.length ? `<p>This week's steps are the ones in Start here, above. Tick them there or on your roadmap.</p>`
-      : todo.length ? `<p class="mini-label">This week</p><ul class="rm-teaser__list" role="list">${todo.map((t) => `<li>${icon("circle-dashed")}<span lang="${esc(t.lang)}">${esc(t.text)}</span></li>`).join("")}</ul>` : ""}
+      : week ? `<p class="rm-teaser__line"><strong>This week:</strong> <span lang="${esc(week.lang)}">${esc(week.title)}</span>. Its steps are on your roadmap.</p>` : ""}
     <p class="rm-teaser__cta"><a class="btn btn-primary" href="/plan/?id=${encodeURIComponent(r.assessment_id)}"><span>Open my roadmap</span>${icon("arrow-right")}</a></p>`;
   box.removeAttribute("aria-busy");
 }
@@ -143,58 +137,82 @@ function weekBody(w: RoadmapWeek, r: Roadmap, editable: boolean): string {
     <p class="rm-week__actions"><a class="btn btn-secondary btn-sm" href="/api${path(r.assessment_id)}/week/${w.n}.pdf" download data-download>${icon("download")}<span>Download week ${w.n} (PDF)</span></a></p>`;
 }
 
+/** The chosen week's detail: why it matters, steps, resource, PDF. Locked weeks show their title and opening date. */
 function weekCard(w: RoadmapWeek, r: Roadmap): string {
-  const current = w.n === r.current_week;
   if (w.state === "locked") {
-    return `<li class="card rm-week rm-week--locked" data-week="${w.n}">
+    return `<div class="card rm-week rm-week--locked" data-week="${w.n}">
       <div class="rm-week__head">
         <span class="rm-week__num rm-week__num--locked" aria-hidden="true">${icon("lock")}</span>
         <div>
           <h3 id="week-${w.n}-title" tabindex="-1">Week ${w.n}: <span class="visually-hidden">coming up, </span><span lang="${esc(w.lang)}">${esc(w.title)}</span></h3>
-          <p class="rm-week__status"><span class="rm-week__long">Coming up. Opens on ${esc(shortDate(w.unlocks_on))}, or sooner when you finish week ${w.n - 1}.</span><span class="rm-week__short" aria-hidden="true">Opens on ${esc(shortDate(w.unlocks_on))}</span></p>
+          <p class="rm-week__status">Coming up. Opens on ${esc(shortDate(w.unlocks_on))}${w.n > 1 ? `, or sooner when you finish week ${w.n - 1}` : ""}.</p>
         </div>
       </div>
       ${r.staff && w.tasks ? `<details class="about"><summary>Staff view: see the ${plural(w.task_count, "step", "steps")}</summary>${weekBody(w, r, false)}</details>` : ""}
-    </li>`;
+    </div>`;
   }
-  if (w.state === "done") {
-    return `<li class="card rm-week rm-week--done" data-week="${w.n}">
-      ${weekHead(w, false)}
-      <details class="about"><summary>Show the ${plural(w.task_count, "step", "steps")}</summary>${weekBody(w, r, true)}</details>
-    </li>`;
-  }
-  return `<li class="card rm-week rm-week--open${current ? " is-current" : ""}" data-week="${w.n}">${weekHead(w, current)}${weekBody(w, r, true)}</li>`;
+  const current = w.n === r.current_week;
+  return `<div class="card rm-week rm-week--${w.state}${current ? " is-current" : ""}" data-week="${w.n}">${weekHead(w, current)}${weekBody(w, r, true)}</div>`;
 }
 
-function badges(list: Badge[]): string {
-  const earned = list.filter((b) => b.earned).length;
-  return `<p class="section-lead">You have earned ${earned} of ${list.length} badges.</p>
-    ${fold(`Show all ${list.length} badges`, `<ul class="rm-badges" role="list">${list.map((b) => `
-      <li class="rm-badge${b.earned ? " is-earned" : ""}">
-        <span class="rm-badge__medal">${svg(b.id)}</span>
-        <span class="rm-badge__name">${esc(b.name)}</span>
-        <span class="rm-badge__state">${b.earned ? `${icon("check")}Earned` : "Not yet"}</span>
-        <span class="rm-badge__desc">${esc(b.description)}</span>
-      </li>`).join("")}
-    </ul>`)}`;
+function weekState(w: RoadmapWeek, r: Roadmap): string {
+  if (w.state === "done") return "Done";
+  if (w.n === r.current_week) return "This week";
+  if (w.state === "open") return w.done_count ? `${w.done_count} of ${w.task_count} done` : "Open";
+  return `Opens ${shortDate(w.unlocks_on)}`;
 }
 
-function summary(r: Roadmap): string {
-  const now = where(r);
+/** #38: all 12 weeks at a glance. Each week is a button that shows its detail (single-open accordion). */
+function timeline(r: Roadmap, sel: number): string {
+  return `<ol class="rm-tl" id="rm-timeline" role="list">${r.weeks.map((w) => {
+    const current = w.n === r.current_week;
+    const dot = w.state === "done" ? icon("check") : w.state === "locked" ? icon("lock") : String(w.n);
+    return `<li class="rm-tl__item" data-state="${current ? "current" : w.state}">
+      <button type="button" class="rm-tl__btn" data-pick="${w.n}" aria-expanded="${w.n === sel}" aria-controls="rm-week-panel"${current ? ' aria-current="step"' : ""}>
+        <span class="rm-tl__dot" aria-hidden="true">${dot}</span>
+        <span class="rm-tl__text">
+          <span class="rm-tl__week">Week ${w.n}<span class="visually-hidden">:</span></span>
+          <span class="rm-tl__title" lang="${esc(w.lang)}">${esc(w.title)}</span><span class="visually-hidden">,</span>
+          <span class="rm-tl__state">${esc(weekState(w, r))}</span>
+        </span>
+      </button>
+    </li>`;
+  }).join("")}</ol>`;
+}
+
+function panel(r: Roadmap, sel: number, cheer: string): string {
+  const w = r.weeks.find((x) => x.n === sel) ?? r.weeks[0];
+  return `<div class="rm-panel" id="rm-week-panel">
+      <div class="rm-cheer" id="rm-cheer" ${cheer ? "" : "hidden"}>${cheer}</div>
+      ${weekCard(w, r)}
+    </div>`;
+}
+
+/** #38: points, level and badges up top, the next badge and what earns it in plain view. */
+function progressCard(r: Roadmap): string {
+  const earned = r.badges.filter((b) => b.earned).length;
+  const next = r.badges.find((b) => !b.earned);
   return `<div class="card rm-summary">
       <ul class="rm-chips" role="list">
         <li class="rm-chip">${svg("first-step")}<span><span class="visually-hidden">Level: </span>${esc(r.level)}</span></li>
         <li class="rm-chip">${icon("star")}<span>${r.points} points</span></li>
         ${r.streak ? `<li class="rm-chip">${svg("flame")}<span>${plural(r.streak, "week", "weeks")} in a row</span></li>` : ""}
       </ul>
-      <p class="rm-summary__line"><strong>${r.weeks_done === r.weeks.length ? "All 12 weeks done" : `Week ${now} of ${r.weeks.length}`}</strong> · ${r.done_tasks} of ${plural(r.total_tasks, "step", "steps")} done (${r.pct}%)</p>
-      ${bar(r.pct, "Roadmap progress")}
-      <p class="rm-summary__hint">${r.next_level ? `${plural(r.next_level.steps, "more step", "more steps")} to reach <strong>${esc(r.next_level.name)}</strong>.` : "You reached the top level: Leading."}
-        ${r.next_unlock ? ` Week ${r.next_unlock.week} opens on ${esc(shortDate(r.next_unlock.date))}.` : ""}</p>
+      <p class="rm-summary__hint">${r.next_level ? `${plural(r.next_level.steps, "more step", "more steps")} to reach <strong>${esc(r.next_level.name)}</strong>.` : "You reached the top level: Leading."}</p>
+      <h3 class="mini-label rm-medals__title">Badges: ${earned} of ${r.badges.length} earned</h3>
+      <ul class="rm-medals" role="list">${r.badges.map((b) => `
+        <li class="rm-medal${b.earned ? " is-earned" : ""}">
+          <span class="rm-badge__medal">${svg(b.id)}</span>
+          <span class="rm-medal__name">${esc(b.name)}</span>
+          <span class="rm-medal__state">${b.earned ? `${icon("check")}Earned` : "Not yet"}</span>
+        </li>`).join("")}
+      </ul>
+      <p class="rm-next">${icon("target")}<span>${next ? `<strong>Next badge: ${esc(next.name)}.</strong> ${esc(next.description)}` : "<strong>You earned every badge.</strong>"}</span></p>
+      <details class="about"><summary>How to earn each badge</summary><ul class="rm-rules" role="list">${r.badges.map((b) => `<li><strong>${esc(b.name)}:</strong> ${esc(b.description)}</li>`).join("")}</ul></details>
     </div>`;
 }
 
-function page(r: Roadmap, cheer: string): string {
+function page(r: Roadmap, sel: number, cheer: string): string {
   const report = `/results/?id=${encodeURIComponent(r.assessment_id)}`;
   const who = r.staff ? "the" : "your";
   const head = `
@@ -208,63 +226,120 @@ function page(r: Roadmap, cheer: string): string {
   if (!r.weeks.length) {
     return `${head}<p class="notice">${icon("circle-check")}<span>There is nothing on this roadmap yet. The answers show no growth priorities in the areas assessed, so there are no weekly steps to plan. Keep doing what works, and take the assessment again in 90 days.</span></p>${back}`;
   }
-  // The work comes first; badges follow it, because they only count the steps. Phones put this week before the totals.
-  const progress = `<section class="section rm-section" aria-labelledby="rm-progress-title">
-      <h2 id="rm-progress-title" class="visually-hidden">Your progress</h2>
-      ${summary(r)}
-    </section>`;
-  const weeks = `<section class="section rm-section" aria-labelledby="rm-weeks-title">
-      <div class="section-head"><div><span class="eyebrow">${r.ai ? "From your report" : "From your answers"}</span><h2 id="rm-weeks-title">Week by week</h2></div></div>
-      <div class="rm-cheer" id="rm-cheer" ${cheer ? "" : "hidden"}>${cheer}</div>
-      <ol class="rm-weeks" role="list">${r.weeks.map((w) => weekCard(w, r)).join("")}</ol>
-    </section>`;
   return `${head}
-    ${PHONE.matches ? weeks + progress : progress + weeks}
-    <section class="section rm-section" aria-labelledby="rm-badges-title">
-      <div class="section-head"><div><span class="eyebrow">For follow-through</span><h2 id="rm-badges-title">Your badges</h2></div></div>
-      ${badges(r.badges)}
+    <section class="section rm-section" aria-labelledby="rm-progress-title">
+      <h2 id="rm-progress-title" class="visually-hidden">Your points and badges</h2>
+      ${progressCard(r)}
+    </section>
+    <section class="section rm-section" aria-labelledby="rm-timeline-title">
+      <div class="section-head"><div><span class="eyebrow">${r.ai ? "From your report" : "From your answers"}</span><h2 id="rm-timeline-title">Your 12 weeks</h2></div></div>
+      <p class="section-lead">Pick a week to see its steps.</p>
+      ${timeline(r, sel)}
+      ${panel(r, sel, cheer)}
     </section>
     <p class="notice section-gap">${icon("info")}<span>Points and badges count the steps you finish, never your answers or scores. Only your organization and Everytown staff can see this roadmap.</span></p>
     ${back}`;
 }
 
-/** Confetti for a finished week; skipped entirely when the reader prefers reduced motion (the glow stays static). */
-function confetti(card: HTMLElement | null) {
-  if (!card) return;
-  card.classList.add("rm-glow");
-  window.setTimeout(() => card.classList.remove("rm-glow"), 2400);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+/** Confetti for a finished week into `into` (none when null); skipped entirely when the reader prefers reduced motion
+ *  (the glow on `card` stays static). */
+function confetti(card: HTMLElement | null, into: HTMLElement | null) {
+  card?.classList.add("rm-glow");
+  window.setTimeout(() => card?.classList.remove("rm-glow"), 2400);
+  if (!into || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const layer = document.createElement("div");
   layer.className = "rm-confetti";
   layer.setAttribute("aria-hidden", "true");
   const colors = ["var(--et-navy)", "var(--et-royal)", "var(--color-csf-orange)", "var(--et-light)"];
   layer.innerHTML = Array.from({ length: 28 }, (_, i) =>
     `<span style="left:${(i * 37) % 100}%;background:${colors[i % 4]};animation-delay:${(i % 7) * 60}ms;--drift:${((i * 53) % 60) - 30}px"></span>`).join("");
-  document.body.append(layer);
+  into.append(layer);
   window.setTimeout(() => layer.remove(), 2600);
+}
+
+/** True the first time this browser finishes one of these weeks of this roadmap (unticking and ticking again stays quiet). */
+function firstTime(id: string, weeks: number[]): boolean {
+  const key = `oci-roadmap-badge-${id}`;
+  try {
+    const seen: number[] = JSON.parse(localStorage.getItem(key) || "[]");
+    if (weeks.every((n) => seen.includes(n))) return false;
+    localStorage.setItem(key, JSON.stringify([...new Set([...seen, ...weeks])]));
+  } catch { /* storage blocked: celebrate anyway */ }
+  return true;
+}
+
+/** #38: the badge pop-up when a tick (the `setRoadmapTask` response) finished a week, the first time this browser sees
+ *  that week finished; otherwise nothing. Closing returns focus to `returnFocus`. Used by /plan/ and the report's Start here. */
+export function celebrateWeek(assessmentId: string, r: Roadmap, returnFocus: HTMLElement | null): void {
+  const c = r.celebrate, weeks = c?.weeks ?? [];
+  if (!c || !weeks.length || !firstTime(assessmentId, weeks)) return;
+  const fresh = c.badges.map((name) => r.badges.find((b) => b.name === name)).filter((b): b is Badge => !!b);
+  const opened = c.opened[0];
+  const after = opened ? `Week ${opened} is open now.`
+    : r.weeks_done === r.weeks.length ? "You finished all 12 weeks."
+    : r.next_unlock ? `Week ${r.next_unlock.week} opens on ${shortDate(r.next_unlock.date)}.` : "";
+  const dlg = document.createElement("dialog");
+  dlg.className = "rm-pop";
+  dlg.setAttribute("aria-labelledby", "rm-pop-title");
+  dlg.setAttribute("aria-describedby", "rm-pop-body");
+  dlg.innerHTML = `
+    <div class="rm-pop__medals" aria-hidden="true">${fresh.length ? fresh.map((b) => `<span class="rm-pop__medal">${svg(b.id)}</span>`).join("")
+      : `<span class="rm-pop__medal rm-pop__medal--week"><span>Week</span><strong>${weeks[0]}</strong></span>`}</div>
+    <h2 id="rm-pop-title" tabindex="-1">Week ${weeks.join(" and ")} done</h2>
+    <div id="rm-pop-body">
+      <p class="rm-pop__points">+${c.points} points. You have ${r.points} points in all.</p>
+      ${fresh.map((b) => `<p><strong>New badge: ${esc(b.name)}.</strong> ${esc(b.description)}</p>`).join("")}
+      ${after ? `<p>${esc(after)}</p>` : ""}
+    </div>
+    <p class="rm-pop__actions"><button type="button" class="btn btn-primary">${opened && returnFocus?.id === `week-${opened}-title` ? `Go to week ${opened}` : "Close"}</button></p>`;
+  $("button", dlg)!.addEventListener("click", () => dlg.close());
+  dlg.addEventListener("close", () => { dlg.remove(); returnFocus?.focus(); });
+  document.body.append(dlg);
+  dlg.showModal();
+  focusEl($("#rm-pop-title", dlg));
+  confetti(null, dlg);
 }
 
 export async function mountPlan(root: HTMLElement, id: string): Promise<void> {
   let state = await getRoadmap(id);
+  let sel = where(state);
   let chain = Promise.resolve();
+  // Phones: the chosen week opens right under its row of the vertical timeline; wider screens show it under the track.
+  const place = () => {
+    const box = $("#rm-week-panel", root), list = $("#rm-timeline", root);
+    if (!box || !list) return;
+    const had = box.contains(document.activeElement) ? document.activeElement as HTMLElement : null;
+    const row = $(`[data-pick="${sel}"]`, list)?.parentElement;
+    if (PHONE.matches && row) row.append(box); else list.after(box);
+    if (had && document.activeElement !== had) had.focus({ preventScroll: true });
+  };
   const render = (cheer = "") => {
     document.title = `Your roadmap: ${state.org_name} · OCI Capacity Coach`;
-    root.innerHTML = page(state, cheer);
+    root.innerHTML = page(state, sel, cheer);
+    place();
     root.removeAttribute("aria-busy");
   };
   render();
   wireDownloads(root);
-  // Turning the screen past 600px: move the parts page() and weekBody() order by PHONE. Only the totals and "Why this
-  // matters" move (nothing focusable), so focus, open details and the cheer line stay put; no refetch.
+  // Turning the screen past 600px: move the chosen week and "Why this matters" (weekBody orders it by PHONE); no refetch.
   PHONE.addEventListener("change", () => {
-    const progress = $("#rm-progress-title", root)?.closest("section");
-    const weeks = $("#rm-weeks-title", root)?.closest("section");
-    if (progress && weeks) { if (PHONE.matches) weeks.after(progress); else weeks.before(progress); }
     $$(".rm-tasks", root).forEach((steps) => {
       const why = steps.parentElement!.querySelector(":scope > .inset");
       if (why) { if (PHONE.matches) steps.after(why); else steps.before(why); }
     });
+    place();
     if (root.contains(document.activeElement)) document.activeElement!.scrollIntoView({ block: "nearest" });
+  });
+
+  // Picking a week on the timeline shows its detail and moves focus to its heading.
+  root.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-pick]");
+    if (!btn) return;
+    sel = Number(btn.dataset.pick);
+    $$("button[data-pick]", root).forEach((b) => b.setAttribute("aria-expanded", String(b === btn)));
+    $("#rm-week-panel", root)!.outerHTML = panel(state, sel, "");
+    place();
+    focusEl($(`#week-${sel}-title`, root));
   });
 
   root.addEventListener("change", (e) => {
@@ -289,18 +364,19 @@ export async function mountPlan(root: HTMLElement, id: string): Promise<void> {
       if (finished.length) parts.push(`Week ${finished.join(" and ")} done! +${c!.points} points.`);
       if (c?.opened.length) parts.push(`Week ${c.opened.join(" and ")} is open.`);
       if (c?.badges.length) parts.push(`New badge: ${c.badges.join(", ")}.`);
-      render(finished.length ? `${icon("circle-check")}<span>${esc(parts.join(" "))}</span>` : "");
       if (finished.length) {
-        const next = c!.opened[0] ?? state.current_week;
-        confetti($(`[data-week="${finished[0]}"]`, root));
-        // The "Week N done!" line goes to the top of the week it points to, so it shows with that week's focused
-        // heading; above the list it was off screen once a few weeks were done (on phones from week 1).
-        const card = next ? $(`li[data-week="${next}"]`, root) : null;
-        if (card) card.prepend($("#rm-cheer", root)!);
-        focusEl($(next ? `#week-${next}-title` : "#rm-cheer", root));
+        // The detail moves on to the week that opens; the "Week N done!" line sits at its top, by its focused heading.
+        sel = c!.opened[0] ?? state.current_week ?? sel;
+        render(`${icon("circle-check")}<span>${esc(parts.join(" "))}</span>`);
+        const title = $(`#week-${sel}-title`, root);
+        focusEl(title);
         $("#rm-cheer", root)!.scrollIntoView({ block: "nearest" });
         announce(parts.join(" "));
+        celebrateWeek(id, state, title);
+        // The finished week glows on the timeline; the confetti falls on the page only when no pop-up took it.
+        confetti($(`[data-pick="${finished[0]}"]`, root)?.parentElement ?? null, $("dialog.rm-pop[open]") ? null : document.body);
       } else {
+        render();
         $<HTMLInputElement>(`#task-${CSS.escape(task)}`, root)?.focus();
         const w = state.weeks.find((x) => x.n === week);
         announce(`${done ? "Step done" : "Step not done"}. ${w ? `${w.done_count} of ${w.task_count} steps done this week.` : ""}${parts.length ? " " + parts.join(" ") : ""}`);

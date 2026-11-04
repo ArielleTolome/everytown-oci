@@ -602,6 +602,7 @@ def build_network_pdf(data, ctx):
     import report as r
 
     pdf = r._PDF(format="Letter")
+    pdf.notice = "staff"
     for style, suffix in (("", "Regular"), ("B", "Bold"), ("I", "Italic"), ("BI", "BoldItalic")):
         pdf.add_font(r.FONT, style, os.path.join(r.FONT_DIR, "AtkinsonHyperlegible-%s.ttf" % suffix))
     pdf.set_title("Community Safety Fund network report: Organizational Capacity Index")
@@ -699,4 +700,5 @@ def build_network_pdf(data, ctx):
     pdf.grid(["Organization", "Areas that need training"],
              [[row["name"], ", ".join(names[d] for d, c in row["cells"].items() if c["high"] or c["asked"]) or "None"]
               for row in needs["rows"]], [70, 100])
+    pdf.confidential()
     return bytes(pdf.output())

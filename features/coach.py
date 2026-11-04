@@ -1,4 +1,4 @@
-"""Ask about your report: one fixed Claude call per question that explains a finished report.
+"""Chat about your report: one fixed Claude call per question that explains a finished report.
 
 The coach never scores. Its answer is text plus ids that are checked against this assessment's growth
 priorities and the resource catalog, and nothing it returns is written back to the assessment.
@@ -185,13 +185,17 @@ def respond(sub, question, turns):
 
 
 def answer_question(sub, question, turns):
-    """The single fixed model step: facts, report and recent turns in; a validated answer out."""
+    """The single fixed model step: facts, report, roadmap and recent turns in; a validated answer out."""
     import pipeline
+    from features.milestones import build_roadmap
     catalog = [{k: r[k] for k in ("id", "title", "domains", "use_for")} for r in pipeline.CATALOG.values()]
     reference = ("Resource catalog (JSON):\n%s\n\nCVI field guides (the full resource library):\n%s"
                  % (json.dumps(catalog, ensure_ascii=False), pipeline.LIBRARY))
     language = "Spanish (neutral Latin American Spanish)" if sub["language"] == "es" else "English"
     earlier = [{"question": t["question"], "answer": t.get("answer")} for t in turns]
+    # The chat answers about the whole report, so the model also sees the roadmap the leader sees (built by code).
+    roadmap = [{"week": w["n"], "title": w["title"], "steps": [t["text"] for t in w["tasks"]]}
+               for w in build_roadmap(sub)["weeks"]]
     content = pipeline._converse(
         "answer",
         modelId=pipeline.FAST_MODEL_ID,
@@ -203,10 +207,11 @@ def answer_question(sub, question, turns):
             ("untrusted", "<profile>\n%s\n</profile>" % (sub.get("profile") or "No website profile available.")),
             "Assessment facts (JSON, final, computed by fixed code):\n%s\n\n"
             "The organization's report (JSON, already checked):\n%s\n\n"
+            "The organization's 12-week roadmap (JSON, built by fixed code from the report):\n%s\n\n"
             "Earlier questions and answers in this conversation (JSON):\n%s\n\n"
             "The reader's new question:"
             % (json.dumps(pipeline._facts(sub), ensure_ascii=False), json.dumps(sub["report"], ensure_ascii=False),
-               json.dumps(earlier, ensure_ascii=False)),
+               json.dumps(roadmap, ensure_ascii=False), json.dumps(earlier, ensure_ascii=False)),
             ("untrusted", "<question>\n%s\n</question>" % question),
             "Answer in %s. Call answer_question once." % language)}],
         toolConfig={"tools": [ASK_TOOL], "toolChoice": {"auto": {}}},

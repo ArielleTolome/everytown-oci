@@ -2,6 +2,34 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.0 — User-test fixes: an easier questionnaire, a clearer report, a roadmap timeline, a report chat, confidential PDFs
+
+From the team's user test on Nov 4: a first-time user went through the site with no guidance, and the team wrote down every place she got stuck (recording and WhatsApp notes with screenshots). Filed as GitHub issues #28 to #39. Already fixed in v1.9.0 and checked again: name required, the "Keep my answer" button now says "Next", one language switch, the progress bar and Previous going back to the card you saw (never to question 1).
+
+**Questionnaire and start page**
+- **#28 Pick how to answer once, from a sample.** Before the first question, one real statement is shown three ways (One at a time, Yes / No for each, Checklist) and the leader picks one. The choice sticks, also on a resume link on another device; the switcher is gone from the questions, with a small "Change how I answer" link to switch later. A teammate opening a share link picks their own.
+- **#29 Answers filled in by a multiple-choice question look chosen.** The next step now says "Your choice filled in these answers" and shows each statement's Yes / No as a selected answer you can flip with one tap, instead of a plain "No" and a "Change to Yes" button.
+- **#30 Every card moves on the same way.** Previous and Next are on every One at a time card, in the same place. A button you cannot use yet stays put and says why ("Choose Yes or No to go on.").
+- **#31 States as bubbles.** The states or territories you add show as removable bubbles ("Remove Ohio").
+
+**Report page**
+- **#32 What came from your answers, what AI wrote.** The stage tracks and "Your results in detail" are gone from the page (scores by area, strengths and the full 30 / 60 / 90 day plan are in the PDF; each area's stage is in Explore any area). A small label under each heading says where it came from: "Written by AI from your answers", "Built from your answers", "Picked from your answers. Steps written by AI.", "Found on public web pages".
+- **#33** The reading level line is gone from the page and the PDF (every report is still checked to read at about grade 8 or plainer).
+- **#34** "What's true about you" is now **"Summary about your organization"** ("Resumen de su organización"), on the page, in the PDF, in read-aloud, in the feedback card and on the staff Quality tab.
+- **#35** "What we learned about you" (what we found online, with sources) is now last, on the page and in the PDF letter.
+- **#36 Roadmap first, priorities side by side.** Your 12-week roadmap now comes before Start here; the heading says the two priorities are weeks 1 to 4; they sit side by side on a laptop (stacked on a phone), and each shows only the steps of weeks that are open, with one line saying when the next steps open. Finishing a week from Start here shows the badge pop-up too.
+- **#37 Chat about your report.** A "Chat about your report" button at the bottom right opens a chat panel: starter questions, your earlier conversation, a typing indicator, Enter to send. The chat now also knows your 12-week roadmap. The "Up to 500 characters. You can ask 15 more questions" line is gone (the limits stay in code; a message appears only if one is reached).
+
+**Roadmap**
+- **#38 A timeline and badges you can see.** The roadmap opens with points, level and badges (the next badge and what earns it), then a timeline of all 12 weeks (done, this week, or when it opens); pick a week to see its steps. Finishing a week pops up a badge. The "0 of 43 steps done" count is gone from the roadmap and the report's roadmap card, which now says in one line what this week is.
+
+**PDFs**
+- **#39 Watermark and confidentiality.** Every PDF (the report, each weekly roadmap page and the staff network report) has a light diagonal Everytown watermark behind each page, a confidentiality line in the footer and a confidentiality clause at the end, in Spanish for Spanish reports.
+
+**Also**
+- Dead CSS from the removed parts deleted; the README, technical guide (and its PDF), folder READMEs, demo script and deck slides 4 and 8 follow the new screens.
+- Verified: unit tests (152) and type check pass; axe 0 at 320, 390 and 1280 on every changed page, the chat and the badge pop-up; the full e2e suite passes on the merged code and on the live site after deploy, on desktop and phone (103 passed, 5 phone-only checks skipped on desktop); the demo path passes (4 of 4). New regression tests: `answer-style-chooser`, `quick-ladder-filled-in`, `quick-nav-every-card`, `report-plan-layout`, `roadmap-timeline-badge` (e2e) and the PDF watermark, confidentiality and answer-style unit tests.
+
 ## v1.9.1 — Technical guide to the whole project
 
 - New [`docs/technical-guide.md`](docs/technical-guide.md), also attached to this release as a 20-page PDF: what the OCI Capacity Coach does and why, the architecture and the reasons behind each choice, a repository map, the questionnaire and scoring engine, the data model, every API route with who may call it, the fixed AI report pipeline step by step (models, prompt rules, validation, guardrails, cost), the coach, read-aloud, roadmap, drafts and teammate links, the staff dashboard and Ask the data, the frontend (pages, one-at-a-time navigation, design, accessibility, phone-first, Spanish), infrastructure and deployment (stacks, configuration, container, cost, scale), security and privacy, observability, tests, evals and end-to-end bug bashes, how we built it, the release history from v0.1.0 to v1.9.0, an operations runbook with troubleshooting, known limits and a glossary. Every fact was checked against the code.

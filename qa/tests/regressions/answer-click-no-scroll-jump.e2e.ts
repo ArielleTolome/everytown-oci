@@ -10,8 +10,8 @@ test('focus landing on the page itself never scrolls the questionnaire', { sessi
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Scroll Jump Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'Yes / No for each').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
-  await screen.getByRole('radio', 'Yes / No for each').check();
   const moved = await browser.evaluate(async () => {
     document.querySelectorAll('#area-form fieldset')[2]?.scrollIntoView({ block: 'center' });
     (document.activeElement as HTMLElement | null)?.blur();

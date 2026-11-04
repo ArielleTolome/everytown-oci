@@ -17,6 +17,7 @@ test('Español on the start page gives Spanish questions; English on the questio
   await app.open('/');
   await screen.getByRole('radio', 'Español').check();
   await start(screen, 'QA Language Org');
+  await screen.getByRole('button', 'Una a la vez').tap(); // #28: the answer-style choice follows the language too
   await expect(screen.getByRole('heading', 'Planeación', { level: 1 })).toBeVisible();
   await expect(screen.getByRole('radio', 'Español')).toBeChecked();
   await expect(screen.getByRole('button', /^Sí/)).toBeVisible();
@@ -40,6 +41,7 @@ test('a questionnaire switched to Español submits language es', { session: 'dem
   });
   await app.open('/');
   await start(screen, 'QA Language Submit Org');
+  await screen.getByRole('button', 'One at a time').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
   // Every chosen statement answered on this device, then the finish screen.
   await browser.evaluate(async () => {

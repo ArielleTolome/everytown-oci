@@ -10,6 +10,7 @@ test('One at a time controls read in Spanish when the questions do', { session: 
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Spanish Controls Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'One at a time').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
   await screen.getByRole('radio', 'Español').check();
   await expect(screen.getByRole('button', /Sí/)).toBeVisible();

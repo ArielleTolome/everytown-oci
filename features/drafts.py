@@ -55,7 +55,9 @@ def clean(raw):
             "answers": _answers(raw.get("answers"), [d["id"] for d in _bank()]),
             "org_meta": clean_org_meta(raw.get("org_meta")),
             "respondent": clean_respondent(raw.get("respondent"))[0],
-            "org_links": {"social": clean_social(links.get("social"))[0]}}
+            "org_links": {"social": clean_social(links.get("social"))[0]},
+            # How the leader answers (questionnaire #28), so a resume link on another device keeps it.
+            "view": raw.get("view") if raw.get("view") in ("quick", "yn", "check") else None}
 
 
 def _find(token):

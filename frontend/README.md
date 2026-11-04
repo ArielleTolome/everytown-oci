@@ -11,7 +11,7 @@ The Astro 5 static site (TypeScript, no UI framework) that organization leaders 
 | `tsconfig.json` | Extends `astro/tsconfigs/strict`. |
 | `.gitignore` | Ignores `node_modules/`, `dist/`, `.astro/`. |
 | `src/pages/index.astro` | `/`: organization leader start page. Respondent role, organization name, website, social links and areas to assess; saves `/api/org-meta`, sample organizations via `/api/demo`. Uses `api`, `dom`, `draft`, `icons`. |
-| `src/pages/questionnaire.astro` | `/questionnaire/`: the statements for the chosen areas, as a checklist or one at a time (`quick`), with Spanish text and glossary help from `public/content/`. Submits `POST /api/assessments`. `?area=` answers one shared area, `?demo=1` preloads `sample_answers.json`. Uses `api`, `dom`, `draft`, `icons`, `quick`. |
+| `src/pages/questionnaire.astro` | `/questionnaire/`: first an answer-style chooser (one sample statement in all three styles, kept as `draft.view`, "Change how I answer" to switch), then the statements for the chosen areas, as a checklist, Yes / No for each or one at a time (`quick`), with Spanish text and glossary help from `public/content/`. Submits `POST /api/assessments`. `?area=` answers one shared area, `?demo=1` preloads `sample_answers.json`. Uses `api`, `dom`, `draft`, `icons`, `quick`. |
 | `src/pages/results.astro` | `/results/?id=`: the report for the organization (and staff, who get extra views). Polls `/api/assessments/<id>/status`, offers `/retry`. Uses `results`, `coach`, `listen`, `roadmap`, `toc`, `report-ui`. |
 | `src/pages/plan.astro` | `/plan/?id=`: the 12-week roadmap page, rendered by `roadmap.mountPlan`. |
 | `src/pages/resume.astro` | `/resume/`: paste a resume link or code (`?d=` token) to continue a saved draft, via `draft`. |

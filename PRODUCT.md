@@ -15,7 +15,7 @@ web
 
 Everytown for Gun Safety works to end gun violence. Its Community Safety Fund supports community-based violence intervention programs (since 2019, $15.7 million to 141 programs in 72 cities) with funding, capacity-building training, peer convenings and advocacy. New grantees complete a self-assessment that shapes their training.
 
-The OCI Capacity Coach is that self-assessment, the Organizational Capacity Index: 143 Yes / No statements across 8 capacity areas. Everytown's reference code scores the answers into a stage per area. The tool then gives the leader a plain-language report: what is true about the organization today, one or two priorities to start with, a 12-week roadmap with owners, and a PDF letter for the board. CSF staff get a network dashboard.
+The OCI Capacity Coach is that self-assessment, the Organizational Capacity Index: 143 Yes / No statements across 8 capacity areas. Everytown's reference code scores the answers into a stage per area. The tool then gives the leader a plain-language report: a summary about the organization today, one or two priorities to start with, a 12-week roadmap with owners, a chat about the report, and a confidential PDF letter for the board. CSF staff get a network dashboard.
 
 Success: in a pilot, 3 to 4 CSF grantees find the recommendations helpful, and CSF staff spend their time coaching instead of writing reports by hand (two staff hand-wrote every report for the 45-organization 2025 pilot).
 
@@ -33,7 +33,7 @@ A learning tool, not an evaluation. Code computes every score and stage; AI only
 
 - The 143 statements are Everytown's official wording (with a machine translation to Spanish); their text and the stage names (Seeding, Emerging, Developing, Strengthening, Transformational) do not change.
 - Gaps are called "growth priorities". Every stage is a normal place to be; results never read as a grade.
-- Reports aim at an 8th grade reading level, measured in code.
+- Reports aim at an 8th grade reading level, measured in code (the grade is checked, not shown to readers).
 - No em dashes in any copy. No emojis.
 - AWS only; Claude on Amazon Bedrock; Astro static site with a Flask JSON API.
 

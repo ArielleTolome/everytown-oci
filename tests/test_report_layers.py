@@ -51,9 +51,9 @@ class LetterFirst(unittest.TestCase):
         self.assertTrue(all("Jordan" not in p and "Secretname" not in p for p in pages))
         letter = _page_of(pages, "Dear Playwright Letter Org team,")
         self.assertEqual(letter, 1)  # right after the cover
-        order = ["What we learned about you", "What's true about you", "What you already do well",
+        order = ["Summary about your organization", "What you already do well",
                  "If I were you, I would start with", "How the Community Safety Fund can help",
-                 report.DETAILS_TITLE, "Domain results", "Appendix A: Full response record"]
+                 "What we learned about you", report.DETAILS_TITLE, "Domain results", "Appendix A: Full response record"]
         positions = [_page_of(pages, t) for t in order]
         self.assertEqual(positions, sorted(positions))
         self.assertLess(_page_of(pages, "Write a one-page plan"), _page_of(pages, report.DETAILS_TITLE))
@@ -64,6 +64,18 @@ class LetterFirst(unittest.TestCase):
         _, pages = _pdf(_sub("es"))
         self.assertIn("Completado por:", pages[0])
         self.assertIn("Si yo fuera ustedes, empezaría con", "".join(pages[1:3]))
+        self.assertIn("Resumen de su organización", pages[1])
+        self.assertIn("Confidencial. Este informe contiene", pages[-1])
+        self.assertIn("Página 1 de %d" % len(pages), pages[0])
+
+    def test_every_page_is_marked_and_the_pdf_ends_confidential(self):
+        sub = _sub()
+        sub["report"]["reading_grade"] = 7.2
+        reader, pages = _pdf(sub)
+        self.assertTrue(all(len(p.images) == 1 for p in reader.pages))  # the Everytown mark, behind the content
+        self.assertTrue(all("Confidential: for your organization" in p for p in pages))
+        self.assertIn("Confidential. This report contains proprietary", pages[-1])
+        self.assertNotIn("Reading level", "".join(pages))
 
     def test_roadmap_failure_only_skips_the_weeks(self):
         with mock.patch("features.milestones.build_roadmap", side_effect=KeyError("focus"), create=True):

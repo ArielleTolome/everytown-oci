@@ -21,13 +21,13 @@ _cache = OrderedDict()  # (assessment id, section, language) -> MP3 bytes; a fin
 _engines = ["generative", "neural"]  # generative first; dropped from the list if this region or voice lacks it
 
 WORDS = {
-    "en": {"summary": "What's true about you.", "focus": "Start here: your top priorities.",
+    "en": {"summary": "Summary about your organization.", "focus": "Start here: your top priorities.",
            "priority": "Priority %d:", "todo": "What to do:", "plan": "Your 30, 60 and 90 day plan.",
            "action": "Action", "step": "Step",
            30: "First 30 days.", 60: "Next 30 days.", 90: "Last 30 days.", "owner": "Owner: %s.",
            "strengths": "What you already do well.",
            "conversation": "Team conversation guide. Use these questions at your next team or board meeting."},
-    "es": {"summary": "Lo que es cierto sobre ustedes.", "focus": "Empiecen aquí: sus prioridades principales.",
+    "es": {"summary": "Resumen de su organización.", "focus": "Empiecen aquí: sus prioridades principales.",
            "priority": "Prioridad %d:", "todo": "Qué hacer:", "plan": "Su plan de 30, 60 y 90 días.",
            "action": "Acción", "step": "Paso",
            30: "Primeros 30 días.", 60: "Los siguientes 30 días.", 90: "Últimos 30 días.",

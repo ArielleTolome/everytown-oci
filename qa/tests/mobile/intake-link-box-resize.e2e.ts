@@ -13,6 +13,7 @@ test('phone: the resume link box re-fits the whole link when the screen width ch
   await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Phone Link Resize Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'One at a time').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
   await screen.getByRole('button', 'Save and finish later').tap();
   await expect(screen.getByLabel('Your resume link')).toBeVisible({ timeout: 15_000 });

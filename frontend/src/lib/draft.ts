@@ -13,6 +13,7 @@ export const SECONDS_PER_STATEMENT = 8;
 export interface OrgMeta { program_models: string[]; staff_size: string | null; budget?: string | null; states: string[] }
 export interface Respondent { role: string | null; title: string | null; name: string | null }
 export interface OrgLinks { social: string[] }
+export type View = "quick" | "yn" | "check";
 
 export interface Draft {
   org_name: string;
@@ -23,6 +24,8 @@ export interface Draft {
   org_meta?: OrgMeta | null;
   respondent?: Respondent | null; // the name is shown on the report only, never sent to the AI
   org_links?: OrgLinks | null;
+  /** #28: how the leader answers (chosen once per draft). Synced with the draft; a teammate's copy never gets it. */
+  view?: View | null;
 }
 
 /** Where a draft syncs to. `area` is set only for a teammate link. `dirty` = local changes not yet on the server. */
@@ -77,6 +80,7 @@ function normalize(d: Partial<Draft> | null): Draft | null {
       : null,
     respondent: r && typeof r === "object" ? { role: r.role ?? null, title: r.title ?? null, name: r.name ?? null } : null,
     org_links: social.length ? { social } : null,
+    view: d.view === "quick" || d.view === "yn" || d.view === "check" ? d.view : null,
   };
 }
 
@@ -88,7 +92,7 @@ function combine(server: Draft, local: Draft | null, dirty: boolean): Draft {
   if (!local) return server;
   return dirty
     ? { ...local, answers: { ...server.answers, ...local.answers } }
-    : { ...server, answers: { ...local.answers, ...server.answers } };
+    : { ...server, view: local.view ?? server.view, answers: { ...local.answers, ...server.answers } }; // this device's pick first
 }
 
 /** The draft for this page. With ?d=<token> it is loaded from the server (resume or teammate link). */

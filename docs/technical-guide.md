@@ -181,7 +181,7 @@ All data is synthetic. `assessments.doc` holds the full rendered document as `js
 | `latest_assessments` (view) | `schema.sql` | Each organization's most recent assessment: the unit for network analytics. |
 | `domain_benchmarks` (view) | `schema.sql` | Peer percentile per organization and area (staff only). |
 | `support_requests` | `schema.sql` | Areas an organization asked CSF for training or coaching in. |
-| `coach_messages` | `features/coach.sql` | "Ask about your report" questions and validated answers. |
+| `coach_messages` | `features/coach.sql` | "Chat about your report" questions and validated answers. |
 | `drafts`, `draft_shares` | `features/drafts.sql` | Server-side questionnaire drafts and per-area teammate links (with the teammate's role). |
 | `roadmap_tasks` | `features/milestones.sql` | Ticked roadmap steps with time; points, streaks and badges are computed from it. |
 | `peer_requests` | `features/peers_request.sql` | "Connect me with similar groups" requests. |
@@ -205,7 +205,7 @@ Flask JSON API under `/api`. Sign-in is mocked: `demo` / `demo` (organization) a
 | `GET /api/assessments/<id>`, `/status` | signed in | The document; the job's step-by-step status. |
 | `POST /api/assessments/<id>/retry` | signed in | Rerun only the AI steps of a failed report (scores are kept). |
 | `GET /api/assessments/<id>/report.pdf` | signed in | The PDF report. |
-| `GET, POST /api/assessments/<id>/ask` | owner or staff | Ask about your report (section 8). |
+| `GET, POST /api/assessments/<id>/ask` | owner or staff | Chat about your report (section 8). |
 | `GET /api/assessments/<id>/audio/<section>` | signed in | Read-aloud MP3 for one section. |
 | `POST /api/assessments/<id>/support` | owner | Ask CSF for training or coaching in chosen areas. |
 | `POST /api/assessments/<id>/peer-request` | owner | Ask to be connected with similar groups. |
@@ -250,10 +250,11 @@ Every feature route lists its rules in [`features/README.md`](../features/README
 
 ## 8. Features around the report
 
-### Ask about your report (`features/coach.py`)
+### Chat about your report (`features/coach.py`, `frontend/src/lib/coach.ts`)
 
-- One fixed Claude Haiku call per question, with the organization's facts, its report and the last 6 turns. The answer goes through a tool schema and validation: gap ids must be real, resources must be in the catalog, answers are cut at 200 words.
-- Limits: 15 questions per report, 500 characters per question.
+- On the report, a button at the bottom right opens a chat dialog with code-written starter questions, the earlier conversation, a typing indicator and Enter to send.
+- One fixed Claude Haiku call per question, with the organization's facts, its report, its 12-week roadmap (built by code) and the last 6 turns. The answer goes through a tool schema and validation: gap ids must be real, resources must be in the catalog, answers are cut at 200 words.
+- Limits: 15 questions per report, 500 characters per question. The chat no longer shows a count of questions left.
 - **Crisis safety:** questions matching a fixed crisis pattern (English and Spanish) never reach the model. They get a fixed caring answer with 911 and 988 (the Suicide and Crisis Lifeline) and never count against the 15 questions (v1.5.3).
 - Questions asking to change a score get a fixed, kind refusal if the guardrail blocks them.
 
@@ -266,11 +267,13 @@ Amazon Polly generative voices (Ruth for English, Lupe for Spanish, neural as fa
 - Built in code from the report, no model call, rebuilt identically each time: weeks 1 to 2 and 3 to 4 are the Start here priorities, then the plan by horizon (30 days: weeks 5 to 6, 60 days: 7 to 9, 90 days: 10 to 12). Week 12 ends with "Retake the OCI".
 - A week opens when the one before is finished or 7 days after it opened; a finished step never relocks its week.
 - Points: 10 per step, 25 per finished week. Levels by share of steps done: Getting started, Building, Growing, Leading. Seven badges (First step, Week one done, Foundation builder, On a roll, Halfway there, Roadmap complete, Ready to retake). Weekly PDF per week.
+- `/plan/` (v1.10) opens on a points, level and badges card (with the next badge and what earns it), then a timeline of all 12 weeks (done, this week, or when it opens); picking a week shows its steps, and a locked week says when it opens. There is no "X of Y steps done" count, here or on the report's roadmap card, which names this week in one line.
+- Finishing a week pops up a badge dialog (`roadmap.celebrateWeek`), once per week per browser (localStorage); Escape closes it and returns focus. Ticks from Start here on the report open the same pop-up.
 - Start here checkboxes on the report and the roadmap share one store (`roadmap_tasks`).
 
 ### Save, resume and teammates (`features/drafts.py`, `frontend/src/lib/draft.ts`)
 
-Answers save on the device after every change. "Save and finish later" creates a server draft and a resume link or code; answers then sync (debounced). "Send this area to a teammate" creates a per-area link; the teammate answers only that area, is asked their role, and their answers merge into the same assessment ("Answered by"). Answers only merge, never erase. Drafts are capped at 64 KB.
+Before the first question the leader picks an answer style; it is kept in the draft as `draft.view` (`quick`, `yn` or `check`), on the device and in the server draft (`features/drafts.py clean()` keeps it), so a resume link keeps it. A teammate opening a share link picks their own. Answers save on the device after every change. "Save and finish later" creates a server draft and a resume link or code; answers then sync (debounced). "Send this area to a teammate" creates a per-area link; the teammate answers only that area, is asked their role, and their answers merge into the same assessment ("Answered by"). Answers only merge, never erase. Drafts are capped at 64 KB.
 
 ### Support, peers and staying connected
 
@@ -308,14 +311,18 @@ Astro 5 static site in `frontend/`, TypeScript modules, no UI framework, one sty
 | Page | Who | Main modules |
 |---|---|---|
 | `/login/` | everyone | Mocked sign-in, `?next=` (open redirect closed in v1.3). |
-| `/` start page | leader | Role, job title and name (required since v1.8.2), organization name, optional details (program models, staff size, budget, up to 10 states or territories), website and social links, areas with time estimates, the language switch, sample organizations, continue-where-you-left-off. |
-| `/questionnaire/` | leader, teammates | Three views over one answer store: One at a time (`lib/quick.ts`), Yes / No for each, Checklist. Progress, area navigation, save and share tools (`lib/draft.ts`). |
-| `/results/?id=` | leader, staff | Stages, live job progress, the layered report (`lib/results.ts`), Start here, roadmap teaser, coach (`lib/coach.ts`), read-aloud (`lib/listen.ts`), feedback and opt-in cards, PDF. |
+| `/` start page | leader | Role, job title and name (required since v1.8.2), organization name, optional details (program models, staff size, budget, up to 10 states or territories, shown as removable chips), website and social links, areas with time estimates, the language switch, sample organizations, continue-where-you-left-off. |
+| `/questionnaire/` | leader, teammates | A first "How would you like to answer?" screen shows one sample statement in all three styles; the choice sticks, and "Change how I answer" switches later. Three views over one answer store: One at a time (`lib/quick.ts`), Yes / No for each, Checklist. Progress, area navigation, save and share tools (`lib/draft.ts`). |
+| `/results/?id=` | leader, staff | Live job progress, the two-layer report (`lib/results.ts`), Start here, roadmap card, the chat (`lib/coach.ts`), read-aloud (`lib/listen.ts`), feedback and opt-in cards, PDF. |
 | `/plan/?id=` | leader, staff | The 12-week roadmap (`lib/roadmap.ts`). |
 | `/resume/` | leader | Paste a resume or teammate link. |
 | `/staff/` | staff | The dashboard (`lib/staff-*.ts`). |
 
-**One at a time (v1.9 behaviour).** One card per statement or multiple-choice question. Answering moves to the next unanswered card; "Next" (formerly "Keep my answer") moves on from an answered card; Previous walks back through the cards in the order the person saw them, and Next walks them forward again (a history, not a position step). The progress line reads "Question N of M in <area>" with the bar at the same position; the answered total stays in the bottom bar ("Saved: 7 of 15").
+**One at a time (v1.10 behaviour).** One card per statement or multiple-choice question. Every card has Previous and Next in the same place; when you cannot move on yet (or on the first card, for Previous) the button stays and says why. Answering moves to the next unanswered card; Next moves on from an answered card; Previous walks back through the cards in the order the person saw them, and Next walks them forward again (a history, not a position step). After a multiple-choice question, a "Your choice filled in these answers" step shows the filled-in statements as selected Yes / No pairs you can flip with one tap. The progress line reads "Question N of M in <area>" with the bar at the same position; the answered total stays in the bottom bar ("Saved: 7 of 15").
+
+**The results page (v1.10).** Two layers. Explore any area shows each area's stage right away while the report is written. Your plan (the default once ready) runs: Summary about your organization; the 12-week roadmap; Start here (the two code-chosen priorities, weeks 1 to 4, side by side on a laptop, each showing only the steps of open weeks plus one line saying when the next open); Chat about your report; support; peers; Stay connected; and, last, What we learned about you (with sources). A small label under each heading says what came from the answers and what AI wrote. Stage tracks, "Your results in detail" and the reading level line are gone from the page; scores, strengths, the 30/60/90 plan and sources are in the PDF.
+
+**The PDF (v1.10).** Every PDF (full report, weekly roadmap page, staff network report) has a light Everytown watermark on each page, a confidentiality note in the footer and a confidentiality clause at the end (Spanish for Spanish reports). The letter runs: Summary about your organization, strengths, where to start, the next 12 weeks, how CSF helps, and what we learned about you last. The reading grade is no longer printed (it is still checked in code).
 
 **Design.** The Everytown Community Safety Fund look (navy #001C60, royal blue #0D3DD9, one red stripe, CSF orange as decoration, Source Serif 4 headlines, Atkinson Hyperlegible body text), from a design system kept outside the repo (`/workshop/design-system/everytown-oci/MASTER.md` and page files, with every deviation recorded).
 
@@ -466,6 +473,7 @@ axe-core 4.10.2 (WCAG 2.0, 2.1, 2.2 A and AA) on every page and staff tab at 320
 | v1.8.2 | Job title and name required. |
 | v1.9.0 | Team requests: one language switch for questions and report, several states, progress and Previous that follow the person (#23 to #27). |
 | v1.9.1 | This technical guide. |
+| v1.10.0 | User-test fixes: answer-style chooser, filled-in step, Previous and Next on every card, state chips, a two-layer results page, Chat about your report, roadmap timeline and badges, PDF watermark and confidentiality (#28 to #39). |
 
 The full notes for each are in [`CHANGELOG.md`](../CHANGELOG.md) and on the GitHub Releases page.
 

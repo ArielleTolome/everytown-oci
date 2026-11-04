@@ -13,7 +13,7 @@ import Icon from "../components/Icon.astro";
   import { api, ApiError, getMeta, requireUser, type Domain, type Question, type Stage } from "../lib/api";
   import { $, $$, esc, focusEl, plural } from "../lib/dom";
   import { icon } from "../lib/icons";
-  import { clearDraft, DraftLinkError, draftToken, loadDraft, saveDraft, savedLocally, SECONDS_PER_STATEMENT, type Draft } from "../lib/draft";
+  import { clearDraft, DraftLinkError, draftToken, loadDraft, saveDraft, savedLocally, SECONDS_PER_STATEMENT, type Draft, type View } from "../lib/draft";
   import { mountQuick, scopeLadders, type Ladder } from "../lib/quick";
 
   const root = $("#q-root")!;
@@ -23,12 +23,9 @@ import Icon from "../components/Icon.astro";
   let missing = new Set<string>();
   let submitting = false;
   let barObserver: ResizeObserver | null = null;
-  type View = "quick" | "yn" | "check";
-  const VIEW_KEY = "oci-q-view";
   const DEMO_KEY = "oci-demo-preload";
-  // One at a time is the default on a first visit; a chosen view is remembered.
+  // #28: picked once per draft on the "How would you like to answer?" screen and kept in the draft (draft.view).
   let view: View = "quick";
-  try { const v = localStorage.getItem(VIEW_KEY); if (v === "yn" || v === "check") view = v; } catch { /* storage disabled */ }
   let ladders: Ladder[] = [];
   let byId = new Map<string, { q: Question; area: string }>();
   let quick: { goTo(id: string): void } | null = null;
@@ -165,6 +162,8 @@ import Icon from "../components/Icon.astro";
   }
 
   function render(n: number, moveFocus: boolean) {
+    if (!draft.view) { renderChooser(n, false); return; }
+    view = draft.view;
     const d = domains[n - 1];
     current = d;
     const last = n === domains.length;
@@ -172,8 +171,8 @@ import Icon from "../components/Icon.astro";
     const nextName = last ? "" : nameOf(domains[n]);
     document.title = `${here.length ? "Check your answers: " : ""}${nameOf(d)} (${n} ${L("of", "de")} ${domains.length}) · OCI Capacity Coach`;
 
-    // One at a time: the card comes right after the progress line; the view and language switches, area info and
-    // tips move below it, so the first statement is on the first screen (also on a phone).
+    // One at a time: the card comes right after the progress line; area info and tips move below it, so the first
+    // statement is on the first screen (also on a phone).
     const quickView = view === "quick";
     const context = `
       <details class="about-card">
@@ -188,24 +187,19 @@ import Icon from "../components/Icon.astro";
     const tips = `
       <details class="about-card kbd-tips">
         <summary>${icon("type")}<span>Keyboard tips</span>${icon("chevron-down", "about-card__chevron")}</summary>
-        <div class="about-card__body"><ul>
-          <li>In One at a time view, press Y for Yes or N for No. The next statement comes up by itself. Press the left arrow to go back one.</li>
-          <li>Press Tab to move from one statement to the next.</li>
-          <li>In Yes / No view, press Y for Yes or N for No while you are on a statement. The arrow keys also move between Yes and No.</li>
-          <li>In the checklist, press Space to tick or untick a statement.</li>
+        <div class="about-card__body"><ul>${view === "quick"
+          ? "<li>Press Y for Yes or N for No. The next statement comes up by itself. Press the left arrow to go back one.</li>"
+          : `<li>Press Tab to move from one statement to the next.</li>${view === "yn"
+            ? "<li>Press Y for Yes or N for No while you are on a statement. The arrow keys also move between Yes and No.</li>"
+            : "<li>Press Space to tick or untick a statement.</li>"}`}
         </ul></div>
       </details>
       <p class="hint">Answer all ${d.questions.length} statements to finish this area. We save your answers on this device as you go.</p>`;
-    const tools = `
-      <div class="q-tools">
-        <fieldset class="seg" aria-describedby="view-hint"><legend id="view-legend"></legend><div class="seg__opts">
-          ${seg("q-view", "quick", "One at a time", view === "quick")}${seg("q-view", "yn", "Yes / No for each", view === "yn")}${seg("q-view", "check", "Checklist: tick what's true", view === "check")}
-        </div><p class="hint seg__hint" id="view-hint"></p></fieldset>
-      </div>
-      ${demo ? `<p class="q-demo"><button type="button" class="q-demo__btn" id="demo-fill">${icon("clipboard")}<span>Demo: fill this area with sample answers</span></button></p>` : ""}`;
+    const tools = demo ? `<p class="q-demo"><button type="button" class="q-demo__btn" id="demo-fill">${icon("clipboard")}<span>Demo: fill this area with sample answers</span></button></p>` : "";
     // Save and share are secondary in One at a time view, so they follow the card there; a teammate keeps the notice
-    // about which area they answer on top.
-    const draftTools = `<div id="draft-tools" data-area="${esc(d.id)}" data-name="${esc(nameOf(d))}"${langEs()}></div>`;
+    // about which area they answer on top. #28: the one quiet way back to "How would you like to answer?" sits with them.
+    const draftTools = `<div id="draft-tools" data-area="${esc(d.id)}" data-name="${esc(nameOf(d))}"${langEs()}></div>
+      <p class="q-change-view"${langEs()}><button type="button" class="q-demo__btn" id="change-view">${icon("list-checks")}<span>${L("Change how I answer", "Cambiar cómo respondo")}</span></button></p>`;
     const toolsBelow = quickView && !teammate;
     root.dataset.view = view;
     root.innerHTML = `
@@ -243,19 +237,13 @@ import Icon from "../components/Icon.astro";
     updateProgress();
     watchBar();
 
-    $(".q-tools")!.addEventListener("change", (e) => {
-      view = (e.target as HTMLInputElement).value as View;
-      try { localStorage.setItem(VIEW_KEY, view); } catch { /* storage disabled */ }
-      // The layout depends on the view: re-render, then put focus back on the chosen option.
-      render(n, false);
-      $<HTMLInputElement>('input[name="q-view"]:checked')?.focus();
-    });
+    $("#change-view")!.addEventListener("click", () => renderChooser(n, true));
     watchLang(() => render(n, false));
     const form = $<HTMLFormElement>("#area-form")!;
     form.addEventListener("change", (e) => {
       const input = e.target as HTMLInputElement;
       const id = input.type === "radio" ? input.name : input.dataset.q;
-      // Only this area's statements are answers: in One at a time view the view switch sits in this form too.
+      // Only this area's statements are answers: the save and share panel and the multiple-choice "filled in" answers sit in this form too.
       if (!id || !d.questions.some((q) => q.id === id)) return;
       const wasComplete = isComplete(d);
       draft.answers[id] = input.type === "radio" ? (input.value as "yes" | "no") : input.checked ? "yes" : "no";
@@ -341,6 +329,57 @@ import Icon from "../components/Icon.astro";
   const seg = (name: string, value: string, label: string, on: boolean) => `
     <label class="seg__opt"><input type="radio" name="${name}" value="${value}"${on ? " checked" : ""}><span class="seg__check" aria-hidden="true">${icon("check")}</span><span>${label}</span></label>`;
 
+  /** #28: "How would you like to answer?" before the first question of a draft (also for a teammate), and again from
+   * "Change how I answer". One real statement shown the three ways as choice cards; the pick is kept in the draft. */
+  function renderChooser(n: number, again: boolean) {
+    current = null;
+    quick = null;
+    const q = [...domains[0].questions].sort((x, y) => textOf(x).length - textOf(y).length)[0]; // shortest reads best small
+    const yn = (big: boolean) => `<span class="vp__pair${big ? " vp__pair--big" : ""}"><span class="vp__opt">${L("Yes", "Sí")}</span><span class="vp__opt">No</span></span>`;
+    const s = `<span class="vp__stmt">${esc(textOf(q))}</span>`;
+    const cards: [View, string, string, string][] = [
+      ["quick", L("One at a time", "Una a la vez"), L("One statement on the screen. Choose Yes or No and the next one comes up.",
+        "Una afirmación en la pantalla. Elija Sí o No y aparece la siguiente."), `${s}${yn(true)}`],
+      ["yn", L("Yes / No for each", "Sí / No para cada una"), L("All the statements of an area on one page. Choose Yes or No for each one.",
+        "Todas las afirmaciones de un área en una página. Elija Sí o No en cada una."), `<span class="vp__row">${s}${yn(false)}</span><span class="vp__more"></span><span class="vp__more"></span>`],
+      ["check", L("Checklist: tick what's true", "Lista: marque lo que es cierto"), L("All the statements of an area as a list. Tick the ones that are true. The rest count as No.",
+        "Todas las afirmaciones de un área en una lista. Marque las que son ciertas. Las demás cuentan como No."), `<span class="vp__tick"><span class="vp__box"></span>${s}</span><span class="vp__more vp__more--tick"></span><span class="vp__more vp__more--tick"></span>`],
+    ];
+    document.title = `${L("How would you like to answer?", "¿Cómo prefiere responder?")} · OCI Capacity Coach`;
+    root.dataset.view = "choose";
+    root.innerHTML = `
+      <div class="title-band"${langEs()}>${langSwitch()}
+        <span class="eyebrow">${L("Step 2 of 3: Questionnaire", "Paso 2 de 3: Cuestionario")}</span>
+        <h1 id="choose-title" tabindex="-1">${L("How would you like to answer?", "¿Cómo prefiere responder?")}</h1>
+      </div>
+      <div class="view-pick"${langEs()}>
+        <p class="view-pick__lead">${L("Here is one statement from your questionnaire, shown three ways. Pick the way that feels easiest. Your answers count the same in all three.",
+          "Esta es una afirmación de su cuestionario, mostrada de tres formas. Elija la que le resulte más fácil. Sus respuestas cuentan igual en las tres.")}</p>
+        <p class="visually-hidden">${L("The statement is:", "La afirmación es:")} ${stmt(q)}</p>
+        <ul class="view-pick__list" role="list">${cards.map(([v, name, desc, preview]) => `
+          <li><button type="button" class="view-card${again && v === view ? " is-current" : ""}" data-pick="${v}" aria-labelledby="vp-${v}-name" aria-describedby="vp-${v}-desc${again && v === view ? ` vp-${v}-cur` : ""}">
+            <span class="view-card__preview" aria-hidden="true">${preview}</span>
+            <span class="view-card__name" id="vp-${v}-name">${name}</span>
+            <span class="view-card__desc" id="vp-${v}-desc">${desc}</span>
+            ${again && v === view ? `<span class="view-card__cur" id="vp-${v}-cur">${icon("check")}${L("How you answer now", "Cómo responde ahora")}</span>` : ""}
+            <span class="view-card__go" aria-hidden="true">${L("Answer this way", "Responder así")}${icon("arrow-right")}</span>
+          </button></li>`).join("")}
+        </ul>
+        <p class="hint">${L("You can change this later with Change how I answer, under the questions.", "Puede cambiarlo después con Cambiar cómo respondo, debajo de las preguntas.")}</p>
+      </div>`;
+    root.removeAttribute("aria-busy");
+    $(".view-pick__list")!.addEventListener("click", (e) => {
+      const v = (e.target as Element).closest<HTMLElement>("[data-pick]")?.dataset.pick as View | undefined;
+      if (!v) return;
+      draft.view = v;
+      saveDraft(draft);
+      render(n, true);
+    });
+    watchLang(() => renderChooser(n, again));
+    window.scrollTo(0, 0);
+    if (again) focusEl($("#choose-title"));
+  }
+
   /** #25: one language switch, top right of the title band (not shown when the Spanish texts did not load). It sets the
    * questions and the report language (draft.language: the report and its read-aloud voice); a teammate's only their questions. */
   const langSwitch = () => (Object.keys(es).length ? `
@@ -397,8 +436,6 @@ import Icon from "../components/Icon.astro";
     const about = $("#about-body")!;
     about.innerHTML = `<p>${esc(t?.about ?? d.about)}</p>${d.connects ? `<p>${esc(t?.connects ?? d.connects)}</p>` : ""}`;
     if (t) about.setAttribute("lang", "es"); else about.removeAttribute("lang");
-    $("#view-legend")!.innerHTML = tr("How would you like to answer?", "¿Cómo prefiere responder?");
-    $("#view-hint")!.innerHTML = tr("Pick any. Your answers stay the same if you switch.", "Elija cualquiera. Sus respuestas no cambian si cambia de forma.");
     $("#callout-text")!.textContent = view === "quick"
       ? "Choose Yes if the statement is true for your organization today, and No if it is not yet. The next one comes up by itself. Every No is simply a place to grow."
       : "Answer for how your organization works today, not how you hope it will be. Every No is simply a place to grow.";
@@ -559,7 +596,7 @@ import Icon from "../components/Icon.astro";
       });
       // Keep the organization details for next time; answers start fresh.
       clearDraft();
-      saveDraft({ ...draft, answers: {} });
+      saveDraft({ ...draft, answers: {}, view: null }); // the next assessment asks how to answer again
       location.assign(`/results/?id=${encodeURIComponent(id)}`);
     } catch (ex) {
       submitting = false;

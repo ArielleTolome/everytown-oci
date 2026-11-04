@@ -2,6 +2,7 @@ import { test } from '@e2e-dev/web';
 import { expect } from 'e2e';
 
 // Regression for #23: an organization can choose more than one state or territory, and its draft brings them all back.
+// #31: the chosen ones are bubbles (chips) side by side, each with its own remove control.
 // The draft stays on this device (no report, nothing saved on the server).
 test('the start page keeps several states or territories in the draft', { session: 'demo' }, async ({ app, screen, browser }) => {
   await app.open('/');
@@ -19,6 +20,7 @@ test('the start page keeps several states or territories in the draft', { sessio
     await expect(screen.getByRole('button', `Remove ${state}`)).toBeVisible();
   }
   await screen.getByRole('button', 'Start questionnaire').tap();
+  await screen.getByRole('button', 'One at a time').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible({ timeout: 15_000 });
 
   await app.open('/');
@@ -26,5 +28,9 @@ test('the start page keeps several states or territories in the draft', { sessio
   await expect(screen.getByRole('button', 'Remove New York')).toBeVisible();
   expect(await browser.evaluate(() => [...document.querySelectorAll('#state-list li > span')].map((s) => s.textContent)))
     .toEqual(['New Jersey', 'New York']);
+  expect(await browser.evaluate(() => new Set([...document.querySelectorAll('#state-list li')].map((li) => Math.round(li.getBoundingClientRect().top))).size)).toBe(1);
+  await screen.getByRole('button', 'Remove New Jersey').tap();
+  await expect(screen.getByRole('button', 'Remove New Jersey')).toBeHidden();
+  expect(await browser.evaluate(() => [...document.querySelectorAll('#state-list li > span')].map((s) => s.textContent))).toEqual(['New York']);
   await browser.evaluate(() => { localStorage.removeItem('oci-draft'); localStorage.removeItem('oci-draft-sync'); });
 });

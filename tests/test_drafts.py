@@ -51,6 +51,15 @@ class DraftData(unittest.TestCase):
         self.assertEqual(out["domain_ids"], ["PL", "FM"])  # canonical order, unknown area gone
         self.assertEqual(out["answers"], {"PL1": "yes", "FM1": "no"})
 
+    def test_answer_style_kept_only_when_known(self):
+        # #28: the leader's answer style follows a resume link to another device; anything else is dropped.
+        for v in ("quick", "yn", "check"):
+            self.assertEqual(drafts.clean({"view": v})["view"], v)
+        for bad in ("grid", "", None, ["quick"], 1):
+            self.assertIsNone(drafts.clean({"view": bad})["view"], bad)
+        self.assertIsNone(drafts.clean({})["view"])
+        self.assertNotIn("view", drafts._view(drafts.clean({"view": "yn"}), "PL"))  # a teammate picks their own
+
 
 @unittest.skipUnless(HAS_DB, "needs the Aurora Data API (OCI_DB_CLUSTER_ARN)")
 class Drafts(unittest.TestCase):
