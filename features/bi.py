@@ -53,6 +53,7 @@ def load():
         "COALESCE(to_jsonb(o)->>'budget', a.doc->'org_meta'->>'budget') AS budget, "
         "COALESCE(to_jsonb(a)->>'respondent_role', a.doc->'respondent'->>'role') AS role, "
         "(a.doc->'answered_by')::text AS answered_by, a.doc->'trace'->>'url' AS trace_url, "
+        "a.doc->'trace'->>'cloudwatch_url' AS trace_cloudwatch_url, "
         "(SELECT json_agg(json_build_array(dr.domain_id, dr.estimated_stage, dr.score_pct))::text "
         " FROM domain_results dr WHERE dr.assessment_id = r.id) AS stages, "
         "(SELECT json_agg(json_build_array(g.question_id, g.priority) ORDER BY g.rank)::text "
@@ -74,7 +75,7 @@ def load():
                                  recent=r["recent"], program_models=json.loads(r["models"] or "[]"),
                                  staff_size=r["staff_size"], budget=r["budget"], state=r["state"], role=r["role"],
                                  answered_by=answered_by if isinstance(answered_by, dict) else {}, prev=None,
-                                 trace_url=r["trace_url"])
+                                 trace_url=r["trace_url"], trace_cloudwatch_url=r["trace_cloudwatch_url"])
         elif r["id"] in orgs:
             orgs[r["id"]]["prev"] = snap
     out = list(orgs.values())
@@ -291,6 +292,7 @@ def org_detail(o, ctx):
             "source": o["source"], "assessments": o["assessments"], "program_models": o["program_models"],
             "staff_size": o["staff_size"], "budget": o["budget"], "state": o["state"], "role": o["role"],
             "asked": o["asked"], "asked_at": o["asked_at"], "trace_url": o.get("trace_url"),
+            "trace_cloudwatch_url": o.get("trace_cloudwatch_url"),
             "stages": [dict(o["stages"][d], domain_id=d, domain_name=ctx["names"][d], high=_high(o, d))
                        for d in ctx["order"] if d in o["stages"]],
             "top_gaps": [{"question_id": q, "question_text": ctx["text"][q], "priority": p,

@@ -20,6 +20,7 @@ import pipeline  # noqa: E402
 
 def reset():
     observability._provider = observability._tracer = None
+    del observability._pending[:]
 
 
 def sample_sub(profile=None):
@@ -196,17 +197,23 @@ class TracingOn(unittest.TestCase):
         self.assertEqual((v["oci.plan_in"], v["oci.dropped.no_grounded_gap_id"], v["oci.dropped.unknown_gap_id_removed"]),
                          (2, 1, 2))
 
-    def test_audit_link_and_online_check_metrics(self):
-        sub, spans = self.run_job()
+    def test_audit_links_and_online_checks_reach_cloudwatch_and_phoenix(self):
+        with mock.patch.object(observability, "PHOENIX", "https://phoenix.example"):
+            sub, spans = self.run_job()
         root = spans["oci.report"]
         trace_id = format(root.context.trace_id, "032x")
         self.assertLess(abs(int(trace_id[:8], 16) - time.time()), 120)  # X-Ray ids start with the epoch seconds
         xid = "1-%s-%s" % (trace_id[:8], trace_id[8:])
-        self.assertEqual(sub["trace"], {"trace_id": trace_id, "project": "everytown-oci", "url":
-                                        "https://%s.console.aws.amazon.com/cloudwatch/home?region=%s#xray:traces/%s"
-                                        % (observability.REGION, observability.REGION, xid)})
+        self.assertEqual(sub["trace"], {
+            "trace_id": trace_id, "project": "everytown-oci", "url": "https://phoenix.example/redirects/traces/" + trace_id,
+            "cloudwatch_url": "https://%s.console.aws.amazon.com/cloudwatch/home?region=%s#xray:traces/%s"
+                              % (observability.REGION, observability.REGION, xid)})
         metrics = {m["Check"]: m for m in map(json.loads, self.stdout.getvalue().splitlines()) if "_aws" in m}
         self.assertEqual({k: v["CheckFailed"] for k, v in metrics.items()}, {"grounded": 0, "raw_drop_rate": 1})
+        notes = {n["name"]: n for n in observability._pending}  # the same checks, as Phoenix annotations on the root
+        self.assertEqual({k: (n["span_id"], n["result"]["label"]) for k, n in notes.items()},
+                         {"grounded": (format(root.context.span_id, "016x"), "pass"),
+                          "raw_drop_rate": (format(root.context.span_id, "016x"), "fail")})
         self.assertEqual(root.attributes["oci.checks.failed"], ("raw_drop_rate",))
 
     def test_orgs_never_get_the_trace_link(self):

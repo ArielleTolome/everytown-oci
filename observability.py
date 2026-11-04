@@ -14,7 +14,9 @@ import json
 import logging
 import os
 import random
+import threading
 import time
+import urllib.request
 
 log = logging.getLogger(__name__)
 SERVICE = os.environ.get("OCI_TRACE_SERVICE") or "everytown-oci"
@@ -25,6 +27,8 @@ QUALITY_NAMESPACE = "EverytownOCI/Quality"
 
 _provider = None
 _tracer = None
+_pending = []  # Phoenix span annotations waiting for flush()
+_lock = threading.Lock()
 
 
 class _NoSpan:
@@ -177,10 +181,11 @@ def cloudwatch_url(trace_id):
 
 
 def trace_link(trace_id):
-    """{trace_id, project, url} for the assessment document: the trace in Phoenix (its own sign-in) when configured,
-    else in the CloudWatch console (AWS sign-in)."""
-    url = "%s/redirects/traces/%s" % (PHOENIX, trace_id) if PHOENIX and trace_id else cloudwatch_url(trace_id)
-    return {"trace_id": trace_id, "project": SERVICE, "url": url}
+    """{trace_id, project, url, cloudwatch_url} for the assessment document: `url` opens the trace in Phoenix (its own
+    sign-in) when configured, else in the CloudWatch console (AWS sign-in); `cloudwatch_url` is always the console."""
+    cw = cloudwatch_url(trace_id)
+    url = "%s/redirects/traces/%s" % (PHOENIX, trace_id) if PHOENIX and trace_id else cw
+    return {"trace_id": trace_id, "project": SERVICE, "url": url, "cloudwatch_url": cw}
 
 
 def owner_hash(owner):
@@ -201,12 +206,38 @@ def metric(namespace, dimensions, values):
         log.exception("could not emit metric")
 
 
+def annotate(span, name, score=None, label=None, explanation=None, kind="CODE"):
+    """Queue a Phoenix span annotation on `span`; flush() sends it after the span itself (Phoenix needs the span
+    first). No-op without Phoenix. Never raises."""
+    if _tracer is None or not PHOENIX:
+        return
+    try:
+        ctx = span.get_span_context()
+        if ctx.is_valid:
+            with _lock:
+                _pending.append({"span_id": format(ctx.span_id, "016x"), "name": name, "annotator_kind": kind,
+                                 "result": {"label": label, "score": score, "explanation":
+                                            explanation[:2000] if isinstance(explanation, str) else None}})
+    except Exception:
+        log.exception("could not queue annotation %s", name)
+
+
 def flush(timeout_s=5):
-    """Export finished spans. Called after every Lambda invocation. Never raises."""
+    """Export finished spans to every backend, then queued Phoenix annotations. Called after every Lambda
+    invocation. Never raises."""
     if _provider is None:
         return
     try:
         _provider.force_flush(int(timeout_s * 1000))
+        with _lock:
+            batch = _pending[:]
+            del _pending[:]
+        if batch:
+            req = urllib.request.Request(
+                PHOENIX + "/v1/span_annotations", data=json.dumps({"data": batch}).encode(), method="POST",
+                headers={"Content-Type": "application/json",
+                         "Authorization": "Bearer " + (os.environ.get("OCI_PHOENIX_API_KEY") or "")})
+            urllib.request.urlopen(req, timeout=timeout_s).read()
     except Exception as exc:
         log.warning("trace export failed: %s", exc)
 
@@ -327,8 +358,8 @@ def score_attrs(sub):
 
 def online_checks(sub, raw, root):
     """Run evals.checks.report_checks on every finished report: each result becomes a CloudWatch metric
-    (EverytownOCI/Quality, CheckScore and CheckFailed by Check) and, when tracing is on, attributes on the
-    online_checks span and on `root`. Skipped when the evals package is absent. Never raises."""
+    (EverytownOCI/Quality, CheckScore and CheckFailed by Check), a Phoenix CODE annotation on `root` and, when tracing
+    is on, attributes on the online_checks span and on `root`. Skipped when the evals package is absent. Never raises."""
     try:
         from evals.checks import report_checks
     except ImportError:
@@ -343,6 +374,7 @@ def online_checks(sub, raw, root):
                 if isinstance(r.get("score"), (int, float)):
                     metric(QUALITY_NAMESPACE, {"Check": r["name"]},
                            {"CheckScore": r["score"], "CheckFailed": int(r.get("label") == "fail")})
+                annotate(root, r["name"], score=r.get("score"), label=r.get("label"), explanation=r.get("explanation"))
             failed = [r["name"] for r in results if r.get("label") == "fail"]
             attrs.update({"oci.checks.failed": failed or None, "oci.checks.count": len(results),
                           "output.value": {r["name"]: r.get("label") for r in results}})

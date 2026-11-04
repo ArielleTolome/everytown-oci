@@ -96,7 +96,9 @@ python3 -m unittest tests.test_checks                        # checks, datasets 
 
 - `--suite reports|coach|staff_ask|all`, `--limit N` (round-robin across each example's first tag, so 4 coach
   examples cover a how-to, a score change, a crisis and an off-topic question), `--judges/--no-judges`,
-  `--cloudwatch/--no-cloudwatch` (default on), `--model ID` (the report writer for
+  `--cloudwatch/--no-cloudwatch` (default on), `--phoenix/--no-phoenix` (default on when `OCI_PHOENIX_ENDPOINT`
+  is set or `infra/.phoenix.env` exists: the dataset is uploaded once per content hash and the run becomes a Phoenix
+  experiment in the `PhoenixUrl` UI, with every evaluator score), `--model ID` (the report writer for
   `reports`, the fast model for `coach` and `staff_ask`), `--compare ID` (the same suite again with a second
   model, then a side-by-side table of mean scores), `--name` (experiment name prefix).
 - The tasks call the real code: reports run `pipeline.gather_library`, `write_report` and `plain_language`

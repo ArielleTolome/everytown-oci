@@ -5,7 +5,7 @@ import { coachBody } from "./coach";
 import { icon, type IconName } from "./icons";
 import { fillRoadmapTeaser, roadmapTeaser, setRoadmapTask, shortDate, type Roadmap } from "./roadmap";
 import { errorText } from "./report-ui";
-import { traceLink } from "./staff-bi";
+import { traceLinks } from "./staff-bi";
 
 /** v1.0 document fields (all optional; older documents lack them). Kept local so api.ts stays conflict-free. */
 export interface ResearchSource { kind: "website" | "social" | "news"; url: string; title: string; used: boolean }
@@ -14,8 +14,9 @@ export interface V10 {
   research?: { strength: "rich" | "some" | "limited" | "none"; sources: ResearchSource[] } | null;
   answered_by?: Record<string, string> | null;
   peer_request?: { requested_at: string } | null;
-  /** v1.1: the AI trace of the latest run (staff only; the API strips it for organizations). */
-  trace?: { trace_id: string; project: string; url: string | null } | null;
+  /** v1.1: the AI trace of the latest run (staff only; the API strips it for organizations). `url` is Phoenix when
+   *  configured, else CloudWatch; `cloudwatch_url` (v1.6) is always the CloudWatch console. */
+  trace?: { trace_id: string; project: string; url: string | null; cloudwatch_url?: string | null } | null;
 }
 export const v10 = (sub: Assessment) => sub as Assessment & V10;
 
@@ -614,7 +615,7 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
     top.push(`<p class="notice section-gap" lang="es">${icon("info")}<span>Las preguntas están en inglés; este informe se escribió en español.</span></p>`);
   }
   // The AI and scoring note lives in the ready panel (statusPanel), so it is said once.
-  if (opts.staff) top.push(traceLink(v10(sub).trace?.url));
+  if (opts.staff) top.push(traceLinks(v10(sub).trace?.url, v10(sub).trace?.cloudwatch_url));
 
   // Layer 1: the short, conversational version.
   const plan: string[] = [];

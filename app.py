@@ -287,7 +287,7 @@ def run_job(sid):
         except Exception:
             app.logger.exception("trace attributes failed for %s", sid)
     with observability.span("oci.report", "CHAIN", **attrs) as root:
-        if observability.enabled():  # staff-only audit link to this run's trace in the CloudWatch console
+        if observability.enabled():  # staff-only audit links to this run's trace in Phoenix and the CloudWatch console
             sub["trace"] = observability.trace_link(observability.current_trace_id())
         with observability.span("score", "CHAIN", **observability.score_attrs(sub)):
             pass  # the engine ran at submit time; this span records its result

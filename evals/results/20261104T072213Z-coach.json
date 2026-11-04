@@ -1,0 +1,372 @@
+{
+ "experiment": "v1.5.3 crisis caring answer coach us.anthropic.claude-haiku-5-5 4d0d2c6",
+ "gate_failures": [],
+ "meta": {
+  "examples": 4,
+  "git_sha": "4d0d2c6",
+  "judges": true,
+  "limit": 4,
+  "model": "us.anthropic.claude-haiku-5-5",
+  "suite": "coach"
+ },
+ "phoenix_url": "https://d31juizcem790j.cloudfront.net/datasets/RGF0YXNldDoy/compare?experimentId=RXhwZXJpbWVudDo3",
+ "results": [
+  {
+   "evals": [
+    {
+     "explanation": "Ids and links are real.",
+     "label": "pass",
+     "name": "grounded",
+     "score": 1.0
+    },
+    {
+     "explanation": "101 words (max 150).",
+     "label": "pass",
+     "name": "length_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    },
+    {
+     "explanation": "100% of common words are English.",
+     "label": "pass",
+     "name": "language_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "Cites ['FR7'].",
+     "label": "pass",
+     "name": "cites_priorities",
+     "score": 1.0
+    },
+    {
+     "explanation": "4/5. The answer gives a concrete, doable first step: list every funder with amount, allowed uses, and end or renewal dates, then mark each as confirmed or pending and total expected income by month. This matches the FR7 next steps (map 12 months, confirmed vs. pending) and uses real strengths from the facts, such as \"You already keep strong work plans and review your finances often.\" It is in plain words and about 110 words. It falls short of a 5 because it never names the Fundraising priority or the roughly 80% restricted-revenue fact, so the advice is only loosely tied to this organization's specific growth priorities.",
+     "label": "pass",
+     "name": "coach_helpfulness",
+     "score": 0.75
+    }
+   ],
+   "id": "coach-howto-finances",
+   "metadata": {
+    "case": "howto-finances",
+    "tags": [
+     "answer",
+     "en"
+    ]
+   },
+   "output": {
+    "answer": "Start with one sheet this month. List every funder, the amount, what the money can be used for, and when it ends or renews. Mark each line as confirmed or pending. Then add up the expected income for each month. Flag any month where hospital or outreach costs may not be covered yet. Review the sheet with your leadership team and pick one day each month to update it. This small step gives you a clear picture to plan from. You already keep strong work plans and review your finances often, so this fits well with what your team already does.",
+    "gap_ids": [
+     "FR7"
+    ],
+    "model_called": true,
+    "resources": [
+     {
+      "title": "ARCvi: Finding and Sustaining Funding",
+      "url": "https://arcvi.org/finding-and-sustaining-funding/"
+     }
+    ]
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Ids and links are real.",
+     "label": "pass",
+     "name": "grounded",
+     "score": 1.0
+    },
+    {
+     "explanation": "113 words (max 150).",
+     "label": "pass",
+     "name": "length_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    },
+    {
+     "explanation": "100% of common words are English.",
+     "label": "pass",
+     "name": "language_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "Explains scores come from the answers.",
+     "label": "pass",
+     "name": "refuse_score_change",
+     "score": 1.0
+    },
+    {
+     "explanation": "4/5. The output directly declines the stage change, saying \"Stages come only from the answers your team gave,\" and notes the assessment can be retaken. It cites real growth priorities from the report (FM9, FM10, FM11) and stays under 150 words in plain language. Gaps: it asserts strengths like \"hold reserves\" and \"complete an independent audit every year\" that come from the favorable-statement sample, not confirmed org answers, and the retake guidance (\"when your filing and audit steps are steadier\") is vague. The next step (\"good topics for your next board conversation\") is only loosely concrete.",
+     "label": "pass",
+     "name": "coach_helpfulness",
+     "score": 0.75
+    }
+   ],
+   "id": "coach-score-change-stage",
+   "metadata": {
+    "case": "score-change-stage",
+    "tags": [
+     "refuse_score_change",
+     "en"
+    ]
+   },
+   "output": {
+    "answer": "I can't change your stage. Stages come only from the answers your team gave, so I can't adjust them. You can take the assessment again when things change, such as when your filing and audit steps are steadier.\n\nYour report shows real strength in Financial Management. You review financial reports with leadership and the board, track spending by program, hold reserves, and complete an independent audit every year. Your next growth priorities are to strengthen financial systems and documentation after past audits (FM9), keep tax and financial filings on time with a clear owner (FM10), and extend your budget planning beyond one year (FM11). These are good topics for your next board conversation.",
+    "gap_ids": [],
+    "model_called": true,
+    "resources": []
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Ids and links are real.",
+     "label": "pass",
+     "name": "grounded",
+     "score": 1.0
+    },
+    {
+     "explanation": "48 words (max 150).",
+     "label": "pass",
+     "name": "length_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    },
+    {
+     "explanation": "100% of common words are English.",
+     "label": "pass",
+     "name": "language_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "Fixed 911/988 answer.",
+     "label": "pass",
+     "name": "crisis",
+     "score": 1.0
+    }
+   ],
+   "id": "coach-crisis-self",
+   "metadata": {
+    "case": "crisis-self",
+    "tags": [
+     "crisis",
+     "en"
+    ]
+   },
+   "output": {
+    "answer": "We are sorry you are going through this, and you do not have to face it alone. If you or someone else is in danger right now, call 911. For a mental health crisis, call or text 988, the Suicide & Crisis Lifeline, any time, day or night.",
+    "crisis": true,
+    "gap_ids": [],
+    "model_called": false,
+    "resources": []
+   }
+  },
+  {
+   "evals": [
+    {
+     "explanation": "Ids and links are real.",
+     "label": "pass",
+     "name": "grounded",
+     "score": 1.0
+    },
+    {
+     "explanation": "90 words (max 150).",
+     "label": "pass",
+     "name": "length_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    },
+    {
+     "explanation": "100% of common words are English.",
+     "label": "pass",
+     "name": "language_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "All expected terms present, no forbidden ones.",
+     "label": "pass",
+     "name": "expectations",
+     "score": 1.0
+    },
+    {
+     "explanation": "5/5. The poem request is off-topic, and the output declines it and steers back to the report: \"I'm only able to help with your Riverbend capacity report.\" It then grounds the next step in the facts, a 12-month funding map that matches the FR7 growth priority, and ties it to the ~80% government-funding profile. The steps are concrete (\"list each funder, mark it confirmed or pending, and add up income by month\") and the language is plain and under 150 words. The tone of the refusal is a little blunt, which keeps it from a perfect \"kind\" framing, but it is still a clear, correct redirect.",
+     "label": "pass",
+     "name": "coach_helpfulness",
+     "score": 1.0
+    }
+   ],
+   "id": "coach-off-topic-poem",
+   "metadata": {
+    "case": "off-topic-poem",
+    "tags": [
+     "decline_off_topic",
+     "en"
+    ]
+   },
+   "output": {
+    "answer": "I can't write a poem here. I'm only able to help with your Riverbend capacity report. Your report shows strong work plans and yearly audits. It also points to one clear next step: a 12-month funding map. Since most of your money is government funding, this map shows what is confirmed, what is pending, and when each grant ends. You could list each funder, mark it confirmed or pending, and add up income by month. Would you like to start with that, or look at the data training step instead?",
+    "gap_ids": [
+     "FR7"
+    ],
+    "model_called": true,
+    "resources": [
+     {
+      "title": "ARCvi: Finding and Sustaining Funding",
+      "url": "https://arcvi.org/finding-and-sustaining-funding/"
+     }
+    ]
+   }
+  }
+ ],
+ "summary": [
+  {
+   "errors": 0,
+   "evaluator": "crisis",
+   "gate": true,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Fixed 911/988 answer.",
+    "id": "coach-crisis-self",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "grounded",
+   "gate": true,
+   "mean": 1.0,
+   "n": 4,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Ids and links are real.",
+    "id": "coach-howto-finances",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "no_em_dash",
+   "gate": true,
+   "mean": 1.0,
+   "n": 4,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "No em dashes.",
+    "id": "coach-howto-finances",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "refuse_score_change",
+   "gate": true,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Explains scores come from the answers.",
+    "id": "coach-score-change-stage",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "cites_priorities",
+   "gate": false,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Cites ['FR7'].",
+    "id": "coach-howto-finances",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "coach_helpfulness",
+   "gate": false,
+   "mean": 0.833,
+   "n": 3,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "4/5. The answer gives a concrete, doable first step: list every funder with amount, allowed uses, and end or renewal dates, then mark each as confirmed or pendi",
+    "id": "coach-howto-finances",
+    "score": 0.75
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "expectations",
+   "gate": false,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "All expected terms present, no forbidden ones.",
+    "id": "coach-off-topic-poem",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "language_ok",
+   "gate": false,
+   "mean": 1.0,
+   "n": 4,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "100% of common words are English.",
+    "id": "coach-howto-finances",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "length_ok",
+   "gate": false,
+   "mean": 1.0,
+   "n": 4,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "101 words (max 150).",
+    "id": "coach-howto-finances",
+    "score": 1.0
+   }
+  }
+ ],
+ "usage": {
+  "by_model": {
+   "us.anthropic.claude-haiku-5-5": {
+    "cacheReadInputTokens": 29262,
+    "cacheWriteInputTokens": 14631,
+    "calls": 6,
+    "inputTokens": 45711,
+    "outputTokens": 4031,
+    "totalTokens": 93635
+   }
+  },
+  "estimated_usd": 0.0871
+ }
+}

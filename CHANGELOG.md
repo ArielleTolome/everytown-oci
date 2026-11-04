@@ -2,6 +2,14 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.6.0 — Arize Phoenix is back, alongside Amazon CloudWatch
+
+- **Traces in both, at the same time.** `observability.py` sends every span to X-Ray / CloudWatch Transaction Search and, when `OCI_PHOENIX_ENDPOINT` is set, also to Arize Phoenix (project = service name: `everytown-oci`, evals `everytown-oci-evals`). The code checks run on every live report go to both: CloudWatch metrics as before, and Phoenix CODE annotations on the report's root span. Each report stores both links, and staff see **View AI trace in Phoenix (staff)** and **View AI trace in CloudWatch (staff)** in the organization drawer and on the staff report view.
+- **Phoenix stack `everytown-oci-obs`** is back (`infra/observability.yaml`, `scripts/deploy_observability.sh`), restored from the v1.4 final snapshot of its data volume (new `DataSnapshotId` parameter, `PHOENIX_SNAPSHOT_ID` on the first deploy), so the v1.1 to v1.3 traces, datasets and experiments are there again. The deploy script now also creates a sign-in with a known password (`PHOENIX_LOGIN_EMAIL` / `PHOENIX_LOGIN_PASSWORD` in `infra/.phoenix.env`). `scripts/deploy.sh` passes the Phoenix URL and key to the app; `scripts/teardown.sh` deletes the stack again, keeping a final snapshot. About $22 a month.
+- **Evals in both.** `evals.run` runs each suite as a Phoenix experiment (`--phoenix`, on when Phoenix is configured; it reads `infra/.phoenix.env`) and still publishes metrics and logs to CloudWatch.
+- The CloudWatch dashboard, alarms, Bedrock invocation logging and quality metrics are unchanged.
+- The pitch deck's cost appendix and slide 9 list Phoenix as optional, about $22 a month. Deployed with v1.5.3 and verified on the live site: 14 of 14 end-to-end tests and both demo-path tests pass, and a new report stores its Phoenix trace link.
+
 ## v1.5.3 — E2E and bug bash before judging: fixes, more Lambda headroom, a one-command demo check
 
 All 11 end-to-end tests passed on the live site, then a 9-charter bug bash (e2e explore, Claude on Bedrock) raised 15 findings. 9 were confirmed and fixed; 6 were rejected with evidence (the roadmap's "a finished step never relocks its week" and the active-week streak are by design; a "lost tick" and a changed "Asked for help" count came from explorers and scripts editing the same shared report at once; the 200-character name limit already existed; `?t=` teammate links do not exist).

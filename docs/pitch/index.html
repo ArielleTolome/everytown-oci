@@ -334,7 +334,7 @@ figure figcaption p { font-size: 27px; }
       <div class="card pale"><h3>Everytown's own method</h3><p class="small">The 143 statements and reference scoring engine are Everytown's, unchanged. Week 12 is "Retake the OCI", so staff see whether support helped.</p></div>
     </div>
   </div>
-  <div class="foot"><span>Spend guards: capped concurrency, an hourly report cap, optional AWS Budget. Observability: CloudWatch, a few dollars a month.</span><span>9</span></div>
+  <div class="foot"><span>Spend guards: capped concurrency, an hourly report cap, optional AWS Budget. Observability: CloudWatch, a few dollars a month; Phoenix optional, about $22.</span><span>9</span></div>
   <aside class="notes">5:55 to 6:35. It works today: you just saw it live. A report costs about 11 cents of Bedrock, the whole network twice a year is under 50 dollars of tokens, and hosting is one to three dollars a month with the database on auto-pause. There are no servers to patch. Everytown owns it: Apache-2.0, three CloudFormation stacks, one deploy script. It stays healthy because every release has to pass the evals, the end-to-end tests and the accessibility checks. And it is Everytown's own method, unchanged, with a retake in week 12 so staff can see whether their support moved anyone.</aside>
 </section>
 
@@ -460,6 +460,7 @@ figure figcaption p { font-size: 27px; }
         <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 16px 14px 0;">Whole network, twice a year</td><td style="padding:14px 16px;">under $50 a year</td><td style="padding:14px 0 14px 16px;">140 organizations × 2 assessments, with room for retries and coach questions</td></tr>
         <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 16px 14px 0;">App hosting</td><td style="padding:14px 16px;">$1 to $3 a month</td><td style="padding:14px 0 14px 16px;">Aurora on auto-pause; about $45 a month kept warm at 0.5 ACU (as for judging)</td></tr>
         <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 16px 14px 0;">CloudWatch observability</td><td style="padding:14px 16px;">a few dollars a month</td><td style="padding:14px 0 14px 16px;">dashboard, a few custom metrics, spans and model logs at demo volume; no server</td></tr>
+        <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 16px 14px 0;">Arize Phoenix (optional)</td><td style="padding:14px 16px;">about $22 a month</td><td style="padding:14px 0 14px 16px;">one t3.small with an encrypted volume behind CloudFront; the same traces plus eval experiments</td></tr>
         <tr><td style="padding:14px 16px 14px 0;">A full eval run</td><td style="padding:14px 16px;">about $3.50</td><td style="padding:14px 0 14px 16px;">all three suites with judges; a quick check is about $0.60</td></tr>
       </tbody>
     </table>

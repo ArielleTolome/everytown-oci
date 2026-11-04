@@ -94,7 +94,7 @@ done
 # 5. System API key for the app (kept while it still works) and the projects. Updates PHOENIX_URL/PHOENIX_API_KEY.
 PHOENIX_URL=$URL PHOENIX_ADMIN_SECRET=$PHOENIX_ADMIN_SECRET PHOENIX_API_KEY=${PHOENIX_API_KEY:-} \
   python3 - "$ENV_FILE" <<'PY'
-import json, os, sys, urllib.error, urllib.request
+import json, os, secrets, sys, urllib.error, urllib.request
 
 url, env_file = os.environ["PHOENIX_URL"], sys.argv[1]
 
@@ -123,11 +123,33 @@ else:
     print("Phoenix API key: created a new system key (everytown-oci-app).")
 
 # Saved before anything else can fail: Phoenix shows a key only once.
-lines = [l for l in open(env_file).read().splitlines() if not l.startswith(("PHOENIX_URL=", "PHOENIX_API_KEY="))]
-lines += [f"PHOENIX_URL={url}", f"PHOENIX_API_KEY={key}"]
+env = dict(l.split("=", 1) for l in open(env_file).read().splitlines() if "=" in l)
+env.update(PHOENIX_URL=url, PHOENIX_API_KEY=key)
+env.setdefault("PHOENIX_LOGIN_EMAIL", "oci-admin@everytown-oci.example")  # Phoenix rejects @localhost for new users
+env.setdefault("PHOENIX_LOGIN_PASSWORD", secrets.token_urlsafe(18))
 fd = os.open(env_file, os.O_WRONLY | os.O_TRUNC | os.O_CREAT, 0o600)
 with os.fdopen(fd, "w") as f:
-    f.write("\n".join(lines) + "\n")
+    f.write("".join(f"{k}={v}\n" for k, v in env.items()))
+
+# A login with a known password: a restored data volume keeps the old admin@localhost password, which is not in the
+# env file, so the deploy owns this second admin instead.
+admin = os.environ["PHOENIX_ADMIN_SECRET"]
+if env["PHOENIX_LOGIN_EMAIL"] not in {u["email"] for u in call("GET", "/v1/users?limit=100", admin)["data"]}:
+    temp = secrets.token_urlsafe(18)
+    call("POST", "/v1/users", admin, {"send_welcome_email": False, "user": {
+        "email": env["PHOENIX_LOGIN_EMAIL"], "username": env["PHOENIX_LOGIN_EMAIL"].split("@")[0], "role": "ADMIN",
+        "auth_method": "LOCAL", "password": temp}})
+    # New users must reset their password on first sign-in; do that here, as the reset page would.
+    import http.cookiejar
+    web = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+    def post(path, body):
+        web.open(urllib.request.Request(url + path, data=json.dumps(body).encode(),
+                                        headers={"Content-Type": "application/json"}), timeout=30).read()
+    post("/auth/login", {"email": env["PHOENIX_LOGIN_EMAIL"], "password": temp})
+    post("/graphql", {"query": "mutation($p: String!, $c: String!) { patchViewer(input: {newPassword: $p, "
+                      "currentPassword: $c}) { user { email } } }",
+                      "variables": {"p": env["PHOENIX_LOGIN_PASSWORD"], "c": temp}})
+    print(f"Phoenix login created: {env['PHOENIX_LOGIN_EMAIL']}")
 
 existing = {p["name"] for p in call("GET", "/v1/projects?limit=100", key)["data"]}
 for name, description in (("everytown-oci", "Live app traces: report pipeline, coach, staff AI, read-aloud"),
@@ -138,6 +160,6 @@ for name, description in (("everytown-oci", "Live app traces: report pipeline, c
 PY
 
 echo "PhoenixUrl: $URL"
-echo "Log in as $PHOENIX_ADMIN_USER with PHOENIX_ADMIN_INITIAL_PASSWORD from $ENV_FILE (never commit it); Phoenix asks"
-echo "for a new password on first login. The app's API key is in the same file."
+echo "Sign in with PHOENIX_LOGIN_EMAIL and PHOENIX_LOGIN_PASSWORD from $ENV_FILE (never commit it). The app's API key"
+echo "is in the same file."
 echo "Run scripts/deploy.sh to send app traces there."
