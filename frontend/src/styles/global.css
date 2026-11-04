@@ -1529,3 +1529,27 @@ main h2[id] { scroll-margin-top: var(--space-lg); }
   .draft-panel .input-group .btn { flex: 1; }
 }
 /* == end v1.8 bash-intake == */
+/* == v1.8.1 intake == */
+/* #10 iPhone SE: on every One at a time card the statement and its first answer clear the sticky bar on the first
+   screen. Phones: cheers and hints follow the answers (nothing is hidden); the area-complete card puts its buttons first. */
+@media (max-width: 599px) {
+  .quick__card > .quick__cheer, .quick__card > .hint { order: 1; margin: var(--space-sm) 0 0; }
+  .quick-done { display: flex; flex-direction: column; }
+  .quick-done > .quick-done__badge { align-self: center; }
+  .quick-done > .quick-done__cheer, .quick-done > .hint { order: 1; }
+  .quick-done > .quick__nav { margin: var(--space-sm) 0 var(--space-md); }
+  /* "Based on your choice, we recorded": the first statement starts right under the heading. */
+  .ladder-item:first-child { padding-top: 0; }
+  /* Under 380px the head leaves what the screen already says (the step eyebrow, the area name in the meter, the
+     decorative streak) to screen readers, and a long bar label drops the short status (the meter shows the count). */
+  @media (max-width: 379px) {
+    [data-view="quick"] .title-band .eyebrow, [data-view="quick"] .q-streak, .quick__count-area,
+    [data-view="quick"]:has(.quick) .q-bar:not(:has(.q-next-name)) .q-bar__status:not(.is-warn) { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+    [data-view="quick"] .q-progress__meta { display: contents; }
+    .ladder-item__area { display: inline; margin-right: var(--space-xs); }
+    .ladder-item__text, #q-root .q-progress__where { line-height: 1.35; }
+    .quick-done > .quick-done__badge { width: 3.5rem; height: 3.5rem; margin-bottom: var(--space-sm); }
+    .quick-done__badge .icon { width: 2rem; height: 2rem; }
+  }
+}
+/* == end v1.8.1 intake == */

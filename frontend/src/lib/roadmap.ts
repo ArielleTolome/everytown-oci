@@ -254,6 +254,18 @@ export async function mountPlan(root: HTMLElement, id: string): Promise<void> {
   };
   render();
   wireDownloads(root);
+  // Turning the screen past 600px: move the parts page() and weekBody() order by PHONE. Only the totals and "Why this
+  // matters" move (nothing focusable), so focus, open details and the cheer line stay put; no refetch.
+  PHONE.addEventListener("change", () => {
+    const progress = $("#rm-progress-title", root)?.closest("section");
+    const weeks = $("#rm-weeks-title", root)?.closest("section");
+    if (progress && weeks) { if (PHONE.matches) weeks.after(progress); else weeks.before(progress); }
+    $$(".rm-tasks", root).forEach((steps) => {
+      const why = steps.parentElement!.querySelector(":scope > .inset");
+      if (why) { if (PHONE.matches) steps.after(why); else steps.before(why); }
+    });
+    if (root.contains(document.activeElement)) document.activeElement!.scrollIntoView({ block: "nearest" });
+  });
 
   root.addEventListener("change", (e) => {
     const box = e.target as HTMLInputElement;

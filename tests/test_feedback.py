@@ -69,12 +69,18 @@ class Feedback(Base):
         self.assertEqual(self.post(section="plan", helpful=True, comment="x" * 1000).status_code, 200)
         self.assertEqual(len(self.writes("report_feedback")), 1)
 
-    def test_only_the_submitting_session_or_staff(self):
+    def test_only_the_submitting_session_answers_and_staff_only_read(self):
         self.owner_of.return_value = "someone-else"
         self.assertEqual(self.post(section="plan", helpful=True).status_code, 403)
         self.assertEqual(self.client.get("/api/assessments/%s/feedback" % SID).status_code, 403)
         self.sign_in("staff")
-        self.assertEqual(self.post(section="plan", helpful=True).status_code, 200)
+        self.assertEqual(self.client.get("/api/assessments/%s/feedback" % SID).status_code, 200)
+        res = self.post(section="plan", helpful=True)  # issue #12: a staff answer replaced the organization's
+        self.assertEqual(res.status_code, 403)
+        self.assertIn("Mark reviewed", res.get_json()["error"])
+        self.owner_of.return_value = "me"  # even on a report this staff session submitted
+        self.assertEqual(self.post(section="plan", helpful=True).status_code, 403)
+        self.assertEqual(self.writes("report_feedback"), [])
         with self.client.session_transaction() as s:
             s.clear()
         self.assertEqual(self.post(section="plan", helpful=True).status_code, 401)
@@ -151,6 +157,18 @@ class Optin(Base):
         self.assertTrue(self.query.call_args.args[0].startswith("DELETE FROM optins"))
         self.owner_of.return_value = "someone-else"
         self.assertEqual(self.client.get("/api/assessments/%s/optin" % SID).status_code, 403)
+
+    def test_staff_list_claims_no_grantee_status(self):
+        # issue #13: grantee was (source <> 'demo'), so every new group showed "Grantee: Yes"
+        self.sign_in("staff")
+        row = {"assessment_id": SID, "org_id": SID, "org_name": "QA Org", "program_models": '["Hospital-based"]',
+               "state": None, "training": True, "updates": False, "name": None, "email": "a@example.org",
+               "updated": "2026-11-04 10:00 UTC", "updated_at": "2026-11-04T10:00:00"}
+        self.query.return_value = [row]
+        (got,) = self.client.get("/api/staff/optins").get_json()["optins"]
+        self.assertNotIn("grantee", got)
+        self.assertNotIn("grantee", self.query.call_args.args[0])
+        self.assertEqual(got["program_models"], ["Hospital-based"])
 
 
 class Funnel(unittest.TestCase):

@@ -16,6 +16,8 @@ type Answer = "yes" | "no";
 
 export interface QuickCtx {
   domain: Domain;
+  /** The area name in the question language. */
+  name: string;
   answers: Record<string, Answer>;
   ladders: Ladder[];
   /** Every statement of the chosen areas, with its area name (a ladder can span two areas). */
@@ -50,13 +52,14 @@ function stepsFor(d: Domain, ladders: Ladder[]): Step[] {
 }
 
 const CHEERS = ["Great job, let's keep going.", "Nice and steady. Keep it up.", "You are making good progress.", "Thank you for taking this one step at a time."];
+const CHEERS_ES = ["Muy bien, sigamos.", "Paso a paso. Siga así.", "Va avanzando muy bien.", "Gracias por ir una afirmación a la vez."];
 
 /** Code-written encouragement, shown about every 5 answers. It never depends on whether the answers were Yes or No. */
-function cheerLine(done: number, total: number, area: string, shown: number): string {
+function cheerLine(done: number, total: number, area: string, shown: number, es: boolean): string {
   const left = total - done;
-  if (left <= 3) return `Almost there. ${plural(left, "statement", "statements")} left in ${area}.`;
-  if (done * 10 >= total * 4 && done * 10 <= total * 6) return `Halfway through ${area}. Let's keep going.`;
-  return CHEERS[shown % CHEERS.length];
+  if (left <= 3) return es ? `Ya casi. ${plural(left, "afirmación pendiente", "afirmaciones pendientes")} en ${area}.` : `Almost there. ${plural(left, "statement", "statements")} left in ${area}.`;
+  if (done * 10 >= total * 4 && done * 10 <= total * 6) return es ? `Va a la mitad de ${area}. Sigamos.` : `Halfway through ${area}. Let's keep going.`;
+  return (es ? CHEERS_ES : CHEERS)[shown % CHEERS.length];
 }
 
 /** Render the view into `host`; returns `goTo(statementId)` for the error summary links. */
@@ -88,7 +91,9 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
   function meter() {
     const done = d.questions.filter((q) => a[q.id]).length;
     const count = $("#quick-count", host)!;
-    count.textContent = ctx.spanish() ? `${done} de ${d.questions.length} respondidas en ${d.name}` : `${done} of ${d.questions.length} answered in ${d.name}`;
+    // The area name is its own span: under 380px it is left for screen readers (the heading above names the area).
+    count.innerHTML = ctx.spanish() ? `${done} de ${d.questions.length} respondidas<span class="quick__count-area"> en ${esc(ctx.name)}</span>`
+      : `${done} of ${d.questions.length} answered<span class="quick__count-area"> in ${esc(ctx.name)}</span>`;
     if (ctx.spanish()) count.lang = "es"; else count.removeAttribute("lang");
     const bar = $<HTMLProgressElement>("#area-progress", host)!;
     bar.value = done;
@@ -121,7 +126,7 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
     const areas = [...new Set(l.statements.map((id) => ctx.byId.get(id)!.area))].join(" and ");
     const es = ctx.spanish() ? ' lang="es"' : "";
     return `
-      <p class="quick__kicker"><span class="stage-badge">One question</span> Answers ${l.statements.length} statements</p>
+      <p class="quick__kicker"><span class="stage-badge">${tr("One question", "Una pregunta")}</span> ${tr(`Answers ${l.statements.length} statements`, `Responde ${l.statements.length} afirmaciones`)}</p>
       <h2 class="quick__stmt" id="quick-focus" tabindex="-1"${es}>${esc(ctx.spanish() ? l.question_es : l.question)}</h2>
       ${ctx.spanish() ? `<details class="q-help" lang="es"><summary>Ver el original en inglés</summary><p lang="en">${esc(l.question)}</p></details>` : ""}
       <p class="hint" id="quick-ladder-hint">${tr(`Your choice answers ${l.statements.length} statements in ${esc(areas)}. Next, you will see each answer and can change any of them.`,
@@ -157,11 +162,12 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
   function doneStep(): string {
     return `<div class="quick-done">
         <span class="quick-done__badge" aria-hidden="true">${icon("circle-check")}</span>
-        <h2 class="quick__stmt" id="quick-focus" tabindex="-1">${esc(d.name)} complete</h2>
-        <p class="quick-done__cheer">${esc(ctx.cheer)}</p>
-        <p class="hint">All ${d.questions.length} statements in this area are answered. You can look back over them any time.</p>
+        <h2 class="quick__stmt" id="quick-focus" tabindex="-1">${tr(`${esc(d.name)} complete`, `Área de ${esc(ctx.name)} completa`)}</h2>
+        <p class="quick-done__cheer"${ctx.spanish() ? ' lang="es"' : ""}>${esc(ctx.cheer)}</p>
+        <p class="hint">${tr(`All ${d.questions.length} statements in this area are answered. You can look back over them any time.`,
+          `Las ${d.questions.length} afirmaciones de esta área están respondidas. Puede revisarlas cuando quiera.`)}</p>
         <div class="quick__nav">
-          <button type="button" class="btn btn-secondary btn-sm" id="quick-review">${icon("arrow-left")}<span>Look over this area</span></button>
+          <button type="button" class="btn btn-secondary btn-sm" id="quick-review">${icon("arrow-left")}<span>${tr("Look over this area", "Revisar esta área")}</span></button>
           <button type="button" class="btn btn-primary" id="quick-next">${ctx.nextHtml}${icon("arrow-right")}</button>
         </div>
       </div>`;
@@ -170,7 +176,7 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
   function show(focus: boolean) {
     meter();
     const s = steps[pos];
-    card.innerHTML = `${cheer ? `<p class="quick__cheer">${icon("sprout")}<span>${esc(cheer)}</span></p>` : ""}${
+    card.innerHTML = `${cheer ? `<p class="quick__cheer">${icon("sprout")}<span${ctx.spanish() ? ' lang="es"' : ""}>${esc(cheer)}</span></p>` : ""}${
       !s ? doneStep() : s.kind === "stmt" ? stmtStep(s.q) : confirm ? confirmStep(s.l) : chooseStep(s.l)}`;
     cheer = "";
     if (focus) focusEl($("#quick-focus", card));
@@ -197,8 +203,8 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
     if (busy || s?.kind !== "stmt") return;
     since++;
     const done = d.questions.filter((q) => a[q.id] || q.id === s.q.id).length;
-    if (since >= 5 && done < d.questions.length) { cheer = cheerLine(done, d.questions.length, d.name, shown++); since = 0; }
-    ctx.change(() => { a[s.q.id] = v; }, `${v === "yes" ? "Yes" : "No"} recorded. ${cheer ? `${cheer} ` : ""}`);
+    if (since >= 5 && done < d.questions.length) { cheer = cheerLine(done, d.questions.length, ctx.name, shown++, ctx.spanish()); since = 0; }
+    ctx.change(() => { a[s.q.id] = v; }, ctx.spanish() ? `Registramos ${v === "yes" ? "Sí" : "No"}. ${cheer ? `${cheer} ` : ""}` : `${v === "yes" ? "Yes" : "No"} recorded. ${cheer ? `${cheer} ` : ""}`);
     card.querySelectorAll<HTMLElement>("[data-answer]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.answer === v)));
     leave(advance);
   }
@@ -209,7 +215,7 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
     const c = s.l.choices[i];
     since += s.l.statements.length;
     ctx.change(() => { s.l.statements.forEach((id) => { a[id] = c.yes.includes(id) ? "yes" : "no"; }); },
-      `Recorded ${c.yes.length} Yes and ${s.l.statements.length - c.yes.length} No from your choice. `);
+      ctx.spanish() ? `Registramos ${c.yes.length} Sí y ${s.l.statements.length - c.yes.length} No según su elección. ` : `Recorded ${c.yes.length} Yes and ${s.l.statements.length - c.yes.length} No from your choice. `);
     leave(() => { confirm = true; show(true); });
   }
 
@@ -228,7 +234,7 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
     else if (el.dataset.flip) {
       const id = el.dataset.flip;
       const v: Answer = a[id] === "yes" ? "no" : "yes";
-      ctx.change(() => { a[id] = v; }, `Changed to ${v === "yes" ? "Yes" : "No"}. `);
+      ctx.change(() => { a[id] = v; }, ctx.spanish() ? `Cambiado a ${v === "yes" ? "Sí" : "No"}. ` : `Changed to ${v === "yes" ? "Yes" : "No"}. `);
       const ans = document.getElementById(`la-${id}`)!;
       ans.className = `ladder-item__ans is-${v}`;
       ans.innerHTML = ansText(id);

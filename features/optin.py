@@ -65,7 +65,7 @@ def optin(sid):
 
 @bp.route("/api/staff/optins")
 def staff_optins():
-    """Each organization's latest opt-in. grantee: not a demo sample (the tool has no grantee list yet)."""
+    """Each organization's latest opt-in."""
     import db
     from features.feedback import _staff_error
 
@@ -75,7 +75,7 @@ def staff_optins():
     rows = db.query(
         "SELECT DISTINCT ON (a.org_id) p.assessment_id::text AS assessment_id, o.id::text AS org_id, "
         "o.name AS org_name, o.program_models::text AS program_models, o.state, p.training, p.updates, p.name, "
-        "p.email, %s AS updated, COALESCE(a.source <> 'demo', false) AS grantee, p.updated_at FROM optins p "
+        "p.email, %s AS updated, p.updated_at FROM optins p "
         "JOIN assessments a ON a.id = p.assessment_id JOIN organizations o ON o.id = a.org_id "
         "ORDER BY a.org_id, p.updated_at DESC" % (STAMP % "p.updated_at"))
     rows.sort(key=lambda r: r.pop("updated_at"), reverse=True)  # newest first across organizations

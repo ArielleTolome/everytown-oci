@@ -52,12 +52,28 @@ import Icon from "../components/Icon.astro";
     CE: "Community Engagement done. Your ties to the community are what make this work possible.",
     TI: "Technology done. Thank you. Even small tools can save your team real time.",
   };
-  const cheerFor = (d: Domain) => CHEER[d.id] ?? `${d.name} done. Thank you for your honest answers.`;
+  const CHEER_ES: Record<string, string> = {
+    PL: "Área de Planeación terminada. Gracias por su honestidad, eso es lo que hace útil el plan.",
+    FR: "Área de Recaudación de fondos terminada. Saber dónde están es el primer paso hacia fondos más estables.",
+    GV: "Área de Gobernanza terminada. Respuestas honestas como estas ayudan a que su junta crezca con ustedes.",
+    HR: "Área de Recursos Humanos terminada. Su equipo es su mayor fortaleza. Gracias por mirar con atención.",
+    FM: "Área de Manejo Financiero terminada. Respuestas claras aquí les ayudan a proteger el trabajo que hacen.",
+    ML: "Área de Monitoreo, Aprendizaje y Evaluación terminada. Ya están aprendiendo de su propio trabajo.",
+    CE: "Área de Participación Comunitaria terminada. Sus lazos con la comunidad hacen posible este trabajo.",
+    TI: "Área de Tecnología terminada. Gracias. Hasta las herramientas pequeñas le pueden ahorrar tiempo a su equipo.",
+  };
+  const cheerFor = (d: Domain) => spanish()
+    ? CHEER_ES[d.id] ?? `Área de ${nameOf(d)} terminada. Gracias por sus respuestas honestas.`
+    : CHEER[d.id] ?? `${d.name} done. Thank you for your honest answers.`;
 
   const spanish = () => qlang === "es";
   const textOf = (q: Question) => (spanish() && es[q.id]?.text) || q.text;
   // New v1.7 interface text follows the question language (same pattern as lib/quick.ts); `sp` is trusted HTML.
   const tr = (en: string, sp: string) => (spanish() ? `<span lang="es">${sp}</span>` : en);
+  // v1.8.1: the bar, progress line, area nav and save tools follow it too. Their containers carry langEs(), so plain L().
+  const L = (en: string, sp: string) => (spanish() ? sp : en);
+  const langEs = () => (spanish() ? ' lang="es"' : "");
+  const nameOf = (d: Domain) => (spanish() && es[d.id]?.text) || d.name;
   const stmt = (q: Question) => `<span${spanish() ? ' lang="es"' : ""}>${esc(textOf(q))}</span>`;
   const noState = (id: string) => (draft.answers[id] === "no" ? "Counted as No" : "");
 
@@ -87,10 +103,10 @@ import Icon from "../components/Icon.astro";
       const state = cur ? "current" : done ? "done" : "upcoming";
       // An area left part way (a teammate's, or one answered on another device) says so instead of "Upcoming".
       const started = !done && d.questions.some((q) => draft.answers[q.id]);
-      const label = done ? "Completed" : cur ? "In progress" : started ? "Started" : "Upcoming";
+      const label = done ? L("Completed", "Completada") : cur ? L("In progress", "En curso") : started ? L("Started", "Empezada") : L("Upcoming", "Pendiente");
       const mark = done ? icon("check") : `<span>${i + 1}</span>`;
       const inner = `<span class="area-card__mark" aria-hidden="true">${mark}</span>
-        <span class="area-card__text"><span class="area-card__state">${label}</span><span class="area-card__name">${i + 1}. ${esc(d.name)}</span></span>`;
+        <span class="area-card__text"><span class="area-card__state">${label}</span><span class="area-card__name">${i + 1}. ${esc(nameOf(d))}</span></span>`;
       return `<li class="area-card is-${state}${started && !cur ? " is-started" : ""}"${cur ? ' aria-current="step"' : ""}>${canLink ? `<a href="#${i + 1}">${inner}</a>` : `<span class="area-card__body">${inner}</span>`}</li>`;
     }).join("");
   }
@@ -151,8 +167,8 @@ import Icon from "../components/Icon.astro";
     current = d;
     const last = n === domains.length;
     const here = d.questions.filter((q) => missing.has(q.id));
-    const nextName = last ? "" : domains[n].name;
-    document.title = `${here.length ? "Check your answers: " : ""}${d.name} (${n} of ${domains.length}) · OCI Capacity Coach`;
+    const nextName = last ? "" : nameOf(domains[n]);
+    document.title = `${here.length ? "Check your answers: " : ""}${nameOf(d)} (${n} ${L("of", "de")} ${domains.length}) · OCI Capacity Coach`;
 
     // One at a time: the card comes right after the progress line; the view and language switches, area info and
     // tips move below it, so the first statement is on the first screen (also on a phone).
@@ -190,18 +206,18 @@ import Icon from "../components/Icon.astro";
       ${demo ? `<p class="q-demo"><button type="button" class="q-demo__btn" id="demo-fill">${icon("clipboard")}<span>Demo: fill this area with sample answers</span></button></p>` : ""}`;
     // Save and share are secondary in One at a time view, so they follow the card there; a teammate keeps the notice
     // about which area they answer on top.
-    const draftTools = `<div id="draft-tools" data-area="${esc(d.id)}"></div>`;
+    const draftTools = `<div id="draft-tools" data-area="${esc(d.id)}" data-name="${esc(nameOf(d))}"${langEs()}></div>`;
     const toolsBelow = quickView && !new URLSearchParams(location.search).has("area");
     root.dataset.view = view;
     root.innerHTML = `
-      <div class="title-band">
-        <span class="eyebrow">Step 2 of 3: Questionnaire</span>
-        <h1 id="area-title" tabindex="-1">${esc(d.name)}</h1>
+      <div class="title-band"${langEs()}>
+        <span class="eyebrow">${L("Step 2 of 3: Questionnaire", "Paso 2 de 3: Cuestionario")}</span>
+        <h1 id="area-title" tabindex="-1">${esc(nameOf(d))}</h1>
       </div>
-      <nav aria-label="Capacity areas" class="area-stepper"><ol role="list">${stepper(n)}</ol></nav>
+      <nav aria-label="${L("Capacity areas", "Áreas de capacidad")}" class="area-stepper"${langEs()}><ol role="list">${stepper(n)}</ol></nav>
       ${toolsBelow ? "" : draftTools}
-      <div class="q-progress">
-        <p class="q-progress__where">Area ${n} of ${domains.length}. ${last ? "This is the last area." : `Next: ${esc(nextName)}`}</p>
+      <div class="q-progress"${langEs()}>
+        <p class="q-progress__where">${L(`Area ${n} of ${domains.length}.`, `Área ${n} de ${domains.length}.`)} ${last ? L("This is the last area.", "Esta es la última área.") : `${L("Next", "Siguiente")}: ${esc(nextName)}`}</p>
         <label for="overall-progress" class="q-progress__label" id="progress-text"></label>
         <progress id="overall-progress" max="${totalQuestions()}" value="0"></progress>
         <p class="q-progress__meta"><span class="q-progress__time" id="time-left"></span><span class="q-streak" id="area-streak" hidden></span></p>
@@ -217,10 +233,10 @@ import Icon from "../components/Icon.astro";
         <div class="questions" id="questions"></div>
         ${quickView ? (toolsBelow ? draftTools : "") + tools + context + tips : ""}
         <p class="field-error" id="submit-error" role="alert" hidden></p>
-        <div class="q-bar" id="q-bar">
-          <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span class="q-bar__back-label">Back${n === 1 ? '<span class="visually-hidden"> to your organization</span>' : ""}</span></button>
-          <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span class="q-bar__full">Saved on this device</span>${shortStatus(d)}</p>
-          <button type="submit" class="btn btn-primary" id="next-btn">${last ? "<span>Review and finish</span>" : nextHtml(nextName)}${icon("arrow-right")}</button>
+        <div class="q-bar" id="q-bar"${langEs()}>
+          <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span class="q-bar__back-label">${L("Back", "Atrás")}${n === 1 ? `<span class="visually-hidden">${L(" to your organization", ", a los datos de su organización")}</span>` : ""}</span></button>
+          <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span class="q-bar__full">${L("Saved on this device", "Guardado en este dispositivo")}</span>${shortStatus(d)}</p>
+          <button type="submit" class="btn btn-primary" id="next-btn">${last ? `<span>${L("Review and finish", "Revisar y terminar")}</span>` : nextHtml(nextName)}${icon("arrow-right")}</button>
         </div>
       </form>`;
     root.removeAttribute("aria-busy");
@@ -233,13 +249,10 @@ import Icon from "../components/Icon.astro";
       if (input.name === "q-view") {
         view = input.value as View;
         try { localStorage.setItem(VIEW_KEY, view); } catch { /* storage disabled */ }
-        // The layout depends on the view: re-render, then put focus back on the chosen option.
-        render(n, false);
-        $<HTMLInputElement>('input[name="q-view"]:checked')?.focus();
-        return;
-      }
-      qlang = input.value === "es" ? "es" : "en";
-      fillQuestions(d);
+      } else qlang = input.value === "es" ? "es" : "en";
+      // The layout depends on the view and the controls on the language: re-render, then put focus back on the chosen option.
+      render(n, false);
+      $<HTMLInputElement>(`input[name="${input.name}"]:checked`)?.focus();
     });
     const form = $<HTMLFormElement>("#area-form")!;
     form.addEventListener("change", (e) => {
@@ -274,7 +287,7 @@ import Icon from "../components/Icon.astro";
       radio.focus();
       if (radio.checked) return;
       radio.checked = true;
-      keyed = `${k === "y" ? "Yes" : "No"} for statement ${parseInt(fs.querySelector(".question__num")?.textContent ?? "", 10)}. `;
+      keyed = `${k === "y" ? "Yes" : "No"} ${L("for statement", "para la afirmación")} ${parseInt(fs.querySelector(".question__num")?.textContent ?? "", 10)}. `;
       radio.dispatchEvent(new Event("change", { bubbles: true }));
     });
     // The deliberate step the brief asks for: the engine treats a missing answer as favorable, so unticked must become an explicit "no".
@@ -292,7 +305,8 @@ import Icon from "../components/Icon.astro";
       $("#done-error")!.hidden = true;
       $("#done-btn")!.removeAttribute("aria-describedby");
       $("#error-summary")?.remove();
-      saved(d, wasComplete, rest.length ? `Recorded No for ${plural(rest.length, "statement", "statements")} you did not tick. ` : "");
+      saved(d, wasComplete, rest.length ? L(`Recorded No for ${plural(rest.length, "statement", "statements")} you did not tick. `,
+        `Registramos No en ${plural(rest.length, "afirmación", "afirmaciones")} que no marcó. `) : "");
     });
     form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -319,7 +333,8 @@ import Icon from "../components/Icon.astro";
       d.questions.forEach((q) => { if (sample[q.id]) { draft.answers[q.id] = sample[q.id]; missing.delete(q.id); } });
       saveDraft(draft);
       fillQuestions(d);
-      saved(d, wasComplete, `Demo: filled ${plural(d.questions.length, "statement", "statements")} with sample answers. `);
+      saved(d, wasComplete, L(`Demo: filled ${plural(d.questions.length, "statement", "statements")} with sample answers. `,
+        `Demo: llenamos ${plural(d.questions.length, "afirmación", "afirmaciones")} con respuestas de ejemplo. `));
     });
 
     if (here.length) focusEl($("#error-summary"));
@@ -330,7 +345,7 @@ import Icon from "../components/Icon.astro";
     <label class="seg__opt"><input type="radio" name="${name}" value="${value}"${on ? " checked" : ""}><span class="seg__check" aria-hidden="true">${icon("check")}</span><span>${label}</span></label>`;
 
   /** "Next: <area>". Under 600px the area name is read out but not shown, so the button never wraps (the progress line names it). */
-  const nextHtml = (name: string) => `<span>Next<span class="q-next-name">: ${esc(name)}</span></span>`;
+  const nextHtml = (name: string) => `<span${langEs()}>${L("Next", "Siguiente")}<span class="q-next-name">: ${esc(name)}</span></span>`;
 
   /** Statements, About text and the answer instructions for the current view and language. */
   function fillQuestions(d: Domain) {
@@ -349,7 +364,7 @@ import Icon from "../components/Icon.astro";
       </div>` : ""}`;
     const i = domains.indexOf(d);
     quick = view === "quick" ? mountQuick($("#quick-host")!, {
-      domain: d, answers: draft.answers, ladders, byId, spanish, stmt, helpFor,
+      domain: d, name: nameOf(d), answers: draft.answers, ladders, byId, spanish, stmt, helpFor,
       change: (apply, prefix) => {
         const wasComplete = isComplete(d);
         apply();
@@ -359,8 +374,8 @@ import Icon from "../components/Icon.astro";
       },
       cheer: cheerFor(d),
       // Teammate links (?area=) send the area back instead of moving on (draft.ts relabels the bar button the same way).
-      nextHtml: new URLSearchParams(location.search).has("area") ? "<span>Send my answers back</span>"
-        : i === domains.length - 1 ? "<span>Review and finish</span>" : nextHtml(domains[i + 1].name),
+      nextHtml: new URLSearchParams(location.search).has("area") ? `<span${langEs()}>${L("Send my answers back", "Enviar mis respuestas")}</span>`
+        : i === domains.length - 1 ? `<span${langEs()}>${L("Review and finish", "Revisar y terminar")}</span>` : nextHtml(nameOf(domains[i + 1])),
     }) : null;
     const t = spanish() ? es[d.id] : undefined;
     const about = $("#about-body")!;
@@ -375,7 +390,7 @@ import Icon from "../components/Icon.astro";
 
   /** Phones show a short status in the bar row; the full sentence stays in the live region for screen readers. */
   const shortStatus = (d: Domain) =>
-    `<span class="q-bar__short" aria-hidden="true">Saved: ${d.questions.filter((q) => draft.answers[q.id]).length} of ${d.questions.length}</span>`;
+    `<span class="q-bar__short" aria-hidden="true">${L("Saved", "Guardado")}: ${d.questions.filter((q) => draft.answers[q.id]).length} ${L("of", "de")} ${d.questions.length}</span>`;
 
   /** Update progress and the bar's polite status (the only live region for answer changes). */
   function saved(d: Domain, wasComplete: boolean, prefix = "") {
@@ -383,13 +398,15 @@ import Icon from "../components/Icon.astro";
     const done = d.questions.filter((q) => draft.answers[q.id]).length;
     const ok = savedLocally();
     const msg = !ok
-      ? "Your browser did not let us save on this device. Keep this page open until you finish."
+      ? L("Your browser did not let us save on this device. Keep this page open until you finish.",
+        "Su navegador no nos dejó guardar en este dispositivo. Mantenga esta página abierta hasta terminar.")
       : !wasComplete && done === d.questions.length
         ? cheerFor(d)
-        : `Saved on this device. ${done} of ${d.questions.length} answered in this area.`;
+        : L(`Saved on this device. ${done} of ${d.questions.length} answered in this area.`,
+          `Guardado en este dispositivo. ${done} de ${d.questions.length} respondidas en esta área.`);
     const status = $("#save-status")!;
     status.querySelector(".q-bar__full")!.textContent = prefix + msg;
-    status.querySelector(".q-bar__short")!.textContent = `Saved: ${done} of ${d.questions.length}`;
+    status.querySelector(".q-bar__short")!.textContent = `${L("Saved", "Guardado")}: ${done} ${L("of", "de")} ${d.questions.length}`;
     // Not saved: phones show the full warning, not the short line.
     status.classList.toggle("is-warn", !ok);
   }
@@ -423,12 +440,14 @@ import Icon from "../components/Icon.astro";
     const bar = $<HTMLProgressElement>("#overall-progress");
     if (bar) { bar.value = a; bar.textContent = `${pct}%`; }
     const txt = $("#progress-text");
-    if (txt) txt.textContent = `${a} of ${t} statements answered (${pct}%)`;
+    if (txt) txt.textContent = L(`${a} of ${t} statements answered (${pct}%)`, `${a} de ${t} afirmaciones respondidas (${pct}%)`);
     const time = $("#time-left");
     if (time && current) {
       const left = current.questions.filter((q) => !draft.answers[q.id]).length;
       const min = Math.ceil((left * SECONDS_PER_STATEMENT) / 60);
-      time.innerHTML = `${icon("clock")}<span>${left ? `About ${plural(min, "minute", "minutes")} left in ${esc(current.name)}` : `${esc(current.name)} is done`}</span>`;
+      const name = esc(nameOf(current));
+      time.innerHTML = `${icon("clock")}<span>${left ? L(`About ${plural(min, "minute", "minutes")} left in ${name}`, `Faltan unos ${plural(min, "minuto", "minutos")} en ${name}`)
+        : L(`${name} is done`, `Área de ${name} terminada`)}</span>`;
     }
     // The area nav shows Completed as soon as the current area is fully answered.
     const nav = $(".area-stepper ol");
@@ -439,7 +458,7 @@ import Icon from "../components/Icon.astro";
       const open = domains.findIndex((x) => !isComplete(x));
       const k = open < 0 ? domains.length : open;
       streak.hidden = k === 0;
-      streak.innerHTML = `${icon("flag")}<span>Streak: ${plural(k, "area", "areas")} done in a row</span>`;
+      streak.innerHTML = `${icon("flag")}<span>${L(`Streak: ${plural(k, "area", "areas")} done in a row`, `Racha: ${plural(k, "área terminada", "áreas terminadas seguidas")}`)}</span>`;
     }
   }
 
@@ -471,28 +490,30 @@ import Icon from "../components/Icon.astro";
     current = null;
     quick = null;
     const t = totalQuestions();
-    const lastName = domains[domains.length - 1].name;
-    document.title = "Ready for your results · OCI Capacity Coach";
+    const lastName = nameOf(domains[domains.length - 1]);
+    document.title = `${L("Ready for your results", "Listo para sus resultados")} · OCI Capacity Coach`;
     root.innerHTML = `
-      <div class="title-band">
-        <span class="eyebrow">Step 2 of 3: Questionnaire</span>
-        <h1 id="finish-title" tabindex="-1">You answered all ${t} statements</h1>
+      <div class="title-band"${langEs()}>
+        <span class="eyebrow">${L("Step 2 of 3: Questionnaire", "Paso 2 de 3: Cuestionario")}</span>
+        <h1 id="finish-title" tabindex="-1">${L(`You answered all ${t} statements`, `Respondió las ${t} afirmaciones`)}</h1>
       </div>
-      <div class="finish">
+      <div class="finish"${langEs()}>
         <span class="quick-done__badge" aria-hidden="true">${icon("circle-check")}</span>
-        <p class="finish__lead">That's the hard part. Your plan is next.</p>
-        <h2 class="finish__h">What you covered</h2>
+        <p class="finish__lead">${L("That's the hard part. Your plan is next.", "Esa es la parte difícil. Ahora viene su plan.")}</p>
+        <h2 class="finish__h">${L("What you covered", "Lo que cubrió")}</h2>
         <ul class="finish__areas" role="list">${domains.map((x) => `
-          <li>${icon("circle-check")}<span><strong>${esc(x.name)}</strong> <span class="finish__count">${plural(x.questions.length, "statement", "statements")} answered</span></span></li>`).join("")}
+          <li>${icon("circle-check")}<span><strong>${esc(nameOf(x))}</strong> <span class="finish__count">${L(plural(x.questions.length, "statement", "statements") + " answered",
+            plural(x.questions.length, "afirmación respondida", "afirmaciones respondidas"))}</span></span></li>`).join("")}
         </ul>
-        <p>When you choose See my results, we build your report and your plan. It takes a minute or two. You can still go back and change any answer first.</p>
+        <p>${L("When you choose See my results, we build your report and your plan. It takes a minute or two. You can still go back and change any answer first.",
+          "Cuando elija Ver mis resultados, preparamos su informe y su plan. Toma uno o dos minutos. Antes, todavía puede volver y cambiar cualquier respuesta.")}</p>
       </div>
       <form id="area-form" novalidate>
         <p class="field-error" id="submit-error" role="alert" hidden></p>
-        <div class="q-bar" id="q-bar">
-          <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span class="q-bar__back-label">Back<span class="visually-hidden"> to ${esc(lastName)}</span></span></button>
-          <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span class="q-bar__full">Saved on this device. All ${t} statements answered.</span><span class="q-bar__short" aria-hidden="true">Saved: ${t} of ${t}</span></p>
-          <button type="submit" class="btn btn-primary" id="next-btn"><span>See my results</span>${icon("arrow-right")}</button>
+        <div class="q-bar" id="q-bar"${langEs()}>
+          <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span class="q-bar__back-label">${L("Back", "Atrás")}<span class="visually-hidden">${L(" to", ", a")} ${esc(lastName)}</span></span></button>
+          <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span class="q-bar__full">${L(`Saved on this device. All ${t} statements answered.`, `Guardado en este dispositivo. Las ${t} afirmaciones están respondidas.`)}</span><span class="q-bar__short" aria-hidden="true">${L("Saved", "Guardado")}: ${t} ${L("of", "de")} ${t}</span></p>
+          <button type="submit" class="btn btn-primary" id="next-btn"><span>${L("See my results", "Ver mis resultados")}</span>${icon("arrow-right")}</button>
         </div>
       </form>`;
     root.removeAttribute("aria-busy");
@@ -510,7 +531,7 @@ import Icon from "../components/Icon.astro";
     const label = btn.querySelector("span")!;
     const before = label.innerHTML;
     btn.setAttribute("aria-disabled", "true");
-    label.textContent = "Sending your answers";
+    label.textContent = L("Sending your answers", "Enviando sus respuestas");
     try {
       const { id } = await api.post<{ id: string }>("/assessments", {
         org_name: draft.org_name, org_url: draft.org_url, language: draft.language,
@@ -577,7 +598,8 @@ import Icon from "../components/Icon.astro";
     if (draft.language === "es" && Object.keys(es).length) qlang = "es";
     domains = d.domain_ids.map((id) => meta.domains.find((x) => x.id === id)).filter((x): x is Domain => !!x);
     if (!domains.length) { location.replace("/"); return; }
-    byId = new Map(domains.flatMap((x) => x.questions.map((q) => [q.id, { q, area: x.name }] as const)));
+    // Area names follow the question language (a getter, since the language can change after this map is built).
+    byId = new Map(domains.flatMap((x) => x.questions.map((q) => [q.id, { q, get area() { return nameOf(x); } }] as const)));
     ladders = scopeLadders(ladderFile?.ladders ?? [], new Set(byId.keys()));
     // No step in the link (a resume link, the start page): open the first area that still needs answers.
     if (!location.hash) {

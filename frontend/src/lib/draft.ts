@@ -31,9 +31,13 @@ interface Sync { token: string; area: string | null; dirty: boolean }
 const LEADER = { draft: "oci-draft", sync: "oci-draft-sync" };
 // A teammate on the same browser must not overwrite the leader's own draft.
 const TEAM = { draft: "oci-draft-team", sync: "oci-draft-team-sync" };
-const SAVED_LOCAL = "Saved on this device";
-const SAVED_SERVER = "Saved. You can resume on any device";
-const SAVED_TEAM = "Saved and shared with your team";
+// The status line follows the question language: the questionnaire marks its bar lang="es" (see tx).
+const SAVED = {
+  en: { local: "Saved on this device", server: "Saved. You can resume on any device", team: "Saved and shared with your team" },
+  es: { local: "Guardado en este dispositivo", server: "Guardado. Puede continuar en cualquier dispositivo", team: "Guardado y compartido con su equipo" },
+};
+/** Spanish questions get Spanish controls: the questionnaire puts lang="es" on the bar and on `#draft-tools`. */
+const tx = (el: Element | null, en: string, sp: string) => (el?.closest('[lang="es"]') ? sp : en);
 
 let slot = LEADER;
 let current: Draft | null = null;
@@ -168,10 +172,10 @@ async function push(): Promise<void> {
 function setStatus(online: boolean) {
   const el = $("#save-status span");
   if (!el?.textContent) return;
-  const label = team() ? SAVED_TEAM : SAVED_SERVER;
+  const s = SAVED[tx(el, "en", "es") as "en" | "es"];
   el.textContent = online
-    ? el.textContent.replace(SAVED_LOCAL, label)
-    : el.textContent.replace(SAVED_TEAM, SAVED_LOCAL).replace(SAVED_SERVER, SAVED_LOCAL);
+    ? el.textContent.replace(s.local, team() ? s.team : s.server)
+    : el.textContent.replace(s.team, s.local).replace(s.server, s.local);
 }
 
 async function ensureToken(): Promise<string> {
@@ -191,7 +195,7 @@ const ROLE: Record<string, string> = {
   TI: "the person who looks after your computers",
 };
 
-function linkBlock(id: string, label: string, url: string) {
+function linkBlock(panel: HTMLElement, id: string, label: string, url: string) {
   // Phones get a box that wraps, so the whole link is readable; wider screens keep the one-line field.
   const field = matchMedia("(max-width: 599px)").matches
     ? `<textarea class="input draft-panel__link" id="${id}" rows="1" readonly spellcheck="false">${esc(url)}</textarea>`
@@ -199,33 +203,43 @@ function linkBlock(id: string, label: string, url: string) {
   return `<label class="draft-panel__label" for="${id}">${esc(label)}</label>
     <div class="input-group">
       ${field}
-      <button type="button" class="btn btn-primary btn-sm" data-copy="${id}">${icon("clipboard")}<span>Copy link</span></button>
+      <button type="button" class="btn btn-primary btn-sm" data-copy="${id}">${icon("clipboard")}<span>${tx(panel, "Copy link", "Copiar enlace")}</span></button>
     </div>`;
 }
 
+/** The phone link box grows to show the whole link, with no inner scroll. */
+function fitLink(t: HTMLTextAreaElement) {
+  t.style.height = "auto";
+  t.style.height = `${t.scrollHeight + t.offsetHeight - t.clientHeight}px`;
+}
+// Rotation or a resized window rewraps the link: re-measure the boxes of open panels.
+window.addEventListener("resize", () => document.querySelectorAll<HTMLTextAreaElement>(".draft-panel:not([hidden]) .draft-panel__link").forEach(fitLink));
+
 async function copy(input: HTMLInputElement | HTMLTextAreaElement, status: HTMLElement) {
   try { await navigator.clipboard.writeText(input.value); } catch { input.select(); document.execCommand("copy"); }
-  status.textContent = "Link copied.";
+  status.textContent = tx(status, "Link copied.", "Enlace copiado.");
 }
 
 /** Step 1 of sharing: ask the teammate's role, so the report can say who answered this area. */
 async function askRole(panel: HTMLElement, area: string, areaName: string) {
-  panel.innerHTML = `<p class="loading">${icon("loader", "spin")}Loading</p>`;
+  panel.innerHTML = `<p class="loading">${icon("loader", "spin")}${tx(panel, "Loading", "Cargando")}</p>`;
   let roles: string[];
   try { roles = (await api.get<{ respondent_roles: string[] }>("/org-meta")).respondent_roles; } catch { roles = []; }
   if (!roles.length) return fillPanel(panel, "share", area, areaName);
+  const en = tx(panel, "", ' lang="en"'); // role names come from the API in English
   panel.innerHTML = `
-    <p class="draft-panel__title" tabindex="-1">Send ${esc(areaName)} to a teammate</p>
-    <p>Someone else may know this area best, like ${esc(ROLE[area] ?? "a teammate")}. What is their role? Your report will show who answered this area.</p>
+    <p class="draft-panel__title" tabindex="-1">${tx(panel, `Send ${esc(areaName)} to a teammate`, `Enviar ${esc(areaName)} a alguien de su equipo`)}</p>
+    <p>${tx(panel, `Someone else may know this area best, like ${esc(ROLE[area] ?? "a teammate")}. What is their role? Your report will show who answered this area.`,
+      "Puede que otra persona conozca mejor esta área. ¿Qué cargo tiene? Su informe mostrará quién respondió esta área.")}</p>
     <fieldset class="field" data-field="dt-role">
-      <legend>Your teammate's role</legend>
-      <p class="field-error" id="dt-role-error" hidden>${icon("alert")}<span>Choose your teammate's role.</span></p>
+      <legend>${tx(panel, "Your teammate's role", "Cargo de la persona de su equipo")}</legend>
+      <p class="field-error" id="dt-role-error" hidden>${icon("alert")}<span>${tx(panel, "Choose your teammate's role.", "Elija el cargo de la persona de su equipo.")}</span></p>
       <div class="choice-row">${roles.map((r) => `
         <label class="choice"><input type="radio" name="dt-role" value="${esc(r)}">
-          <span class="choice__text">${esc(r)}</span>${icon("check", "choice__check")}</label>`).join("")}
+          <span class="choice__text"${en}>${esc(r)}</span>${icon("check", "choice__check")}</label>`).join("")}
       </div>
     </fieldset>
-    <button type="button" class="btn btn-primary btn-sm" id="dt-make-share">${icon("users")}<span>Make the teammate link</span></button>`;
+    <button type="button" class="btn btn-primary btn-sm" id="dt-make-share">${icon("users")}<span>${tx(panel, "Make the teammate link", "Crear el enlace para su equipo")}</span></button>`;
   panel.querySelector("[data-field=dt-role]")!.addEventListener("change", (e) => {
     panel.querySelector<HTMLElement>("#dt-role-error")!.hidden = true;
     (e.currentTarget as HTMLElement).classList.remove("field--error");
@@ -241,25 +255,31 @@ async function askRole(panel: HTMLElement, area: string, areaName: string) {
 }
 
 async function fillPanel(panel: HTMLElement, kind: "save" | "share", area: string, areaName: string, role?: string) {
-  panel.innerHTML = `<p class="loading">${icon("loader", "spin")}Making your link</p>`;
+  const t = (en: string, sp: string) => tx(panel, en, sp);
+  panel.innerHTML = `<p class="loading">${icon("loader", "spin")}${t("Making your link", "Creando su enlace")}</p>`;
   try {
     const token = await ensureToken();
     await push();
     const base = `${location.origin}/questionnaire/`;
     if (kind === "save") {
       panel.innerHTML = `
-        <p class="draft-panel__title" tabindex="-1">Finish later, on any device</p>
-        <p>Your answers are saved. To keep going later, open this link and sign in with the demo login. It opens the first area you have not finished.</p>
-        ${linkBlock("dt-save-link", "Your resume link", `${base}?d=${token}`)}
-        <p>Resume code: <strong class="draft-panel__code">${esc(resumeCode(token))}</strong>. Use it to check you have the right link. You can also paste the link on the <a href="/resume/">Continue an assessment</a> page.</p>
-        <p class="hint">Keep this link private. Anyone who signs in with it can see and change these answers.</p>
+        <p class="draft-panel__title" tabindex="-1">${t("Finish later, on any device", "Termine después, en cualquier dispositivo")}</p>
+        <p>${t("Your answers are saved. To keep going later, open this link and sign in with the demo login. It opens the first area you have not finished.",
+          "Sus respuestas están guardadas. Para seguir después, abra este enlace e inicie sesión con el acceso de demostración. Se abre en la primera área que no ha terminado.")}</p>
+        ${linkBlock(panel, "dt-save-link", t("Your resume link", "Su enlace para continuar"), `${base}?d=${token}`)}
+        <p>${t(`Resume code: <strong class="draft-panel__code">${esc(resumeCode(token))}</strong>. Use it to check you have the right link. You can also paste the link on the <a href="/resume/">Continue an assessment</a> page.`,
+          `Código para continuar: <strong class="draft-panel__code">${esc(resumeCode(token))}</strong>. Úselo para comprobar que tiene el enlace correcto. También puede pegar el enlace en la página <a href="/resume/" lang="en">Continue an assessment</a>.`)}</p>
+        <p class="hint">${t("Keep this link private. Anyone who signs in with it can see and change these answers.",
+          "Guarde este enlace en privado. Cualquier persona que inicie sesión con él puede ver y cambiar estas respuestas.")}</p>
         <p class="draft-panel__status" role="status"></p>`;
     } else {
       const { token: share } = await api.post<{ token: string }>(`/drafts/${encodeURIComponent(token)}/share`, { area, role: role ?? null });
+      const who = role ? ` (<span${t("", ' lang="en"')}>${esc(role.toLowerCase())}</span>)` : "";
       panel.innerHTML = `
-        <p class="draft-panel__title" tabindex="-1">Send ${esc(areaName)} to a teammate</p>
-        <p>Send this link to your teammate${role ? ` (${esc(role.toLowerCase())})` : ""}. They sign in with the demo login and answer only ${esc(areaName)}. They cannot see or change your other areas. Their answers join this same assessment.</p>
-        ${linkBlock("dt-share-link", `Teammate link for ${areaName}`, `${base}?d=${share}&area=${encodeURIComponent(area)}#1`)}
+        <p class="draft-panel__title" tabindex="-1">${t(`Send ${esc(areaName)} to a teammate`, `Enviar ${esc(areaName)} a alguien de su equipo`)}</p>
+        <p>${t(`Send this link to your teammate${who}. They sign in with the demo login and answer only ${esc(areaName)}. They cannot see or change your other areas. Their answers join this same assessment.`,
+          `Envíe este enlace a la persona de su equipo${who}. Inicia sesión con el acceso de demostración y responde solo ${esc(areaName)}. No puede ver ni cambiar sus otras áreas. Sus respuestas se suman a esta misma evaluación.`)}</p>
+        ${linkBlock(panel, "dt-share-link", t(`Teammate link for ${areaName}`, `Enlace para su equipo: ${areaName}`), `${base}?d=${share}&area=${encodeURIComponent(area)}#1`)}
         <p class="draft-panel__status" role="status"></p>`;
     }
     const status = panel.querySelector<HTMLElement>(".draft-panel__status")!;
@@ -267,11 +287,11 @@ async function fillPanel(panel: HTMLElement, kind: "save" | "share", area: strin
       const id = (e.currentTarget as HTMLElement).dataset.copy!;
       copy(panel.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${id}`)!, status);
     });
-    // Phones: the link wraps, so the box grows to show all of it. shortcut: not re-measured on rotation.
-    panel.querySelectorAll<HTMLTextAreaElement>(".draft-panel__link").forEach((t) => { t.style.height = `${t.scrollHeight + t.offsetHeight - t.clientHeight}px`; });
+    panel.querySelectorAll<HTMLTextAreaElement>(".draft-panel__link").forEach(fitLink);
     focusEl(panel.querySelector(".draft-panel__title"));
   } catch {
-    panel.innerHTML = `<p class="field-error" role="alert">${icon("alert")}<span>We could not make a link right now. Your answers are still saved on this device. Please try again.</span></p>`;
+    panel.innerHTML = `<p class="field-error" role="alert">${icon("alert")}<span>${t("We could not make a link right now. Your answers are still saved on this device. Please try again.",
+      "No pudimos crear el enlace ahora. Sus respuestas siguen guardadas en este dispositivo. Inténtelo de nuevo.")}</span></p>`;
   }
 }
 
@@ -281,19 +301,23 @@ export async function mountDraftTools(el: HTMLElement) {
   el.dataset.mounted = "1";
   const area = el.dataset.area || "";
   const meta = await getMeta();
-  const areaName = meta.domains.find((d) => d.id === area)?.name ?? "this area";
+  // data-name: the area name in the question language
+  const areaName = el.dataset.name || meta.domains.find((d) => d.id === area)?.name || tx(el, "this area", "esta área");
   if (team()) {
     teamArea = { name: areaName, ids: meta.domains.find((d) => d.id === area)?.questions.map((q) => q.id) ?? [] };
-    el.innerHTML = `<div class="notice draft-team">${icon("users")}<p>You are answering <strong>${esc(areaName)}</strong> for ${esc(current?.org_name || "your team")}. Answer every statement, then choose <strong>Send my answers back</strong>. Your answers join your team's assessment.</p></div>`;
+    const org = esc(current?.org_name || tx(el, "your team", "su equipo"));
+    el.innerHTML = `<div class="notice draft-team">${icon("users")}<p>${tx(el,
+      `You are answering <strong>${esc(areaName)}</strong> for ${org}. Answer every statement, then choose <strong>Send my answers back</strong>. Your answers join your team's assessment.`,
+      `Está respondiendo <strong>${esc(areaName)}</strong> para ${org}. Responda cada afirmación y luego elija <strong>Enviar mis respuestas</strong>. Sus respuestas se suman a la evaluación de su equipo.`)}</p></div>`;
     $("#back-btn")?.setAttribute("hidden", "");
     const next = $("#next-btn span");
-    if (next) next.textContent = "Send my answers back";
+    if (next) next.textContent = tx(next, "Send my answers back", "Enviar mis respuestas");
     return;
   }
   el.innerHTML = `<div class="draft-tools">
       <div class="draft-tools__buttons">
-        <button type="button" class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="dt-save">${icon("clock")}<span>Save and finish later</span></button>
-        <button type="button" class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="dt-share">${icon("users")}<span>Send this area to a teammate</span></button>
+        <button type="button" class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="dt-save">${icon("clock")}<span>${tx(el, "Save and finish later", "Guardar y terminar después")}</span></button>
+        <button type="button" class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="dt-share">${icon("users")}<span>${tx(el, "Send this area to a teammate", "Enviar esta área a alguien de su equipo")}</span></button>
       </div>
       <div class="draft-panel" id="dt-save" hidden></div>
       <div class="draft-panel" id="dt-share" hidden></div>

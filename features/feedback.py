@@ -73,9 +73,11 @@ def feedback(sid):
     sub, err = _open(sid)
     if err:
         return err
+    staff = session["user"]["role"] == "staff"
     if request.method == "GET":
-        staff = session["user"]["role"] == "staff"
         return jsonify(feedback=_feedback(sub["id"]), review=_review(sub["id"]) if staff else None)
+    if staff:  # one row per section with no author: a staff answer would replace the organization's own
+        return error("Only the organization answers this. Staff use Mark reviewed or Flag instead.", 403)
     b = body()
     if b.get("section") not in SECTIONS:
         return error("Unknown report section.", 400)
