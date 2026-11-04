@@ -25,7 +25,7 @@ Slide 5 (staff screenshots) is skipped when the live demo covers the staff view.
 ## Before you go on stage (10 minutes)
 
 1. Open https://d2mi2h3eu8y69s.cloudfront.net/api/healthz and confirm `ok`.
-2. **Tab B (prepared report).** Sign in as `demo` / `demo`. Open **Try a synthetic sample organization** and click **Riverbend Violence Interruption Network (synthetic sample)**. Wait for **Your report is ready**. Keep this tab at the top of the report. Do not sign out: the roadmap belongs to this sign-in session.
+2. **Tab B (prepared report).** Sign in as `demo` / `demo`. Open **Try a made-up sample organization** and click **Riverbend Violence Interruption Network (synthetic sample)**. Wait for **Your report is ready**. Keep this tab at the top of the report. Do not sign out: the roadmap belongs to this sign-in session.
 3. **Tab A (live run).** In the same window, a new tab on the start page. Optional: choose **Español** under **Report language**.
 4. **Tab C (staff).** A private window, sign in as `staff` / `staff`, stay on **Training needs**.
 5. **Tab D (AWS console).** In the private window, sign in to the AWS console in us-west-2 and open the CloudWatch dashboard `everytown-oci`, so the trace link opens without a sign-in.
@@ -36,7 +36,7 @@ Slide 5 (staff screenshots) is skipped when the live demo covers the staff view.
 
 | Time | Exact clicks | Say |
 |---|---|---|
-| 0:00 to 0:15 | Tab A: open **Try a synthetic sample organization**, click **Southside Youth Peace Collective (synthetic sample)**. | "One click fills a fictional organization's answers. The stages appear instantly, from Everytown's own scoring code. The AI report takes about 40 seconds, so let me show you one we ran earlier." |
+| 0:00 to 0:15 | Tab A: open **Try a made-up sample organization**, click **Southside Youth Peace Collective (synthetic sample)**. | "One click fills a made-up organization's answers. The stages appear instantly, from Everytown's own scoring code. The AI report takes about 40 seconds, so let me show you one we ran earlier." |
 | 0:15 to 0:50 | Tab B: **What's true about you**, point at **Reading level: about grade 6**. Click **Listen** for one sentence, then stop. | "It reads like a letter from a coach, strengths first. The reading level is measured in code, and any section can be read aloud." |
 | 0:50 to 1:20 | Tab B: **Start here**, priority 1: point at **Based on your answers** (FR7) and the resource link. | "One or two things first, chosen by code. Each shows the exact answer behind it. If the model cites anything else, the server drops it, and links come only from a vetted catalog." |
 | 1:20 to 1:40 | Tab B: **Your 12-week roadmap**, open it, tick one step of week 1. | "Then a 12-week roadmap with an owner for every step, points and badges for following through. Week 12 is retake the OCI." |

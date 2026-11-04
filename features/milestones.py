@@ -19,6 +19,7 @@ TASK_POINTS, WEEK_POINTS = 10, 25
 DEFAULT_OWNER = "Leadership team"
 ENGINE_WHY = "Your answers show this is one of your growth priorities."
 CHECK_IN = "Meet with your team for 20 minutes: what did you finish, and what comes next?"
+CHECK_IN_WHY = "A short check-in keeps what is working going and shows what to do next."
 RETAKE = "Retake the OCI to see your progress"
 LEVELS = ((0, "Getting started"), (25, "Building"), (50, "Growing"), (75, "Leading"))  # by % of steps done
 BADGES = (
@@ -144,7 +145,8 @@ def build_roadmap(sub):
                               "owner": DEFAULT_OWNER, "lang": "en", "retake": True})
             weeks.append({"n": n, "focus": is_focus,
                           "title": lead["title"] if lead else "Check in with your team",
-                          "why": (lead or {}).get("why") or ENGINE_WHY, "lang": lead["lang"] if lead else "en",
+                          "why": (lead or {}).get("why") or (ENGINE_WHY if lead else CHECK_IN_WHY),
+                          "lang": lead["lang"] if lead else "en",
                           "resource": _resource([c[0] for c in chunk] or ([lead] if lead else [])),
                           "tasks": tasks})
     # A priority spread over two weeks would show the same title twice; mark the follow-on week.

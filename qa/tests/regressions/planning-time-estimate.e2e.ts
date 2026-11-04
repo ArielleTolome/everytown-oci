@@ -5,8 +5,8 @@ import { expect } from 'e2e';
 test('Planning time estimate matches between intake and questionnaire', { session: 'demo' }, async ({ app, screen }) => {
   await app.open('/');
   const card = screen.getByRole('listitem').filter({ hasText: 'About Planning' });
-  const meta = (await card.getByText(/statements · About \d+ minutes?$/).textContent()) ?? '';
-  const minutes = Number(/About (\d+) minute/.exec(meta)?.[1]);
+  const meta = (await card.getByText(/statements, about \d+ minutes?$/).textContent()) ?? '';
+  const minutes = Number(/about (\d+) minute/.exec(meta)?.[1]);
   expect(minutes).toBeGreaterThan(0);
   await screen.getByLabel('Executive director').check();
   await screen.getByLabel('Organization name').fill('QA Time Estimate Org');

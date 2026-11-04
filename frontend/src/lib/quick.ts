@@ -26,7 +26,8 @@ export interface QuickCtx {
   /** Apply answer changes, save the draft and update the status line (prefix is announced first). */
   change: (apply: () => void, prefix: string) => void;
   cheer: string;
-  nextLabel: string;
+  /** Label of the area-complete button, as escaped HTML (a `<span>`), so a long area name can be hidden on phones. */
+  nextHtml: string;
 }
 
 /** Ladders limited to the chosen areas. A group with fewer than 2 statements left is asked statement by statement. */
@@ -155,7 +156,7 @@ export function mountQuick(host: HTMLElement, ctx: QuickCtx) {
         <p class="hint">All ${d.questions.length} statements in this area are answered. You can look back over them any time.</p>
         <div class="quick__nav">
           <button type="button" class="btn btn-secondary btn-sm" id="quick-review">${icon("arrow-left")}<span>Look over this area</span></button>
-          <button type="button" class="btn btn-primary" id="quick-next"><span>${esc(ctx.nextLabel)}</span>${icon("arrow-right")}</button>
+          <button type="button" class="btn btn-primary" id="quick-next">${ctx.nextHtml}${icon("arrow-right")}</button>
         </div>
       </div>`;
   }

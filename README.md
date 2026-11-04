@@ -15,13 +15,13 @@ AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/
 | Sign in as an organization leader | `demo` / `demo` |
 | Sign in as Everytown staff | `staff` / `staff` |
 
-1. Sign in as `demo`, open **Try a synthetic sample organization** and pick one: the answers are filled in, the stages appear at once and the AI report is ready in about 40 seconds. Or answer the questionnaire yourself (choose fewer areas to go faster).
+1. Sign in as `demo`, open **Try a made-up sample organization** and pick one: the answers are filled in, the stages appear at once and the AI report is ready in about 40 seconds. Or answer the questionnaire yourself (choose fewer areas to go faster).
 2. On the report: **Start here**, **Your 12-week roadmap**, **Ask about your report**, **Listen**, and **Download PDF report**.
 3. Sign out, sign in as `staff`: **Training needs**, **Ask the data**, **Peers**; click an organization for its drawer and its **View AI trace in CloudWatch (staff)** link (it opens the AWS console, which needs an AWS sign-in; we can show it on request).
 
 Everything in the app is synthetic, the login is mocked, and the URL is temporary: it is torn down after judging. New reports are capped per hour across all visitors, so if one is refused, try again later or open an existing report. Pitch deck: [`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf).
 
-**Current release:** v1.4.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)). AI observability runs on Amazon CloudWatch (see [Observability and evals](#observability-and-evals-amazon-cloudwatch)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 8-minute run of show and demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+**Current release:** v1.5.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)). AI observability runs on Amazon CloudWatch (see [Observability and evals](#observability-and-evals-amazon-cloudwatch)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 8-minute run of show and demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 The tool is designed to sit inside the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) Grantee Portal: CSF says new grantees "complete a self-assessment that shapes their participation in cohort-based and customized training through our Community Training Institute", and the portal is where grantees "sign up for future training opportunities and complete surveys". The look follows that site (navy and royal blue, serif headlines, pill buttons, pale-blue title bands).
 
@@ -78,7 +78,7 @@ cd frontend && npx astro check && npm run build
 ## User journey
 
 1. Sign in with the mocked credentials.
-2. Say who is filling it out (role required: Executive director, Finance lead or bookkeeper, Board chair or member, Program director, Other leadership role; title and name optional). Enter the organization name, what it does (program model), its size (staff and yearly budget), its website and up to 5 social media links. Choose the language (English or Español) and the areas to assess; the four priority areas are pre-selected. Or open "Try a synthetic sample organization" for a one-click demo.
+2. Say who is filling it out (role required: Executive director, Finance lead or bookkeeper, Board chair or member, Program director, Other leadership role; title and name optional). Enter the organization name, what it does (program model), its size (staff and yearly budget), its website and up to 5 social media links. Choose the language (English or Español) and the areas to assess; the four priority areas are pre-selected. Or open "Try a made-up sample organization" for a one-click demo.
 3. Answer one area at a time. The default "One at a time" view shows one statement per card with big Yes / No buttons (Y and N keys work), and asks the 5 laddered topics (funding horizon, largest grant, planning, audits, fundraising staff) as one multiple-choice question whose recorded yes/no answers you can review and change. "Yes / No for each" and "Checklist" views are still there. Jargon help, Spanish questions, save and resume, and "Send this area to a teammate" (who is asked their role) work as before. Every statement must end up with an explicit yes or no.
 4. The results page shows the stage tracks and scores immediately, then live progress through: reading answers, scoring, researching the website, social media and news, consulting the CVI resource library, writing recommendations and checking the reading level. If a step fails, "Try again" reruns only the AI steps.
 5. **Your plan** (the default layer): what's true about you, in a coach's voice; what we learned about you online, with sources; Start here (one or two priorities chosen by code); your 12-week roadmap; Ask about your report; ask CSF for support; and "Connect me with similar groups". **Explore any area** deep-dives into any assessed area. **Your results in detail** has every number. The PDF opens with a two-to-three page letter, then "Behind the plan: your detailed results".
@@ -207,6 +207,7 @@ Open http://127.0.0.1:8000 and sign in with `demo` / `demo` or `staff` / `staff`
 | `infra/template.yaml`, `infra/database.yaml`, `scripts/` | CloudFormation (app and database stacks) and build/deploy scripts. |
 | `tests/` | Unit tests: model-output grounding and Start-here selection, reading level and rewrite checks, guardrail handling, coach validation and limits, drafts merge rules, re-assessment comparison. |
 | `docs/pitch/` | Hackathon pitch deck (open `index.html`, arrow keys, `n` for notes) and demo script. |
+| `PRODUCT.md` | Product context for design work (users, purpose, constraints, brand commitments), read by the impeccable design skill. |
 | `qa/` | End-to-end tests and bug bash with [e2e](https://e2e.com) (see [End-to-end tests](#end-to-end-tests-and-bug-bash-e2e)). |
 
 ## Scoring
@@ -240,6 +241,7 @@ priority_score    = stage_weight * domain_weight * gap_density_bonus
 - Tokens and rules: `design-system/everytown-oci/MASTER.md` plus per-page overrides (kept outside this repo in the workshop folder), built with the `ui-ux-pro-max` skill.
 - Reference research: Mobbin MCP searches for assessment results, multi-step questionnaires, onboarding pickers and admin analytics; the screens we adapted are linked in the v0.6.0 changelog.
 - Visual exploration: Google Stitch project "Everytown OCI Capacity Coach" with an Everytown design system (navy, royal blue, red, Atkinson Hyperlegible). Stitch's layouts were re-implemented in Astro; its placeholder copy was discarded.
+- v1.5 UI/UX pass: `PRODUCT.md` written with the impeccable skill (`/impeccable init`); a Hallmark audit (audit mode only, findings applied within the Everytown look) of the start page and questionnaire; then `/impeccable clarify` (questionnaire and results wording), `adapt` (phones), `harden` (empty, error and half-finished states) and `quieter` (results page and staff dashboard). Design deviations are recorded in the design-system `pages/*.md`.
 
 ## End-to-end tests and bug bash (e2e)
 

@@ -47,8 +47,11 @@ function buildPlayer(): HTMLElement {
   audio.addEventListener("ended", () => { setStatus(`${icon("circle-check")}<span>Finished</span>`); });
   audio.addEventListener("error", () => {
     if (!audio!.getAttribute("src")) return; // our own stop() clears the source
-    setStatus(`${icon("alert")}<span>We could not play this audio. Please try again.</span>`);
-    announce("We could not play this audio. Please try again.");
+    // Release the Listen button so the next press tries again; the message stays until then.
+    active?.setAttribute("aria-pressed", "false");
+    active = null;
+    setStatus(`${icon("alert")}<span>We could not play this audio. Press Listen to try again.</span>`);
+    announce("We could not play this audio. Press Listen to try again.");
   });
   el.addEventListener("click", (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-player]");

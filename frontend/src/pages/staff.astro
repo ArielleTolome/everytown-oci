@@ -16,19 +16,21 @@ import Icon from "../components/Icon.astro";
   import { askPanel, wireAsk } from "../lib/staff-ask";
   import { wireBriefs } from "../lib/staff-brief";
   import {
-    changePanel, commonPanel, drawerHtml, gapsPanel, needsCsv, needsPanel, peersHtml, peersPanel, roadmapHtml,
+    changePanel, commonPanel, drawerHtml, expired, failHtml, gapsPanel, markScroll, needsCsv, needsPanel, peersHtml, peersPanel, roadmapHtml,
     type Bi, type GroupBy, type Peer, type Roadmap,
   } from "../lib/staff-bi";
 
   // Tabs in the CSF director's priority order: training needs, gaps by domain, most common gaps (then the rest).
+  // Each panel's heading says what it answers, so the tabs carry only a short label.
   const TABS = [
-    { id: "needs", label: "Training needs", hint: "Who needs which training", icon: "target" },
-    { id: "gaps", label: "Gaps by area", hint: "Stages and top gaps", icon: "chart" },
-    { id: "common", label: "Most common gaps", hint: "Across all grantees", icon: "list-checks" },
-    { id: "change", label: "Change over time", hint: "Re-assessments", icon: "trending" },
-    { id: "ask", label: "Ask the data", hint: "Questions in plain words", icon: "message" },
-    { id: "peers", label: "Peers", hint: "Similar grantees", icon: "users" },
+    { id: "needs", label: "Training needs", icon: "target" },
+    { id: "gaps", label: "Gaps by area", icon: "chart" },
+    { id: "common", label: "Most common gaps", icon: "list-checks" },
+    { id: "change", label: "Change over time", icon: "trending" },
+    { id: "ask", label: "Ask the data", icon: "message" },
+    { id: "peers", label: "Peers", icon: "users" },
   ] as const;
+
   type TabId = (typeof TABS)[number]["id"];
   const FILTERS = [
     { key: "program_model", label: "Program model", all: "All program models" }, { key: "staff_size", label: "Staff size", all: "All sizes" },
@@ -43,6 +45,7 @@ import Icon from "../components/Icon.astro";
   let stateNames = new Map<string, string>();
   let roadmaps: Promise<Roadmap[]> | null = null;
   const filters: Record<string, string> = {};
+  let seq = 0; // newest filter request wins when staff change filters quickly
 
   function shell() {
     const opts = (key: (typeof FILTERS)[number]["key"]) => data.options[key].map((v) => `<option value="${esc(v)}">${esc(key === "state" ? stateNames.get(v) || v : key === "staff_size" ? `${v} staff` : v)}</option>`).join("");
@@ -52,7 +55,7 @@ import Icon from "../components/Icon.astro";
         <span class="eyebrow">Everytown staff</span>
         <h1>Network capacity dashboard</h1>
         <p class="lead">Which organizations need which training, where the gaps are, who is improving, and which grantees are alike so you can connect them.</p>
-        <p><a class="btn btn-secondary" href="/api/staff/network-report.pdf" download>${icon("download")}<span>Download the network report (PDF)</span></a></p>
+        <p class="title-band__action"><a class="btn btn-secondary" href="/api/staff/network-report.pdf" download>${icon("download")}<span>Download the network report (PDF)</span></a></p>
       </div>
       <ul class="kpi-grid" role="list" id="kpis"></ul>
       <details class="about how-numbers">
@@ -61,16 +64,20 @@ import Icon from "../components/Icon.astro";
           <li><strong>Every number is computed by code</strong> from the organizations' own answers, scored by the reference engine. AI only writes training briefs and the short answers in Ask the data.</li>
           <li><strong>Network numbers</strong> use each organization's latest assessment, so re-assessments do not count twice.</li>
           <li><strong>Stage</strong> is the highest stage where every statement in that area is already in place.</li>
+          <li><strong>High priority</strong> is the top third of one organization's own growth priorities, as ranked by the scoring engine. Almost every organization has some, so compare how many, not whether there are any.</li>
+          <li><strong>Asked for help</strong> means the organization used "Ask the Community Safety Fund for support" on its report and chose that area.</li>
+          <li><strong>Program model</strong> counts overlap: an organization can run more than one program model and then counts in each, so the groups can add up to more than the total.</li>
           <li><strong>Peer percentile</strong> is a staff-only preview, ranked within the same main program model. Grantees never see it.</li>
         </ul>
       </details>
       <div class="toolbar" id="filters">
         ${FILTERS.map((f) => `<div class="field"><label for="f-${f.key}">${f.label}</label><select class="input" id="f-${f.key}" data-filter="${f.key}"><option value="">${f.all}</option>${opts(f.key)}</select></div>`).join("")}
-        <p class="hint toolbar__note">Filters apply to every tab except Ask the data. Program model, size, budget and state come from the optional details grantees share.</p>
+        <p class="hint toolbar__note">Filters apply to every tab except Ask the data. They use the optional details grantees share, so an organization that did not share a detail drops out when you filter by it.</p>
+        <div class="toolbar__status" id="filter-status"></div>
       </div>
       <div class="tabs">
         <div class="tabs__list layer-tabs staff-tabs" role="tablist" aria-label="Network views">
-          ${TABS.map((tab) => `<button type="button" role="tab" class="layer-tab" id="tab-${tab.id}" aria-controls="panel-${tab.id}" aria-selected="${tab.id === initial}" tabindex="${tab.id === initial ? 0 : -1}">${icon(tab.icon, "layer-tab__icon")}<span class="layer-tab__text"><span class="layer-tab__label">${tab.label}</span><span class="layer-tab__hint">${tab.hint}</span></span></button>`).join("")}
+          ${TABS.map((tab) => `<button type="button" role="tab" class="layer-tab" id="tab-${tab.id}" aria-controls="panel-${tab.id}" aria-selected="${tab.id === initial}" tabindex="${tab.id === initial ? 0 : -1}">${icon(tab.icon, "layer-tab__icon")}<span class="layer-tab__text"><span class="layer-tab__label">${tab.label}</span></span></button>`).join("")}
         </div>
         ${TABS.map((tab) => `<section class="tabs__panel" role="tabpanel" id="panel-${tab.id}" aria-labelledby="tab-${tab.id}" tabindex="0"${tab.id === initial ? "" : " hidden"}></section>`).join("")}
       </div>`;
@@ -84,32 +91,61 @@ import Icon from "../components/Icon.astro";
     render();
   }
 
+  const activeFilters = () => $$<HTMLSelectElement>("[data-filter]").filter((x) => x.value);
+
+  /** Visible filter summary: how many organizations show, with a way back to the whole network. */
+  function filterStatus(html = "") {
+    const active = activeFilters();
+    const n = data.totals.organizations;
+    $("#filter-status")!.innerHTML = html || (active.length
+      ? `<p><strong>${plural(n, "organization matches", "organizations match")}</strong> ${esc(active.map((x) => x.selectedOptions[0].text).join(", "))}.</p>
+        <button type="button" class="btn btn-secondary btn-sm" data-clear-filters>${icon("refresh")}<span>Clear filters</span></button>`
+      : "");
+  }
+
   function render() {
     const t = data.totals;
     $("#kpis")!.innerHTML = [
       ["building", "Organizations", t.organizations, "latest assessment each"], ["clipboard", "Assessments", t.assessments, "including re-assessments"],
-      ["calendar", "Last 30 days", t.last_30_days, "assessments submitted"], ["refresh", "Re-assessed", t.reassessed, "organizations with 2 or more"],
+      ["calendar", "Last 30 days", t.last_30_days, "assessments submitted"], ["refresh", "Re-assessed", t.reassessed, "organizations with 2 or more assessments"],
       ["message", "Asked for help", t.asked_for_help, "organizations with a support request"],
     ].map(([ic, label, n, ctx]) => `<li class="card kpi"><span class="kpi__label">${icon(ic as "building")}${label}</span><span class="kpi__num">${n}</span><span class="kpi__context">${ctx}</span></li>`).join("");
+    filterStatus();
+    if (!t.organizations) {
+      // One empty state for every data tab (Ask the data keeps working: it ignores the filters).
+      const msg = activeFilters().length
+        ? `<p class="notice">${icon("info")}<span>No organizations match these filters. Try fewer filters, or clear them to see the whole network.</span></p>
+          <p><button type="button" class="btn btn-secondary" data-clear-filters>${icon("refresh")}<span>Clear filters</span></button></p>`
+        : `<p class="notice">${icon("info")}<span>No organization has finished an assessment yet. Results show here after the first report.</span></p>`;
+      for (const id of ["needs", "gaps", "common", "change", "peers"]) $(`#panel-${id}`)!.innerHTML = msg;
+      return;
+    }
     $("#panel-needs")!.innerHTML = needsPanel(data);
     $("#panel-gaps")!.innerHTML = gapsPanel(data, group);
     $("#panel-common")!.innerHTML = commonPanel(data);
     $("#panel-change")!.innerHTML = changePanel(data);
     $("#panel-peers")!.innerHTML = peersPanel(data);
+    markScroll(root);
   }
 
   async function refresh() {
     const qs = new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString();
+    const mine = ++seq;
     root.setAttribute("aria-busy", "true");
+    filterStatus(`<p class="loading">${icon("loader", "spin")}Updating the dashboard</p>`);
     try {
-      data = await api.get<Bi>(`/staff/bi${qs ? `?${qs}` : ""}`);
+      const next = await api.get<Bi>(`/staff/bi${qs ? `?${qs}` : ""}`);
+      if (mine !== seq) return;
+      data = next;
       render();
-      const shown = $$<HTMLSelectElement>("[data-filter]").filter((x) => x.value).map((x) => x.selectedOptions[0].text);
+      const shown = activeFilters().map((x) => x.selectedOptions[0].text);
       announce(`Showing ${shown.join(", ") || "all organizations"}: ${plural(data.totals.organizations, "organization", "organizations")}.`);
-    } catch {
-      announce("We could not update the dashboard. Please try again.");
+    } catch (e) {
+      if (mine !== seq) return;
+      filterStatus(`<p class="field-error" role="alert">${failHtml(e, "We could not update the dashboard, so it still shows the previous results.")}</p>
+        ${expired(e) ? "" : `<button type="button" class="btn btn-secondary btn-sm" data-retry-filters>${icon("refresh")}<span>Try again</span></button>`}`);
     } finally {
-      root.removeAttribute("aria-busy");
+      if (mine === seq) root.removeAttribute("aria-busy");
     }
   }
 
@@ -126,7 +162,9 @@ import Icon from "../components/Icon.astro";
       const tab = $(`#tab-${t.id}`)!;
       tab.setAttribute("aria-selected", String(on));
       tab.tabIndex = on ? 0 : -1;
-      $(`#panel-${t.id}`)!.hidden = !on;
+      const panel = $(`#panel-${t.id}`)!;
+      panel.hidden = !on;
+      if (on) markScroll(panel);
       if (on && focus) tab.focus();
     }
     history.replaceState(null, "", `#${id}`);
@@ -154,14 +192,29 @@ import Icon from "../components/Icon.astro";
     if (!o) return;
     drawerBody.innerHTML = drawerHtml(o, (c) => stateNames.get(c) || c);
     drawer.showModal();
+    markScroll(drawer);
     focusEl($("#drawer-title", drawer));
-    // Roadmap progress comes from the milestones feature; the drawer still works without it.
-    roadmaps ??= api.get<{ roadmaps: Roadmap[] }>("/staff/roadmaps").then((r) => r.roadmaps).catch(() => []);
-    const [road, peers] = await Promise.all([roadmaps, api.get<{ peers: Peer[] }>(`/staff/peers/${encodeURIComponent(id)}`).catch(() => null)]);
-    if (!drawer.open || !$("#drawer-peers", drawer)) return;
-    $("#drawer-roadmap", drawer)!.innerHTML = roadmapHtml(road.find((r) => r.org_id === o.id));
-    $("#drawer-peers", drawer)!.innerHTML = peers ? peersHtml(peers.peers) : `<p class="field-error">${icon("alert")}<span>We could not load similar grantees.</span></p>`;
+    await drawerExtras(o.id);
   }
+
+  /** Roadmap progress and similar grantees load after the drawer opens; each says so when it fails and can be retried. */
+  async function drawerExtras(id: string) {
+    roadmaps ??= api.get<{ roadmaps: Roadmap[] }>("/staff/roadmaps").then((r) => r.roadmaps);
+    const [road, peers] = await Promise.allSettled([roadmaps, api.get<{ peers: Peer[] }>(`/staff/peers/${encodeURIComponent(id)}`)]);
+    if (!drawer.open || $("#drawer-peers", drawer)?.dataset.org !== id) return;
+    if (road.status === "rejected") roadmaps = null; // ask again next time
+    const failed = (e: unknown, what: string) => `<p class="field-error">${failHtml(e, `We could not load ${what}.`)}</p>
+      ${expired(e) ? "" : `<button type="button" class="btn btn-secondary btn-sm" data-retry-drawer="${esc(id)}">${icon("refresh")}<span>Try again</span></button>`}`;
+    $("#drawer-roadmap", drawer)!.innerHTML = road.status === "fulfilled" ? roadmapHtml(road.value.find((r) => r.org_id === id)) : failed(road.reason, "roadmap progress");
+    $("#drawer-peers", drawer)!.innerHTML = peers.status === "fulfilled" ? peersHtml(peers.value.peers) : failed(peers.reason, "similar grantees");
+  }
+
+  // Tables scroll sideways; keep their hint and edge shade in step with the scroll position and the window size.
+  document.addEventListener("scroll", (e) => {
+    const frame = (e.target as HTMLElement).parentElement;
+    if (frame?.classList.contains("scroll-frame")) markScroll(frame.parentElement!);
+  }, true);
+  window.addEventListener("resize", () => { markScroll(root); if (drawer.open) markScroll(drawer); });
 
   let opener: HTMLElement | null = null;
   root.addEventListener("click", (e) => {
@@ -169,6 +222,13 @@ import Icon from "../components/Icon.astro";
     const btn = t.closest<HTMLElement>("[data-open-org]");
     const row = t.closest<HTMLElement>("tr[data-org]");
     if (t.closest("#needs-csv")) { needsCsv(data); announce("Matrix downloaded as CSV."); return; }
+    if (t.closest("[data-retry-filters]")) { refresh(); return; }
+    if (t.closest("[data-clear-filters]")) {
+      $$<HTMLSelectElement>("[data-filter]").forEach((s) => { s.value = ""; filters[s.dataset.filter!] = ""; });
+      refresh();
+      $<HTMLSelectElement>("[data-filter]")!.focus();
+      return;
+    }
     if (btn || (row && !t.closest("a, button"))) {
       opener = btn ?? row!.querySelector<HTMLElement>("[data-open-org]");
       openOrg((btn ?? row)!.dataset.openOrg ?? row!.dataset.org!);
@@ -179,12 +239,19 @@ import Icon from "../components/Icon.astro";
     if (sel.id !== "group-by") return;
     group = sel.value as GroupBy | "none";
     $("#panel-gaps")!.innerHTML = gapsPanel(data, group);
+    markScroll($("#panel-gaps")!);
     $<HTMLSelectElement>("#group-by")!.focus();
     announce(`Grouped by ${sel.selectedOptions[0].text.toLowerCase()}.`);
   });
   drawer.addEventListener("click", (e) => {
     // A click on the backdrop lands on the dialog itself; the content sits in .drawer__body.
-    if (e.target === drawer || (e.target as HTMLElement).closest("[data-close-drawer]")) drawer.close();
+    if (e.target === drawer || (e.target as HTMLElement).closest("[data-close-drawer]")) { drawer.close(); return; }
+    const retry = (e.target as HTMLElement).closest<HTMLElement>("[data-retry-drawer]");
+    if (retry) {
+      for (const id of ["#drawer-roadmap", "#drawer-peers"]) $(id, drawer)!.innerHTML = `<p class="loading">${icon("loader", "spin")}Loading</p>`;
+      focusEl($("#drawer-roadmap", drawer)!.previousElementSibling as HTMLElement);
+      drawerExtras(retry.dataset.retryDrawer!);
+    }
   });
   drawer.addEventListener("close", () => { opener?.focus(); });
   wireBriefs(root);
@@ -205,8 +272,10 @@ import Icon from "../components/Icon.astro";
     shell();
   }
 
-  init().catch(() => {
+  init().catch((e) => {
     root.removeAttribute("aria-busy");
-    root.innerHTML = `<h1>Network capacity dashboard</h1><p class="field-error" role="alert">${icon("alert")}<span>We could not load the analytics. Please reload the page.</span></p>`;
+    root.innerHTML = `<h1>Network capacity dashboard</h1><p class="field-error" role="alert">${failHtml(e, "We could not load the network analytics. The server may be busy for a moment.")}</p>
+      <p><button type="button" class="btn btn-secondary" data-reload>${icon("refresh")}<span>Reload the dashboard</span></button></p>`;
+    $("[data-reload]", root)?.addEventListener("click", () => location.reload());
   });
 </script>

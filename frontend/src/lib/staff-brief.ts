@@ -2,6 +2,7 @@
 import { api, ApiError } from "./api";
 import { esc, focusEl, hostOf, plural, safeUrl } from "./dom";
 import { icon } from "./icons";
+import { failHtml } from "./staff-bi";
 
 interface Brief {
   question_id: string; statement: string; domain_name: string; title: string; why_it_matters: string;
@@ -20,7 +21,7 @@ function whoList(b: Brief) {
   const by = (rows: { name: string; orgs: number }[], label = (n: string) => n) => rows.map((r) => `${esc(label(r.name))}: ${r.orgs}`).join(", ");
   return `<ul>
     <li>${plural(w.orgs, "organization", "organizations")} of ${w.assessed} assessed in ${esc(b.domain_name)} have this growth priority${w.high_priority ? `, ${w.high_priority} of them as High priority` : ""}.</li>
-    ${w.program_models.length ? `<li>By program model: ${by(w.program_models)}.</li>` : ""}
+    ${w.program_models.length ? `<li>By program model: ${by(w.program_models)}. An organization with two program models counts in both.</li>` : ""}
     ${w.staff_sizes.length ? `<li>By staff size: ${by(w.staff_sizes, (n) => `${n} staff`)}.</li>` : ""}
     ${w.not_given ? `<li>${plural(w.not_given, "organization has", "organizations have")} not shared program or size details.</li>` : ""}
   </ul>`;
@@ -53,6 +54,10 @@ async function openBrief(btn: HTMLButtonElement) {
   if (!open || slot.dataset.loaded) return;
   const qid = btn.dataset.brief!;
   slot.innerHTML = `<p class="loading" role="status">${icon("loader", "spin")}Writing a training brief. This takes about 20 seconds.</p>`;
+  const slow = window.setTimeout(() => {
+    const p = slot.querySelector(".loading");
+    if (p) p.innerHTML = `${icon("loader", "spin")}Still writing. When the AI service is busy, a brief can take up to a minute.`;
+  }, 30_000);
   if (!briefs.has(qid)) briefs.set(qid, api.post<Brief>("/staff/briefs", { question_id: qid }));
   try {
     const b = await briefs.get(qid)!;
@@ -61,9 +66,12 @@ async function openBrief(btn: HTMLButtonElement) {
     focusEl(slot.querySelector("h3, h4"));
   } catch (e) {
     briefs.delete(qid);
-    slot.innerHTML = `<p class="field-error" role="alert">${icon("alert")}<span>${esc(e instanceof ApiError && e.message ? e.message : "We could not write the brief. Please try again.")}</span></p>`;
+    const text = e instanceof ApiError && e.message && e.status < 500 ? e.message : "We could not write the brief.";
+    slot.innerHTML = `<p class="field-error" role="alert">${failHtml(e, `${text} Select "${btn.textContent?.trim()}" to try again.`)}</p>`;
     btn.setAttribute("aria-expanded", "false");
     holder.hidden = false; // keep the message visible; the next click retries
+  } finally {
+    window.clearTimeout(slow);
   }
 }
 

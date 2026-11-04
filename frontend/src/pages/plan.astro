@@ -17,10 +17,11 @@ import Icon from "../components/Icon.astro";
   const root = $("#plan-root")!;
   const id = new URLSearchParams(location.search).get("id") || "";
 
-  function fail(title: string, text: string) {
+  function fail(title: string, text: string, reload = false) {
     root.removeAttribute("aria-busy");
+    document.title = `${title} · OCI Capacity Coach`;
     root.innerHTML = `<h1>${esc(title)}</h1><p class="notice">${icon("alert")}<span>${esc(text)}</span></p>
-      <p>${id ? `<a href="/results/?id=${encodeURIComponent(id)}">Go to the report</a> · ` : ""}<a href="/">Go to the start page</a></p>`;
+      <p class="actions actions--start">${reload ? `<a class="btn btn-primary" href="${esc(location.href)}">${icon("refresh")}<span>Reload the page</span></a>` : ""}${id ? `<a href="/results/?id=${encodeURIComponent(id)}">Go to the report</a>` : ""}<a href="/">Go to the start page</a></p>`;
   }
 
   requireUser().then(async () => {
@@ -29,7 +30,7 @@ import Icon from "../components/Icon.astro";
       await mountPlan(root, id);
     } catch (ex) {
       if (ex instanceof ApiError && [403, 404, 409].includes(ex.status)) return fail("Roadmap not available", ex.message);
-      fail("Something went wrong", "We could not load your roadmap. Please reload the page.");
+      fail("Something went wrong", "We could not load your roadmap. Check your connection, then reload the page.", true);
     }
   });
 </script>

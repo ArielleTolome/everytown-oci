@@ -3,6 +3,7 @@
 import { api, ApiError, type Assessment, type Resource } from "./api";
 import { $, $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
 import { icon } from "./icons";
+import { errorText, wireDownloads } from "./report-ui";
 
 export interface RoadmapTask { id: string; text: string; gap_ids: string[]; owner: string; lang: string; done: boolean; retake?: boolean }
 export interface RoadmapWeek {
@@ -57,10 +58,16 @@ export function roadmapTeaser(sub: Assessment): string {
   return `<div class="card rm-teaser" data-rm-teaser aria-busy="true"><p class="loading">${icon("loader", "spin")}Loading your roadmap</p></div>`;
 }
 
-/** Fill the teaser from the API; hide the whole section when this session may not see the roadmap. */
-export function wireRoadmapTeaser(root: HTMLElement, sub: Assessment): void {
-  if (!$("[data-rm-teaser]", root)) return;
-  getRoadmap(sub.id).then((r) => fillRoadmapTeaser(root, r)).catch(() => { root.hidden = true; });
+/** Fill the teaser from the API. A session that may not see the roadmap, or a failed load, gets a plain notice. */
+export function wireRoadmapTeaser(root: HTMLElement, roadmap: Promise<Roadmap> | null): void {
+  const box = $("[data-rm-teaser]", root);
+  if (!box || !roadmap) return;
+  roadmap.then((r) => fillRoadmapTeaser(root, r)).catch((ex) => {
+    box.removeAttribute("aria-busy");
+    box.innerHTML = ex instanceof ApiError && ex.status === 403
+      ? `<p class="rm-teaser__note">${icon("lock")}<span>Only the person who submitted this assessment, or Everytown staff, can open its roadmap.</span></p>`
+      : `<p class="rm-teaser__note">${icon("info")}<span>${esc(errorText(ex, "We could not load your roadmap right now. Reload the page to try again."))}</span></p>`;
+  });
 }
 
 /** (Re)draw the teaser from roadmap state, also after a Start here tick on the same page. */
@@ -73,12 +80,13 @@ export function fillRoadmapTeaser(root: ParentNode, r: Roadmap): void {
   const allDone = r.weeks_done === r.weeks.length;
   box.innerHTML = `
     <div class="rm-teaser__head">
-      <h3>${allDone ? "All 12 weeks done" : `Week ${now} of ${r.weeks.length}`} <span class="rm-teaser__count">· ${r.done_tasks} of ${plural(r.total_tasks, "step", "steps")} done</span></h3>
+      <h3>${allDone ? "All 12 weeks done" : `Week ${now} of ${r.weeks.length}`}<span class="visually-hidden">, </span><span class="rm-teaser__count">${r.done_tasks} of ${plural(r.total_tasks, "step", "steps")} done</span></h3>
       <span class="rm-chip">${svg("first-step")}${esc(r.level)} · ${r.points} points</span>
     </div>
     ${bar(r.pct, "Roadmap progress")}
     ${allDone ? `<p>You finished every step. Take the assessment again to see how far you have come.</p>`
-      : r.current_week === null && r.next_unlock ? `<p>${icon("lock")} <span>This week is done. Week ${r.next_unlock.week} opens on ${esc(shortDate(r.next_unlock.date))}.</span></p>`
+      : r.current_week === null && r.next_unlock ? `<p class="rm-teaser__note">${icon("lock")}<span>This week is done. Week ${r.next_unlock.week} opens on ${esc(shortDate(r.next_unlock.date))}.</span></p>`
+      : week?.focus && todo.length ? `<p>This week's steps are the ones in Start here, above. Tick them there or on your roadmap.</p>`
       : todo.length ? `<p class="mini-label">This week</p><ul class="rm-teaser__list" role="list">${todo.map((t) => `<li>${icon("circle-dashed")}<span lang="${esc(t.lang)}">${esc(t.text)}</span></li>`).join("")}</ul>` : ""}
     <p class="rm-teaser__cta"><a class="btn btn-primary" href="/plan/?id=${encodeURIComponent(r.assessment_id)}"><span>Open my roadmap</span>${icon("arrow-right")}</a></p>`;
   box.removeAttribute("aria-busy");
@@ -113,7 +121,7 @@ function taskItem(t: RoadmapTask, w: RoadmapWeek, r: Roadmap, editable: boolean)
         ${editable ? `<label for="task-${esc(t.id)}" lang="${esc(t.lang)}">${label}</label>` : `<p lang="${esc(t.lang)}">${label}</p>`}
         <div class="rm-task__meta">
           <span class="role-chip">${icon("user")}<span class="visually-hidden">Owner: </span><span lang="${esc(w.lang)}">${esc(t.owner)}</span></span>
-          ${based.length ? `<details class="about rm-basis"><summary>Based on your answers to ${plural(based.length, "statement", "statements")}</summary><ul class="basis__list" role="list" lang="en">${based.map((g) => `<li>${icon("flag")}<span>${esc(r.statements[g])}</span></li>`).join("")}</ul></details>` : ""}
+          ${based.length ? `<details class="about rm-basis"><summary>Based on your answers to ${plural(based.length, "statement", "statements")}</summary><ul class="basis__list" role="list" lang="en">${based.map((g) => `<li>${icon("circle-dashed")}<span>${esc(r.statements[g])}</span></li>`).join("")}</ul></details>` : ""}
         </div>
       </div>
     </li>`;
@@ -129,7 +137,7 @@ function weekBody(w: RoadmapWeek, r: Roadmap, editable: boolean): string {
     </fieldset>
     <p class="field-error rm-week__error" id="week-${w.n}-error" role="alert" hidden></p>
     ${w.resource?.url ? `<p class="resource-link">${icon("book")}<span><span class="visually-hidden">Resource: </span><a href="${esc(safeUrl(w.resource.url))}" rel="noopener" lang="${esc(w.lang)}">${esc(w.resource.title)}</a> <span class="url-domain">(${esc(hostOf(w.resource.url))})</span></span></p>` : ""}
-    <p class="rm-week__actions"><a class="btn btn-secondary btn-sm" href="/api${path(r.assessment_id)}/week/${w.n}.pdf" download>${icon("download")}<span>Download week ${w.n} (PDF)</span></a></p>`;
+    <p class="rm-week__actions"><a class="btn btn-secondary btn-sm" href="/api${path(r.assessment_id)}/week/${w.n}.pdf" download data-download>${icon("download")}<span>Download week ${w.n} (PDF)</span></a></p>`;
 }
 
 function weekCard(w: RoadmapWeek, r: Roadmap): string {
@@ -139,7 +147,6 @@ function weekCard(w: RoadmapWeek, r: Roadmap): string {
       <div class="rm-week__head">
         <span class="rm-week__num rm-week__num--locked" aria-hidden="true">${icon("lock")}</span>
         <div>
-          <span class="rm-tag rm-tag--locked">${icon("lock")}Locked</span>
           <h3 id="week-${w.n}-title" tabindex="-1">Week ${w.n}: <span class="visually-hidden">coming up, </span><span lang="${esc(w.lang)}">${esc(w.title)}</span></h3>
           <p class="rm-week__status">Coming up. Opens on ${esc(shortDate(w.unlocks_on))}, or sooner when you finish week ${w.n - 1}.</p>
         </div>
@@ -175,7 +182,7 @@ function summary(r: Roadmap): string {
       <ul class="rm-chips" role="list">
         <li class="rm-chip">${svg("first-step")}<span><span class="visually-hidden">Level: </span>${esc(r.level)}</span></li>
         <li class="rm-chip">${icon("star")}<span>${r.points} points</span></li>
-        <li class="rm-chip">${svg("flame")}<span>${r.streak ? `${plural(r.streak, "week", "weeks")} in a row` : "No streak yet"}</span></li>
+        ${r.streak ? `<li class="rm-chip">${svg("flame")}<span>${plural(r.streak, "week", "weeks")} in a row</span></li>` : ""}
       </ul>
       <p class="rm-summary__line"><strong>${r.weeks_done === r.weeks.length ? "All 12 weeks done" : `Week ${now} of ${r.weeks.length}`}</strong> · ${r.done_tasks} of ${plural(r.total_tasks, "step", "steps")} done (${r.pct}%)</p>
       ${bar(r.pct, "Roadmap progress")}
@@ -187,28 +194,34 @@ function summary(r: Roadmap): string {
 function page(r: Roadmap, cheer: string): string {
   const report = `/results/?id=${encodeURIComponent(r.assessment_id)}`;
   const who = r.staff ? "the" : "your";
-  return `
+  const head = `
     <div class="title-band">
       <p class="rm-back">${r.staff ? `<a href="/staff/">${icon("arrow-left")} Back to staff dashboard</a> · ` : ""}<a href="${report}">${icon("arrow-left")} Back to ${who} full report</a></p>
       <span class="eyebrow">${r.staff ? "12-week roadmap (staff view)" : "Your 12-week roadmap"}</span>
       <h1 id="plan-title" tabindex="-1">${esc(r.org_name)}: ${who} roadmap</h1>
-      <p class="lead">One week at a time. A new week opens when you finish the one before, or 7 days after it opened.</p>
-    </div>
+      ${r.weeks.length ? `<p class="lead">One week at a time. A new week opens when you finish the one before, or 7 days after it opened.</p>` : ""}
+    </div>`;
+  const back = `<p class="section-gap"><a href="${report}">${icon("arrow-left")} Back to ${who} full report</a></p>`;
+  if (!r.weeks.length) {
+    return `${head}<p class="notice">${icon("circle-check")}<span>There is nothing on this roadmap yet. The answers show no growth priorities in the areas assessed, so there are no weekly steps to plan. Keep doing what works, and take the assessment again in 90 days.</span></p>${back}`;
+  }
+  // The work comes first; badges follow it, because they only count the steps.
+  return `${head}
     <section class="section rm-section" aria-labelledby="rm-progress-title">
       <h2 id="rm-progress-title" class="visually-hidden">Your progress</h2>
       ${summary(r)}
-    </section>
-    <section class="section rm-section" aria-labelledby="rm-badges-title">
-      <div class="section-head"><div><span class="eyebrow">For follow-through</span><h2 id="rm-badges-title">Your badges</h2></div></div>
-      ${badges(r.badges)}
     </section>
     <section class="section rm-section" aria-labelledby="rm-weeks-title">
       <div class="section-head"><div><span class="eyebrow">${r.ai ? "From your report" : "From your answers"}</span><h2 id="rm-weeks-title">Week by week</h2></div></div>
       <div class="rm-cheer" id="rm-cheer" ${cheer ? "" : "hidden"}>${cheer}</div>
       <ol class="rm-weeks" role="list">${r.weeks.map((w) => weekCard(w, r)).join("")}</ol>
     </section>
+    <section class="section rm-section" aria-labelledby="rm-badges-title">
+      <div class="section-head"><div><span class="eyebrow">For follow-through</span><h2 id="rm-badges-title">Your badges</h2></div></div>
+      ${badges(r.badges)}
+    </section>
     <p class="notice section-gap">${icon("info")}<span>Points and badges count the steps you finish, never your answers or scores. Only your organization and Everytown staff can see this roadmap.</span></p>
-    <p class="section-gap"><a href="${report}">${icon("arrow-left")} Back to ${who} full report</a></p>`;
+    ${back}`;
 }
 
 /** Confetti for a finished week; skipped entirely when the reader prefers reduced motion (the glow stays static). */
@@ -236,6 +249,7 @@ export async function mountPlan(root: HTMLElement, id: string): Promise<void> {
     root.removeAttribute("aria-busy");
   };
   render();
+  wireDownloads(root);
 
   root.addEventListener("change", (e) => {
     const box = e.target as HTMLInputElement;
@@ -248,7 +262,7 @@ export async function mountPlan(root: HTMLElement, id: string): Promise<void> {
         box.checked = !done;
         const err = $(`#week-${week}-error`, root);
         if (err) {
-          err.innerHTML = `${icon("alert")}<span>${esc(ex instanceof ApiError ? ex.message : "We could not save that. Please try again.")}</span>`;
+          err.innerHTML = `${icon("alert")}<span>${esc(errorText(ex, "We could not save that step. Please try again."))}</span>`;
           err.hidden = false;
         }
         return;

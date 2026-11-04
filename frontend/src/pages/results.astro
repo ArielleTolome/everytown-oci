@@ -14,8 +14,9 @@ import Icon from "../components/Icon.astro";
   import { wireCoach } from "../lib/coach";
   import { wireListen } from "../lib/listen";
   import { icon } from "../lib/icons";
-  import { pdfButton, reportBody, respondentLine, statusPanel, STATE_TEXT, stepItems, wireChecklists, wireExplore, wireLayers, wirePeers, wireReminder, wireSupport } from "../lib/results";
-  import { wireRoadmapTeaser } from "../lib/roadmap";
+  import { pdfButton, reportBody, respondentLine, statusPanel, STATE_TEXT, stepItems, wireChecklists, wireExplore, wireLayers, wireOwnerOnly, wirePeers, wireReminder, wireSupport } from "../lib/results";
+  import { errorText, wireDownloads } from "../lib/report-ui";
+  import { getRoadmap, wireRoadmapTeaser } from "../lib/roadmap";
   import { wireToc } from "../lib/toc";
 
   const root = $("#results-root")!;
@@ -23,6 +24,9 @@ import Icon from "../components/Icon.astro";
   let meta: Meta;
   let user: User;
   let pollTimer = 0;
+  let pollStart = 0;
+  // After this long without a result, say so plainly instead of spinning forever.
+  const SLOW_MS = 120_000;
 
   function render(sub: Assessment, focus: "ready" | "error" | null) {
     const staff = user.role === "staff";
@@ -57,20 +61,26 @@ import Icon from "../components/Icon.astro";
     root.removeAttribute("aria-busy");
     wireListen(sub.id, view);
     wireCoach(sub, view);
-    wireChecklists(sub, view);
+    // One roadmap request feeds Start here, the roadmap teaser and the owner-only forms.
+    const roadmap = sub.report ? getRoadmap(sub.id) : null;
+    wireChecklists(sub, view, roadmap);
+    wireOwnerOnly(view, roadmap);
     wireReminder(sub, view);
     wireSupport(sub, view);
     wirePeers(sub, view);
     wireExplore(sub, meta, view);
     wireLayers(view);
-    const roadmap = $("#roadmap-section", view);
-    if (roadmap) wireRoadmapTeaser(roadmap, sub);
+    wireDownloads(view);
+    const teaser = $("#roadmap-section", view);
+    if (teaser) wireRoadmapTeaser(teaser, roadmap);
     wireToc($("#toc")!, $("#report-main")!);
-
     $<HTMLButtonElement>("#retry-btn")?.addEventListener("click", retry);
     if (focus === "ready") focusEl($("#ready"));
     if (focus === "error") focusEl($("#processing-title"));
-    if (sub.status === "running") schedulePoll();
+    if (sub.status === "running") {
+      pollStart ||= Date.now();
+      schedulePoll();
+    }
   }
 
   function schedulePoll() {
@@ -82,12 +92,20 @@ import Icon from "../components/Icon.astro";
     let data: StatusResponse;
     try {
       data = await api.get<StatusResponse>(`/assessments/${encodeURIComponent(id)}/status`);
-    } catch {
+    } catch (ex) {
+      if (ex instanceof ApiError && ex.status === 401) { await requireUser(); return; } // sends the reader to sign in
       pollTimer = window.setTimeout(poll, 4000);
       return;
     }
+    if (Date.now() - pollStart > SLOW_MS) $("#processing-slow")?.removeAttribute("hidden");
     if (data.status === "done" || data.status === "error") {
-      const sub = await api.get<Assessment>(`/assessments/${encodeURIComponent(id)}`);
+      let sub: Assessment;
+      try {
+        sub = await api.get<Assessment>(`/assessments/${encodeURIComponent(id)}`);
+      } catch {
+        pollTimer = window.setTimeout(poll, 4000);
+        return;
+      }
       announce(sub.status === "done" ? "Your report is ready." : "We could not finish your recommendations.");
       render(sub, sub.status === "done" ? "ready" : "error");
       return;
@@ -112,21 +130,24 @@ import Icon from "../components/Icon.astro";
       await api.post(`/assessments/${encodeURIComponent(id)}/retry`);
       const sub = await api.get<Assessment>(`/assessments/${encodeURIComponent(id)}`);
       announce("Trying again. Building your recommendations.");
+      pollStart = 0;
       render(sub, null);
       focusEl($("#processing-title"));
     } catch (ex) {
       btn.removeAttribute("aria-disabled");
       const err = $("#retry-error");
       if (err) {
-        err.innerHTML = `${icon("alert")}<span>${esc(ex instanceof ApiError ? ex.message : "We could not restart. Please try again.")}</span>`;
+        err.innerHTML = `${icon("alert")}<span>${esc(errorText(ex, "We could not restart. Please try again."))}</span>`;
         err.hidden = false;
       }
     }
   }
 
-  function fail(title: string, text: string) {
+  function fail(title: string, text: string, reload = false) {
     root.removeAttribute("aria-busy");
-    root.innerHTML = `<h1>${esc(title)}</h1><p class="notice">${icon("alert")}<span>${esc(text)}</span></p><p><a href="/">Go to the start page</a></p>`;
+    document.title = `${title} · OCI Capacity Coach`;
+    root.innerHTML = `<h1>${esc(title)}</h1><p class="notice">${icon("alert")}<span>${esc(text)}</span></p>
+      <p class="actions actions--start">${reload ? `<a class="btn btn-primary" href="${esc(location.href)}">${icon("refresh")}<span>Reload the page</span></a>` : ""}<a href="/">Go to the start page</a></p>`;
   }
 
   async function init() {
@@ -146,5 +167,5 @@ import Icon from "../components/Icon.astro";
     render(sub, null);
   }
 
-  init().catch(() => fail("Something went wrong", "We could not load this report. Please reload the page."));
+  init().catch(() => fail("Something went wrong", "We could not load this report. Check your connection, then reload the page.", true));
 </script>

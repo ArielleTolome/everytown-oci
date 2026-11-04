@@ -1,4 +1,5 @@
 // Staff BI dashboard (v1.0): types for GET /api/staff/bi and the HTML for each tab. All numbers come from the server.
+import { ApiError } from "./api";
 import { esc, plural } from "./dom";
 import { icon } from "./icons";
 import { briefButton } from "./staff-brief";
@@ -41,8 +42,31 @@ export const traceLink = (url: string | null | undefined) => (url && /^https?:\/
 const head = (id: string, eyebrow: string, title: string, extra = "") =>
   `<div class="section-head"><div><span class="eyebrow">${esc(eyebrow)}</span><h2 id="${id}">${esc(title)}</h2></div>${extra}</div>`;
 const empty = (text: string) => `<p class="notice">${icon("info")}<span>${esc(text)}</span></p>`;
+/** Tables scroll sideways inside a frame; staff.astro's markScroll() sets data-scrollable / data-more for the hint and the edge shade. */
 const table = (id: string, caption: string, thead: string, tbody: string, cls = "") =>
-  `<div class="table-wrap" role="region" aria-labelledby="${id}" tabindex="0"><table class="${cls}"><caption id="${id}">${caption}</caption><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+  `<div class="scroll-frame"><p class="scroll-hint" aria-hidden="true">Scroll sideways to see every column.</p><div class="table-wrap" role="region" aria-labelledby="${id}" tabindex="0"><table class="${cls}"><caption id="${id}">${caption}</caption><thead>${thead}</thead><tbody>${tbody}</tbody></table></div></div>`;
+
+/** Flag each table frame that overflows (hint) and still has columns to the right (edge shade). */
+export function markScroll(scope: ParentNode = document) {
+  scope.querySelectorAll<HTMLElement>(".scroll-frame").forEach((f) => {
+    const w = f.querySelector<HTMLElement>(".table-wrap");
+    if (!w || !w.clientWidth) return; // hidden tab: measured again when shown
+    f.toggleAttribute("data-scrollable", w.scrollWidth > w.clientWidth + 1);
+    f.toggleAttribute("data-more", w.scrollLeft + w.clientWidth < w.scrollWidth - 1);
+  });
+}
+
+/** An expired staff session: retrying cannot help, signing in again does. */
+export const expired = (e: unknown) => e instanceof ApiError && e.status === 401;
+
+/** Error text for a failed staff request; an expired session gets a sign-in link that comes back here. */
+export function failHtml(e: unknown, text: string) {
+  if (expired(e)) {
+    const next = encodeURIComponent(location.pathname + location.hash);
+    return `${icon("lock")}<span>Your staff session has ended. <a href="/login/?next=${next}">Sign in again</a> to keep working.</span>`;
+  }
+  return `${icon("alert")}<span>${esc(text)}</span>`;
+}
 const share = (value: number, text: string) =>
   `<span class="share"><span class="share__track" aria-hidden="true"><span class="share__fill" style="width:${Math.min(100, Math.max(0, value))}%"></span></span><span>${text}</span></span>`;
 
@@ -64,7 +88,7 @@ export function downloadCsv(filename: string, rows: unknown[][]) {
 export function needCell(c: Cell | undefined) {
   if (!c) return `<td class="need need--na"><span class="meta">Not assessed</span></td>`;
   if (!c.need) return `<td class="need"><span class="visually-hidden">No need</span></td>`;
-  return `<td class="need need--yes"><span class="need__tags">${c.high ? `<span class="need__tag">${icon("flag")}${c.high} High priority</span>` : ""}${c.asked ? `<span class="need__tag need__tag--asked">${icon("message")}Asked for help</span>` : ""}</span></td>`;
+  return `<td class="need need--yes"><span class="need__tags">${c.high ? `<span class="need__tag"><strong>${c.high}</strong> High priority</span>` : ""}${c.asked ? `<span class="need__tag need__tag--asked">${icon("message")}Asked for help</span>` : ""}</span></td>`;
 }
 
 export function needsCsv(d: Bi) {
@@ -85,23 +109,29 @@ export function needsCsv(d: Bi) {
 export function needsPanel(d: Bi) {
   const { areas, rows } = d.training_needs;
   const cards = [...areas].sort((a, b) => b.orgs - a.orgs).map((a) => `<li class="card need-card">
-      <h3>${esc(a.domain_name)}: ${plural(a.orgs, "organization", "organizations")}</h3>
-      <p class="meta">${a.high} with a High priority growth priority · ${a.asked} asked for help</p>
-      ${a.top_question_id ? `<p><span class="chip">${esc(a.top_question_id)}</span> ${esc(a.top_question_text)}</p>
+      <h3>${esc(a.domain_name)}</h3>
+      <p class="need-card__count"><strong>${a.orgs}</strong> ${a.orgs === 1 ? "organization needs" : "organizations need"} training</p>
+      <p class="meta">${a.high} with High priority growth priorities here · ${a.asked} asked for help</p>
+      ${a.top_question_id ? `<p class="need-card__top"><span class="meta need-card__label">Top High priority statement</span><span class="chip">${esc(a.top_question_id)}</span> ${esc(a.top_question_text)}</p>
       ${briefButton(a.top_question_id, `need-${a.domain_id}`)}<div class="brief-slot" id="brief-need-${esc(a.domain_id)}" data-level="4" hidden></div>` : ""}
     </li>`).join("");
-  const thead = `<tr><th scope="col">Organization</th><th scope="col" class="num">Areas</th>${areas.map((a) => `<th scope="col">${esc(a.domain_name)}<span class="th-count">${a.orgs} need</span></th>`).join("")}</tr>`;
+  const thead = `<tr><th scope="col">Organization</th><th scope="col" class="num need-count-col">Areas with a need</th>${areas.map((a) => `<th scope="col">${esc(a.domain_name)}<span class="th-count">${a.orgs} need training</span></th>`).join("")}</tr>`;
   const tbody = rows.map((r) => `<tr data-org="${esc(r.id)}">
       <th scope="row"><button type="button" class="link-btn" data-open-org="${esc(r.id)}">${esc(r.name)}</button></th>
       <td class="num">${r.needs}</td>${areas.map((a) => needCell(r.cells[a.domain_id])).join("")}
     </tr>`).join("");
-  return `${head("needs-title", "Priority 1", "Which organizations need which training",
+  return `${head("needs-title", "Training", "Which organizations need which training",
     `<button type="button" class="btn btn-secondary btn-sm" id="needs-csv">${icon("download")}<span>Download matrix (CSV)</span></button>`)}
-    <p>An organization needs training in an area when it <strong>asked for help</strong> there on its report, or when the area is still at the <strong>Seeding or Emerging</strong> stage and has a <strong>High priority</strong> growth priority (from the scoring engine). The number shows how many High priority growth priorities there are. Select an organization to see its details.</p>
+    <p class="measure">An area counts as a training need when the organization asked for help there, or when the area is at the Seeding or Emerging stage and has at least one High priority growth priority. Select an organization to see its details.</p>
     <h3 class="sub-head">Training to plan, most needed first</h3>
     <ul class="need-cards" role="list">${cards}</ul>
-    <ul class="legend" aria-label="What the cells mean"><li>${icon("flag")}High priority: number of High priority growth priorities</li><li>${icon("message")}Asked for help: the organization asked the Community Safety Fund for support</li></ul>
-    ${rows.length ? table("needs-caption", `Training needs: ${plural(rows.length, "organization", "organizations")} by capacity area, most needs first`, thead, tbody, "needs-matrix") : empty("No organizations match these filters.")}
+    <h3 class="sub-head">Organizations by area</h3>
+    <ul class="legend need-legend" aria-label="What the cells mean">
+      <li><span><strong>3</strong> High priority: 3 of the organization's High priority growth priorities are in this area</span></li>
+      <li>${icon("message")}<span>Asked for help: the organization asked the Community Safety Fund for training or coaching in this area</span></li>
+      <li><span>Blank: no training need in this area. Not assessed: the organization skipped the area.</span></li>
+    </ul>
+    ${table("needs-caption", `Training needs: ${plural(rows.length, "organization", "organizations")} by capacity area, most needs first`, thead, tbody, "needs-matrix")}
     ${supportTable(d)}`;
 }
 
@@ -111,7 +141,7 @@ function supportTable(d: Bi) {
     ${rows.length ? table("support-caption", "Areas where grantees asked for training or coaching, latest request per organization",
       `<tr><th scope="col">Area</th><th scope="col" class="num">Organizations asking</th><th scope="col">Organizations</th></tr>`,
       rows.map((r) => `<tr><th scope="row">${esc(r.domain_name)}</th><td class="num">${r.orgs}</td><td><ul class="plain-list">${r.organizations.map((o) => `<li>${report(o)} ${o.requested_at ? `<span class="meta">(${esc(o.requested_at)})</span>` : ""}</li>`).join("")}</ul></td></tr>`).join(""))
-      : empty("No requests yet.")}`;
+      : empty("No organization has asked the Community Safety Fund for support yet.")}`;
 }
 
 // ---------- 2. gaps by domain ----------
@@ -156,7 +186,7 @@ export function gapsPanel(d: Bi, group: GroupBy | "none") {
   }
   const note = group === "program_model" ? `<p class="hint">An organization with two program models counts in both groups.</p>`
     : group === "role" ? `<p class="hint">Who answered each area: the leader's role, or a teammate's role for areas they were sent.</p>` : "";
-  return `${head("gaps-title", "Priority 2", "Gaps by capacity area")}
+  return `${head("gaps-title", "By area", "Gaps by capacity area")}
     <p>Where organizations are in each area, how many have a High priority growth priority there, and the three most common growth priorities. Group by program model, size, budget or who answered to compare like with like.</p>
     <div class="toolbar toolbar--slim">${picker}</div>${note}${legend}${body}`;
 }
@@ -174,7 +204,7 @@ export function commonPanel(d: Bi) {
       <td class="nowrap">${briefButton(g.question_id, `gap-${i}`)}</td>
     </tr>
     <tr class="brief-row" hidden><td colspan="6"><div class="brief-slot" id="brief-gap-${i}"></div></td></tr>`).join("");
-  return `${head("common-title", "Priority 3", "Most common gaps across all grantees")}
+  return `${head("common-title", "Across the network", "Most common gaps across all grantees")}
     <p>The statements most often marked as a growth priority. Open "By program model" to see who has it, out of those assessed in that area.</p>
     <p class="hint">An organization with two program models counts in both groups.</p>
     ${gaps.length ? table("common-caption", "Most common growth priorities, with the number and share of organizations assessed in that area",
@@ -192,7 +222,7 @@ function rateLine(label: string, r: Rate) {
 export function changePanel(d: Bi) {
   const c = d.change;
   const moves = (r: ChangeRow) => `<ul class="plain-list">${r.moves.map((m) => `<li>${icon(m.change > 0 ? "trending" : m.change < 0 ? "arrow-right" : "circle")}<span>${esc(m.domain_name)}: ${m.change === 0 ? `stayed ${esc(m.to)}` : `${esc(m.from)} to ${esc(m.to)}`}${m.change > 0 ? " (up)" : m.change < 0 ? " (down)" : ""}</span></li>`).join("")}</ul>`;
-  return `${head("change-title", "Priority 4", "Change over time")}
+  return `${head("change-title", "Re-assessments", "Change over time")}
     <p>Organizations that took the assessment more than once: their latest assessment compared with the one before, over the areas both covered.</p>
     ${c.reassessed ? `<ul class="kpi-grid" role="list">
       <li class="card kpi"><span class="kpi__label">${icon("refresh")}Re-assessed</span><span class="kpi__num">${c.reassessed}</span><span class="kpi__context">organizations</span></li>
@@ -208,12 +238,12 @@ export function changePanel(d: Bi) {
     ${table("change-caption", "Stage moves and growth priorities closed since the previous assessment",
       `<tr><th scope="col">Organization</th><th scope="col">Assessed</th><th scope="col">Stage moves</th><th scope="col" class="num">Closed</th><th scope="col" class="num">New</th></tr>`,
       c.rows.map((r) => `<tr><th scope="row">${report(r)}</th><td class="nowrap">${esc(r.previous)} and ${esc(r.latest)}</td><td>${moves(r)}</td><td class="num">${r.closed}</td><td class="num">${r.new}</td></tr>`).join(""))}`
-    : empty("No organization has taken the assessment twice yet.")}`;
+    : empty("No organization has taken the assessment twice yet. When one does, its stage moves and closed growth priorities show here.")}`;
 }
 
 // ---------- 6. peers ----------
 
-const peerList = (peers: Peer[]) => `<ul class="plain-list peer-list">${peers.map((p) => `<li>${report(p.org)} <span class="chip">Match ${p.score.toFixed(2)}</span><br><span class="meta">${p.reasons.map(esc).join(" · ")}</span></li>`).join("")}</ul>`;
+const peerList = (peers: Peer[]) => `<ul class="plain-list peer-list">${peers.map((p) => `<li>${report(p.org)} <span class="chip">${Math.round(p.score * 100)}% similar</span><br><span class="meta">${p.reasons.map(esc).join(" · ")}</span></li>`).join("")}</ul>`;
 
 export function peersPanel(d: Bi) {
   const reqs = d.peer_requests;
@@ -224,7 +254,7 @@ export function peersPanel(d: Bi) {
         <span class="eyebrow">Asked ${esc(r.requested_at)}</span>
         <h4>${report(r.org)}</h4>
         ${r.suggestions.length ? `<p class="meta">Suggested matches</p>${peerList(r.suggestions)}` : `<p class="meta">No similar organization yet.</p>`}
-      </li>`).join("")}</ul>` : empty("No organization has asked to be connected yet.")}
+      </li>`).join("")}</ul>` : empty("No organization has asked to be connected yet. Requests show here when a leader selects \"Ask to be connected\" on their report.")}
     <h3 class="sub-head">Peer groups: same main program model and staff size</h3>
     ${d.peer_groups.length ? `<ul class="cohorts" role="list">${d.peer_groups.map((g) => `<li class="card cohort">
         <span class="eyebrow">${esc(g.staff_size)} staff · ${plural(g.members.length, "organization", "organizations")}</span>
@@ -251,9 +281,9 @@ export function drawerHtml(o: OrgDetail, stateName: (c: string) => string) {
     <p>${report(o, "Open the full report")}</p>${traceLink(o.trace_url)}
     <h3>Stage by area</h3>
     ${table("drawer-stages", `Stages and needs for ${esc(o.name)}`,
-      `<tr><th scope="col">Area</th><th scope="col">Stage</th><th scope="col" class="num">Capacity</th><th scope="col" class="num">High priority</th><th scope="col">Asked for help</th><th scope="col" class="num preview-col">Peer percentile (0 to 100)</th></tr>`,
-      o.stages.map((s) => `<tr><th scope="row">${esc(s.domain_name)}</th><td>${esc(s.stage)}</td><td class="num">${pct(s.score)}</td><td class="num">${s.high}</td><td>${o.asked.includes(s.domain_id) ? "Yes" : "No"}</td><td class="num preview-col">${s.percentile == null ? '<span class="meta">Not enough peers</span>' : `${s.percentile}`}</td></tr>`).join(""))}
-    <p class="hint">${icon("shield")} Peer percentile is a staff-only preview, ranked only among organizations with the same main program model${model ? ` (${esc(model)})` : ""}, when there are 3 or more.</p>
+      `<tr><th scope="col">Area</th><th scope="col">Stage</th><th scope="col" class="num">Capacity</th><th scope="col" class="num">High priority</th><th scope="col">Asked for help</th><th scope="col" class="num preview-col">Peer percentile</th></tr>`,
+      o.stages.map((s) => `<tr><th scope="row">${esc(s.domain_name)}</th><td>${esc(s.stage)}</td><td class="num">${pct(s.score)}</td><td class="num">${s.high}</td><td>${o.asked.includes(s.domain_id) ? "Yes" : "No"}</td><td class="num preview-col">${s.percentile == null ? '<span class="meta">Too few peers</span>' : `${s.percentile}`}</td></tr>`).join(""))}
+    <p class="hint">${icon("shield")} Peer percentile (0 to 100) is a staff-only preview, ranked only among organizations with the same main program model${model ? ` (${esc(model)})` : ""}, when there are 3 or more. Grantees never see it.</p>
     <h3>Top growth priorities</h3>
     <ol class="drawer__gaps">${o.top_gaps.map((g) => `<li><span class="chip">${esc(g.question_id)}</span> ${esc(g.question_text)} <span class="meta">(${esc(g.domain_name)}, ${esc(g.priority)})</span></li>`).join("")}</ol>
     <h3>Support request</h3>
@@ -261,7 +291,7 @@ export function drawerHtml(o: OrgDetail, stateName: (c: string) => string) {
     <h3>Roadmap progress</h3>
     <div id="drawer-roadmap"><p class="loading">${icon("loader", "spin")}Loading</p></div>
     <h3>Similar grantees</h3>
-    <div id="drawer-peers"><p class="loading">${icon("loader", "spin")}Finding similar organizations</p></div>`;
+    <div id="drawer-peers" data-org="${esc(o.id)}"><p class="loading">${icon("loader", "spin")}Finding similar organizations</p></div>`;
 }
 
 export const peersHtml = (peers: Peer[]) => (peers.length ? peerList(peers) : `<p class="meta">No similar organization yet.</p>`);

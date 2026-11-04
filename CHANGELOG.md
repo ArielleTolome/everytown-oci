@@ -2,6 +2,30 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.5.0 — UI/UX pass with impeccable and Hallmark: clearer, calmer, phone-first, sturdier
+
+Product context: `PRODUCT.md` (written with `/impeccable init`: Everytown's mission, the leaders and CSF staff who use the tool, what it does, what must never change). Hallmark ran in audit mode on the start page and questionnaire; its findings were applied inside the Everytown Community Safety Fund look (where a Hallmark rule conflicts with the brand, such as eyebrow labels, the brand wins). Then `/impeccable clarify`, `adapt`, `harden` and `quieter`, in three parallel workers, one per surface.
+
+**Assessment (start page, questionnaire, sign-in)**
+- One at a time: the first statement shows on the first screen on phones and laptops; view, language, save and share controls follow the card. Yes / No sit side by side on every phone, and the phone area nav is a row of numbered marks (Completed, This area, Started).
+- The start page shows a time estimate for the areas picked (one shared 8 seconds per statement, so the start page and questionnaire agree) and offers to continue a half-finished assessment saved on this device; "Continue an assessment" opens the first unfinished area.
+- Clearer, calmer errors: the report limit, server trouble, offline, a dead teammate link and an expired sign-in each say what happened and that answers are saved; sign-in brings you back to the same step. The save status never claims a save the browser refused, and offline answers sync when the connection returns.
+- Plain-language pass on every label, hint and message around the statements (the statements themselves and the stage names are unchanged).
+
+**Results and 12-week roadmap**
+- Quieter growth priorities: "High priority" is a plain outlined word, not a black badge with a flag; stage and statement id are quiet text; stage pills are pale; strengths come before the 30 / 60 / 90 plan. One "learning tool, not a grade" note replaces the separate AI notice.
+- Plainer words: "now in place", "Ask to be connected", no "demo shortcut". The report prompt now asks for "room to grow" and never "weak", "weaker" or "the engine" (16 of 16 eval reports clean; reports eval gate passes).
+- Start here steps in weeks not open yet say when they open; a failed tick shows an error in the card; viewers who did not submit see notices instead of forms the server refuses; clear messages for a lapsed sign-in, slow reports, failed PDFs ("Preparing your PDF...") and failed read-aloud.
+- Phones: one row of three report tabs, Listen beside its heading, the roadmap count and badges fit 375 px. The roadmap shows weeks before badges, locked weeks as one quiet line, a calm empty state, and check-in weeks with their own "why".
+
+**Staff dashboard**
+- Calmer: plain-text training-needs cells, lighter cards and chips, shorter tabs, section labels that name the content instead of "Priority 1 to 4".
+- Every staff table shows when it scrolls sideways; the organization column stays put on phones; two-column tabs, filters and KPI cards on phones; the drawer fits long names.
+- Filters show how many organizations match, with Clear filters, a shared empty state and a retry when an update fails. Ask the data, training briefs and the drawer handle slow answers ("Still working", a 75 s timeout), errors with Try again, and expired sessions with a sign-in link back.
+- Clearer help text: what High priority and Asked for help mean, that program-model counts overlap, and "67% similar" instead of "Match 0.67".
+
+**Also:** the Display menu opens on screen on phones; the pitch deck uses fresh v1.5 screenshots. axe-core: 0 WCAG 2.2 A/AA violations on every page and staff tab at 1280 and 375 px on the live site; all 11 e2e tests pass live.
+
 ## v1.4.0 — Observability on Amazon CloudWatch (replaces the Phoenix server)
 
 - **Traces in CloudWatch Transaction Search.** `observability.py` sends the same OpenTelemetry spans to the AWS X-Ray OTLP endpoint, signed with SigV4 (botocore, no collector or extra package), with X-Ray trace ids. LLM spans also carry OpenTelemetry `gen_ai.*` attributes (model, input and output tokens, finish reason), so CloudWatch generative AI observability and Omni read the model calls. Tracing turns on with `OCI_TRACES=xray`; the Lambda role gets `AWSXrayWriteOnlyAccess`. The staff "View AI trace in CloudWatch (staff)" link opens the trace in the CloudWatch console.

@@ -14,8 +14,8 @@ const SECTIONS: [string, string][] = [
   ["explore-title", "Explore any area"],
   ["stages-title", "Where you are today"],
   ["progress-title", "Progress"],
-  ["plan-title", "30 / 60 / 90 day plan"],
   ["strengths-title", "Strengths"],
+  ["plan-title", "30 / 60 / 90 day plan"],
   ["conversation-title", "Conversation guide"],
   ["gaps-title", "All growth priorities"],
   ["sources-title", "Sources"],
@@ -39,12 +39,12 @@ export function wireToc(nav: HTMLElement, content: HTMLElement) {
     if (groups.at(-1)?.title === title) groups.at(-1)!.items.push(item);
     else groups.push({ title, items: [item] });
   }
-  const links = (items: [string, string][]) => items.map(([id, label]) => `<li><a href="#${id}" data-toc="${id}">${esc(label)}</a></li>`).join("");
+  const links = (items: [string, string][], cls = "") => items.map(([id, label]) => `<li${cls ? ` class="${cls}"` : ""}><a href="#${id}" data-toc="${id}">${esc(label)}</a></li>`).join("");
   nav.innerHTML = `<details class="toc__details">
       <summary>${icon("list-checks")}<span>On this page</span>${icon("chevron-down", "about-card__chevron")}</summary>
       <ol class="toc__list" role="list">${groups.map((g) => g.title && g.items.some(([, label]) => label !== g.title)
         ? `<li class="toc__group"><span class="toc__group-title">${esc(g.title)}</span><ol class="toc__list" role="list">${links(g.items)}</ol></li>`
-        : links(g.items)).join("")}</ol>
+        : links(g.items, g.title ? "toc__solo" : "")).join("")}</ol>
     </details>`;
   const details = nav.querySelector<HTMLDetailsElement>("details")!;
   onWideChange = () => { details.open = WIDE.matches; };

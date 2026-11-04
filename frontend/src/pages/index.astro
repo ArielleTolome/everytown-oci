@@ -6,16 +6,18 @@ import Icon from "../components/Icon.astro";
   <div class="title-band">
     <span class="eyebrow">Step 1 of 3: Your organization</span>
     <h1 id="page-title" tabindex="-1">Tell us about your organization</h1>
-    <p class="lead">This takes about 15 minutes. You will answer Yes or No to short statements about how your organization works today. There are no wrong answers: the goal is to see where you are and what to grow next.</p>
+    <p class="lead">You will answer Yes or No to short statements about how your organization works today. It takes about <span id="time-total">11 minutes</span> for the areas you pick below, and you can stop and come back later.</p>
+    <noscript><p class="notice"><Icon name="info" /><span>This page needs JavaScript. Turn it on in your browser settings, then reload the page.</span></p></noscript>
+    <div class="notice draft-resume" id="draft-resume" hidden></div>
     <p class="resume-cta"><a href="/resume/"><Icon name="refresh" /><span>Continue an assessment you started</span></a></p>
   </div>
 
   <section class="how" aria-labelledby="how-title">
     <h2 id="how-title" class="mini-label">How it works</h2>
     <ol class="how__steps" role="list">
-      <li><span class="how__icon" aria-hidden="true"><Icon name="clipboard" /></span><span><strong>1. Answer</strong> Yes or No to short statements. There are no wrong answers.</span></li>
-      <li><span class="how__icon" aria-hidden="true"><Icon name="chart" /></span><span><strong>2. We score it</strong> with a fixed method, so the same answers always give the same stages.</span></li>
-      <li><span class="how__icon" aria-hidden="true"><Icon name="target" /></span><span><strong>3. You get a plan:</strong> your top 1 or 2 priorities, a 90-day plan, and a PDF to share.</span></li>
+      <li><span class="how__icon" aria-hidden="true"><Icon name="clipboard" /></span><span><strong>1. Answer</strong> Yes or No to each statement. There are no wrong answers.</span></li>
+      <li><span class="how__icon" aria-hidden="true"><Icon name="chart" /></span><span><strong>2. We score it</strong> with a fixed method. The same answers always give the same stages.</span></li>
+      <li><span class="how__icon" aria-hidden="true"><Icon name="target" /></span><span><strong>3. You get a plan:</strong> 1 or 2 growth priorities to start with, a 12-week roadmap and a PDF to share.</span></li>
     </ol>
   </section>
 
@@ -44,7 +46,8 @@ import Icon from "../components/Icon.astro";
       </div>
     </section>
 
-    <div class="card stack">
+    <section class="card stack" aria-labelledby="org-title">
+      <h2 id="org-title" class="org-meta__title">Your organization</h2>
       <div class="field" data-field="org_name">
         <label for="org_name">Organization name</label>
         <p class="field-error" id="org_name-error" hidden></p>
@@ -53,14 +56,14 @@ import Icon from "../components/Icon.astro";
 
       <div class="field" data-field="org_url">
         <label for="org_url">Website <span class="optional">(optional)</span></label>
-        <p class="hint" id="org_url-hint">We read your public site to tailor recommendations. For example: https://example.org</p>
+        <p class="hint" id="org_url-hint">We read your public website so your plan fits your work. For example: https://example.org</p>
         <p class="field-error" id="org_url-error" hidden></p>
         <input class="input" type="url" id="org_url" name="org_url" inputmode="url" autocomplete="url" spellcheck="false" maxlength="500" aria-describedby="org_url-hint">
       </div>
 
       <fieldset class="field" data-field="social" id="social" aria-describedby="social-hint">
         <legend>Social media links <span class="optional">(optional, up to 5)</span></legend>
-        <p class="hint" id="social-hint">Facebook, Instagram, X, LinkedIn, YouTube, TikTok or any web address. We also look for news stories about you. What we find only shapes the wording of your plan. It never changes your scores.</p>
+        <p class="hint" id="social-hint">For example, Facebook or Instagram, or any web address. We read these and look for news stories about your group. What we find only changes the wording of your plan, never your scores.</p>
         <p class="field-error" id="social-error" hidden></p>
         <ul class="social-links" id="social-list" role="list"></ul>
         <button type="button" class="btn btn-secondary btn-sm" id="social-add"><Icon name="plus" /><span>Add a social media link</span></button>
@@ -80,11 +83,11 @@ import Icon from "../components/Icon.astro";
           </label>
         </div>
       </fieldset>
-    </div>
+    </section>
 
     <section class="card stack" aria-labelledby="about-org-title" aria-describedby="about-org-hint">
-      <h2 id="about-org-title" class="org-meta__title">About your organization</h2>
-      <p class="hint" id="about-org-hint">This helps us tailor your plan and connect you with similar groups. It does not change your scores.</p>
+      <h2 id="about-org-title" class="org-meta__title">More about your organization</h2>
+      <p class="hint" id="about-org-hint">This helps us fit your plan to your work and connect you with groups like yours. It does not change your scores.</p>
       <div id="org-meta" class="stack"><p class="loading"><Icon name="loader" class="spin" />Loading</p></div>
     </section>
 
@@ -102,8 +105,8 @@ import Icon from "../components/Icon.astro";
     </div>
 
     <details class="card samples" id="samples" hidden>
-      <summary class="samples__summary"><Icon name="sprout" /><span>Try a synthetic sample organization</span></summary>
-      <p class="hint" id="samples-hint">For demos and staff training. Fictional organizations from the OCI builder package; answers are filled in for you. Your report language and chosen areas above are used.</p>
+      <summary class="samples__summary"><Icon name="sprout" /><span>Try a made-up sample organization</span></summary>
+      <p class="hint" id="samples-hint">For demos and staff training. These organizations are made up, and their answers are filled in for you. We use the report language and areas you picked above. Each sample makes a new report, which takes about a minute.</p>
       <ul class="samples__list" id="sample-list" role="list"></ul>
       <p class="field-error" id="samples-error" role="alert" hidden></p>
     </details>
@@ -112,7 +115,7 @@ import Icon from "../components/Icon.astro";
 
 <script>
   import { api, ApiError, getMeta, requireUser, type Domain } from "../lib/api";
-  import { $, $$, announce, esc, focusEl } from "../lib/dom";
+  import { $, $$, announce, esc, focusEl, plural } from "../lib/dom";
   import { icon } from "../lib/icons";
   import { loadDraft, saveDraft, SECONDS_PER_STATEMENT, type OrgMeta, type Respondent } from "../lib/draft";
 
@@ -248,24 +251,29 @@ import Icon from "../components/Icon.astro";
     announce(`Link ${at + 1} removed.`);
   });
 
+  const areaMinutes = (d: Domain) => Math.max(1, Math.ceil((d.questions.length * SECONDS_PER_STATEMENT) / 60));
+
   /** Checkbox cards with a "Recommended" tag (Airwallex "Primary interest"), statement count and time estimate. */
   function renderDomains(domains: Domain[], selected: string[]) {
     const ordered = [...domains.filter((d) => d.priority), ...domains.filter((d) => !d.priority)];
     $("#domain-groups")!.innerHTML = `<ul class="area-options" role="list">${ordered.map((d) => {
-      const minutes = Math.max(1, Math.ceil((d.questions.length * SECONDS_PER_STATEMENT) / 60));
+      const minutes = areaMinutes(d);
       return `
       <li class="area-option">
         <label class="choice area-option__card">
           <input type="checkbox" name="domains" value="${esc(d.id)}" id="domain-${esc(d.id)}" ${selected.includes(d.id) ? "checked" : ""}>
           <span class="choice__text">
             <span class="area-option__name">${esc(d.name)}${d.priority ? ' <span class="tag">Recommended</span>' : ""}</span>
-            <span class="choice__meta">${d.questions.length} statements · About ${minutes} minutes</span>
+            <span class="choice__meta">${d.questions.length} statements, about ${plural(minutes, "minute", "minutes")}</span>
           </span>${icon("check", "choice__check")}
         </label>
         <details class="about"><summary>About ${esc(d.name)}</summary><p>${esc(d.about)}</p></details>
       </li>`;
     }).join("")}</ul>`;
-    $("#domains")!.addEventListener("change", () => { if (chosen().length) setError("domains", null); });
+    // The intro's time estimate is the sum of the area estimates, so the two always agree.
+    const total = () => { $("#time-total")!.textContent = plural(domains.filter((d) => chosen().includes(d.id)).reduce((s, d) => s + areaMinutes(d), 0), "minute", "minutes"); };
+    total();
+    $("#domains")!.addEventListener("change", () => { total(); if (chosen().length) setError("domains", null); });
   }
 
   interface MetaOptions {
@@ -339,6 +347,16 @@ import Icon from "../components/Icon.astro";
     renderDomains(meta.domains, selected);
     renderOrgMeta(options, draft?.org_meta);
 
+    // A half-finished assessment on this device: say so, so nobody starts over by mistake.
+    const mine = meta.domains.filter((d) => draft?.domain_ids.includes(d.id)).flatMap((d) => d.questions);
+    const done = mine.filter((q) => draft?.answers[q.id]).length;
+    if (draft?.org_name && done) {
+      const box = $("#draft-resume")!;
+      box.innerHTML = `${icon("clock")}<p>You have answers saved on this device for <strong></strong>: ${done} of ${plural(mine.length, "statement", "statements")}. <a href="/questionnaire/">Continue where you left off</a></p>`;
+      box.querySelector("strong")!.textContent = draft.org_name;
+      box.hidden = false;
+    }
+
     if (meta.samples.length) {
       $("#sample-list")!.innerHTML = meta.samples.map((s) => `
         <li><button type="button" class="btn btn-secondary sample-btn" data-sample="${esc(s.id)}" aria-describedby="samples-hint">
@@ -368,28 +386,38 @@ import Icon from "../components/Icon.astro";
         respondent: respondent(),
         org_links: social.length ? { social } : null,
       });
-      location.assign("/questionnaire/#1");
+      location.assign("/questionnaire/");
     });
 
+    let starting = false; // one sample report at a time: each one costs money and counts against the hourly cap
     $("#sample-list")!.addEventListener("click", async (e) => {
       const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-sample]");
-      if (!btn) return;
+      if (!btn || starting) return;
       const errEl = $("#samples-error")!;
       if (!chosen().length) { showErrors({ domains: "Choose at least one capacity area" }); return; }
-      btn.setAttribute("aria-disabled", "true");
+      starting = true;
+      $$("[data-sample]").forEach((b) => b.setAttribute("aria-disabled", "true"));
       errEl.hidden = true;
+      announce("Starting the sample report.");
       try {
         const { id } = await api.post<{ id: string }>("/demo", { sample: btn.dataset.sample, language: language(), domain_ids: chosen() });
         location.assign(`/results/?id=${encodeURIComponent(id)}`);
       } catch (ex) {
-        errEl.innerHTML = `${icon("alert")}<span>${esc(ex instanceof ApiError ? ex.message : "We could not start the sample. Please try again.")}</span>`;
+        if (ex instanceof ApiError && ex.status === 401) { location.assign("/login/?next=%2F"); return; }
+        const msg = ex instanceof ApiError && ex.body.error ? ex.body.error
+          : ex instanceof ApiError ? "Something went wrong on our side. Please try again in a few minutes."
+          : "We could not reach the server. Check your internet connection, then try again.";
+        errEl.innerHTML = `${icon("alert")}<span>${esc(msg)}</span>`;
         errEl.hidden = false;
-        btn.removeAttribute("aria-disabled");
+        starting = false;
+        $$("[data-sample]").forEach((b) => b.removeAttribute("aria-disabled"));
       }
     });
   }
 
   init().catch(() => {
-    $("#domain-groups")!.innerHTML = `<p class="field-error" role="alert">${icon("alert")}<span>We could not load the capacity areas. Please reload the page.</span></p>`;
+    // Nothing below can work without the areas and options: say so once, and stop the loading spinners.
+    for (const sel of ["#role-options", "#org-meta"]) $(sel)!.innerHTML = "";
+    $("#domain-groups")!.innerHTML = `<p class="field-error" role="alert">${icon("alert")}<span>We could not load this page. Check your internet connection, then reload the page.</span></p>`;
   });
 </script>

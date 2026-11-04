@@ -7,6 +7,7 @@ import Icon from "../components/Icon.astro";
     <span class="eyebrow">Welcome</span>
     <h1>Sign in to OCI Capacity Coach</h1>
     <p class="lead">Someone in a leadership role should fill out the assessment, like the executive director, a finance lead or a board chair. Other leaders are welcome too.</p>
+    <p class="notice" id="next-note" hidden><Icon name="info" /><span></span></p>
   </div>
   <div class="card card--auth">
     <div class="notice">
@@ -19,7 +20,9 @@ import Icon from "../components/Icon.astro";
         </ul>
       </div>
     </div>
-    <form class="stack" id="login-form" novalidate>
+    <noscript><p class="notice"><Icon name="info" /><span>Signing in needs JavaScript. Turn it on in your browser settings, then reload the page.</span></p></noscript>
+    {/* method="post": if the script never runs, the password does not end up in the address bar. */}
+    <form class="stack" id="login-form" method="post" novalidate>
       <div class="field">
         <label for="username">Username</label>
         <input class="input" type="text" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
@@ -62,6 +65,16 @@ import Icon from "../components/Icon.astro";
     return role === "staff" ? "/staff/" : "/";
   };
 
+  // Sent here from another page (an expired sign-in, a saved link): say where they will land, and that answers are safe.
+  const next = params.get("next");
+  if (next && next !== "/" && nextUrl("org") === next) {
+    const note = $("#next-note")!;
+    note.querySelector("span")!.textContent = next.startsWith("/questionnaire/")
+      ? "Sign in to keep going with your assessment. Any answers you gave are saved on this device."
+      : "Sign in to go back to the page you were on.";
+    note.hidden = false;
+  }
+
   // Already signed in? Go straight on.
   api.get<{ user: User }>("/me").then(({ user }) => location.replace(nextUrl(user.role))).catch(() => { /* not signed in */ });
 
@@ -87,14 +100,16 @@ import Icon from "../components/Icon.astro";
       return;
     }
     const btn = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+    if (btn.getAttribute("aria-disabled") === "true") return; // already signing in
     btn.setAttribute("aria-disabled", "true");
     try {
       const { user: u } = await api.post<{ user: User }>("/login", { username: user.value.trim(), password: pass.value });
       location.assign(nextUrl(u.role));
     } catch (ex) {
       showError(ex instanceof ApiError && ex.status === 401
-        ? "That username or password did not match. Check the demo credentials above and try again."
-        : "We could not reach the server. Please try again in a moment.");
+        ? "That username or password did not match. Check the demo sign-in details above and try again."
+        : ex instanceof ApiError ? "Something went wrong on our side. Please try again in a few minutes."
+        : "We could not reach the server. Check your internet connection, then try again.");
       pass.focus();
     } finally {
       btn.removeAttribute("aria-disabled");

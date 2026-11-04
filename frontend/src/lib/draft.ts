@@ -43,9 +43,16 @@ let timer: number | undefined;
 const read = <T>(key: string): T | null => {
   try { const raw = localStorage.getItem(key); return raw ? (JSON.parse(raw) as T) : null; } catch { return null; }
 };
-const write = (key: string, v: unknown) => {
-  try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* storage full or disabled */ }
+const write = (key: string, v: unknown): boolean => {
+  try { localStorage.setItem(key, JSON.stringify(v)); return true; } catch { return false; } // storage full or disabled
 };
+let localOk = true;
+/** Whether the last save reached this device's storage, so the questionnaire never claims a save that did not happen. */
+export const savedLocally = () => localOk;
+
+/** A teammate link that the server no longer knows (old, cut short or mistyped). */
+export class DraftLinkError extends Error {}
+
 const sync = () => read<Sync>(slot.sync);
 const team = () => sync()?.area ?? null;
 
@@ -88,7 +95,12 @@ export async function loadDraft(): Promise<Draft | null> {
     try {
       res = await api.get(`/drafts/${encodeURIComponent(token)}`);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 404) { location.replace("/resume/?missing=1"); return new Promise(() => {}); }
+      if (e instanceof ApiError && e.status === 404) {
+        // A teammate cannot use the leader's resume page: the questionnaire explains what to ask for instead.
+        if (params.has("area")) throw new DraftLinkError("teammate link not found");
+        location.replace("/resume/?missing=1");
+        return new Promise(() => {});
+      }
       throw e;
     }
     slot = res.area ? TEAM : LEADER;
@@ -118,12 +130,15 @@ export async function loadDraft(): Promise<Draft | null> {
 
 export function saveDraft(d: Draft) {
   current = d;
-  write(slot.draft, d);
+  localOk = write(slot.draft, d);
   const s = sync();
   if (!s) return;
   write(slot.sync, { ...s, dirty: true });
   schedule();
 }
+
+// Answers saved while offline stay marked as not yet on the server; send them as soon as the connection is back.
+window.addEventListener("online", () => { if (sync()?.dirty) schedule(); });
 
 export function clearDraft() {
   window.clearTimeout(timer);
@@ -230,8 +245,8 @@ async function fillPanel(panel: HTMLElement, kind: "save" | "share", area: strin
     if (kind === "save") {
       panel.innerHTML = `
         <p class="draft-panel__title" tabindex="-1">Finish later, on any device</p>
-        <p>Your answers are saved. To keep going later, open this link and sign in with the demo login.</p>
-        ${linkBlock("dt-save-link", "Your resume link", `${base}?d=${token}#1`)}
+        <p>Your answers are saved. To keep going later, open this link and sign in with the demo login. It opens the first area you have not finished.</p>
+        ${linkBlock("dt-save-link", "Your resume link", `${base}?d=${token}`)}
         <p>Resume code: <strong class="draft-panel__code">${esc(resumeCode(token))}</strong>. Use it to check you have the right link. You can also paste the link on the <a href="/resume/">Continue an assessment</a> page.</p>
         <p class="hint">Keep this link private. Anyone who signs in with it can see and change these answers.</p>
         <p class="draft-panel__status" role="status"></p>`;

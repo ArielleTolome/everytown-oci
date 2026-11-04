@@ -3,7 +3,8 @@ import { api, ApiError, type Assessment, type Focus, type Gap, type Meta, type P
 import { $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
 import { coachBody } from "./coach";
 import { icon, type IconName } from "./icons";
-import { fillRoadmapTeaser, getRoadmap, roadmapTeaser, setRoadmapTask, type Roadmap } from "./roadmap";
+import { fillRoadmapTeaser, roadmapTeaser, setRoadmapTask, shortDate, type Roadmap } from "./roadmap";
+import { errorText } from "./report-ui";
 import { traceLink } from "./staff-bi";
 
 /** v1.0 document fields (all optional; older documents lack them). Kept local so api.ts stays conflict-free. */
@@ -36,7 +37,7 @@ const pct = (n: number) => `${Math.round(n)}%`;
 export const pdfUrl = (sub: Assessment) => `/api/assessments/${encodeURIComponent(sub.id)}/report.pdf`;
 export function pdfButton(sub: Assessment): string {
   const size = sub.pdf_kb ? `PDF, ${sub.pdf_kb} KB` : "PDF";
-  return `<a class="btn btn-primary" href="${pdfUrl(sub)}" download>${icon("download")}<span>Download PDF report (${size})</span></a>`;
+  return `<a class="btn btn-primary" href="${pdfUrl(sub)}" download data-download>${icon("download")}<span>Download PDF report (${size})</span></a>`;
 }
 
 /** Read-aloud button for one report section; listen.ts plays it with Amazon Polly. */
@@ -62,9 +63,13 @@ export function stepItems(steps: Step[]): string {
 
 export function statusPanel(sub: Assessment): string {
   if (sub.status === "done") {
+    const n = sub.report?.focus?.length ?? 0;
     return `<section class="panel panel--ready" aria-labelledby="ready">
       <h2 id="ready" tabindex="-1">${icon("circle-check")}Your report is ready</h2>
-      <p>Read what's true about you, then start with your top ${sub.report?.focus?.length === 1 ? "priority" : "priorities"}. Share the PDF with your team to talk it through together.</p>
+      ${sub.report
+        ? `<p>Start with what is true about you${n ? `, then your ${n === 1 ? "top priority" : "top priorities"}` : ""}. Share the PDF so your team can talk it through together.</p>
+      <p class="hint">This is a learning tool, not a grade. Your stages come from a fixed scoring method. The plan is written with AI from your answers and the CVI resource library, so talk it over with your team before you act.</p>`
+        : `<p>Your stages and growth priorities are below. This is a learning tool, not a grade: every stage is a normal place to be.</p>`}
     </section>`;
   }
   const failed = sub.steps.find((s) => s.state === "error");
@@ -72,10 +77,11 @@ export function statusPanel(sub: Assessment): string {
   return `<section class="panel ${isError ? "panel--error" : ""}" id="processing" aria-labelledby="processing-title" aria-busy="${isError ? "false" : "true"}" data-no-print>
     ${isError
       ? `<h2 id="processing-title" tabindex="-1">${icon("alert")}We could not finish your recommendations</h2>
-         <p>${failed ? `The step "${esc(failed.label)}" did not finish. ` : ""}Your answers and stages are saved. You do not need to answer the questions again.</p>
+         <p>${failed ? `The step "${esc(failed.label)}" did not finish. ` : ""}Your answers and stages are saved, so you do not need to answer the questions again. Try again now, or come back to this page later.</p>
          ${sub.error ? `<p class="hint">Details: ${esc(sub.error)}</p>` : ""}`
       : `<h2 id="processing-title" tabindex="-1">${icon("loader", "spin")}Building your recommendations</h2>
-         <p>This usually takes under a minute. Your stages are ready now, below. You can read them while you wait.</p>`}
+         <p>This usually takes under a minute. Your stages are ready now in "Your results in detail" below, so you can read them while you wait.</p>
+         <p class="hint" id="processing-slow" hidden>This is taking longer than usual. Your answers and stages are saved. You can keep this page open, or come back to this link later.</p>`}
     <ol class="step-list" role="list" id="step-list">${stepItems(sub.steps)}</ol>
     ${isError ? `<p class="field-error" id="retry-error" role="alert" hidden></p>
       <button type="button" class="btn btn-primary" id="retry-btn">${icon("refresh")}<span>Try again</span></button>` : ""}
@@ -136,21 +142,21 @@ export function progressSection(sub: Assessment): string {
     body = `<p class="notice">${icon("info")}<span>Your answers match your assessment on ${esc(p.previous_created)}.</span></p>`;
   } else {
     body = `<ul class="stat-grid" role="list">
-        <li class="card stat">${icon("circle-check")}<span><span class="stat__num">${closed.length}</span><span class="stat__label">growth ${closed.length === 1 ? "priority" : "priorities"} closed</span></span></li>
-        <li class="card stat">${icon("flag")}<span><span class="stat__num">${fresh.length}</span><span class="stat__label">new</span></span></li>
+        <li class="card stat">${icon("circle-check")}<span><span class="stat__num">${closed.length}</span><span class="stat__label">growth ${closed.length === 1 ? "priority" : "priorities"} now in place</span></span></li>
+        <li class="card stat">${icon("sprout")}<span><span class="stat__num">${fresh.length}</span><span class="stat__label">new growth ${fresh.length === 1 ? "priority" : "priorities"}</span></span></li>
       </ul>
       ${moves.length ? `<h3>Stage changes by area</h3>
       <ul class="stage-moves" role="list">${moves.map((m) => m.from === m.to
         ? `<li class="stage-move is-same"><span class="stage-move__name">${esc(m.domain_name)}</span><span class="stage-move__change">${esc(m.to)}: No change</span></li>`
         : `<li class="stage-move"><span class="stage-move__name">${esc(m.domain_name)}</span><span class="stage-move__change">${esc(m.from)} ${icon("arrow-right")}<span class="visually-hidden"> to </span> ${esc(m.to)}</span></li>`).join("")}
       </ul>` : ""}
-      ${closed.length ? `<details class="about"><summary>Show closed growth priorities (${closed.length})</summary><ul>${closed.map(item).join("")}</ul></details>` : ""}
+      ${closed.length ? `<details class="about"><summary>Show growth priorities now in place (${closed.length})</summary><ul>${closed.map(item).join("")}</ul></details>` : ""}
       ${fresh.length ? `<details class="about"><summary>Show new growth priorities (${fresh.length})</summary><ul>${fresh.map(item).join("")}</ul></details>` : ""}`;
   }
   return `<section class="section" aria-labelledby="progress-title">
     ${sectionHead("progress-title", `Progress since your last assessment (${p.previous_created})`, "Your progress")}
     ${body}
-    <p class="hint">Progress compares with earlier assessments from this sign-in session (demo shortcut).</p>
+    <p class="hint">In this demo, progress compares only with assessments from the same sign-in.</p>
     ${p.previous_id ? `<p><a href="/results/?id=${encodeURIComponent(p.previous_id)}">View previous report</a></p>` : ""}
   </section>`;
 }
@@ -160,10 +166,10 @@ export function progressSection(sub: Assessment): string {
 /** "Based on your answers": real statement text from the question bank (English even in a Spanish report). */
 function basis(ids: string[], gaps: Map<string, Gap>, open = false): string {
   if (!ids.length) return "";
-  const rows = ids.map((id) => `<li>${icon("flag")}<span><span class="chip">${esc(id)}</span> ${esc(gaps.get(id)?.question_text ?? "Statement not found")}</span></li>`).join("");
+  const rows = ids.map((id) => `<li>${icon("circle-dashed")}<span><span class="chip">${esc(id)}</span> ${esc(gaps.get(id)?.question_text ?? "Statement not found")}</span></li>`).join("");
   return `<div class="basis" lang="en">
     ${open
-      ? `<p class="mini-label">Based on your answers</p><ul class="basis__list" role="list">${rows}</ul>`
+      ? `<p class="mini-label">Based on your answers to these statements</p><ul class="basis__list" role="list">${rows}</ul>`
       : `<details class="about"><summary>Based on your answers to ${plural(ids.length, "statement", "statements")}</summary><ul class="basis__list" role="list">${rows}</ul></details>`}
   </div>`;
 }
@@ -184,9 +190,10 @@ function checklistStatus(done: number, total: number): string {
 function focusSection(items: Focus[], gaps: Map<string, Gap>, lang: string): string {
   if (!items.length) return "";
   const L = `lang="${esc(lang)}"`;
+  const one = items.length === 1;
   return `<section class="section" aria-labelledby="focus-title">
-    ${sectionHead("focus-title", "Start here: your top priorities", "Do these first", "focus", lang,
-      `Do not try to fix everything at once. Out of everything you could work on, ${items.length === 1 ? "this is the one priority" : "these are the two priorities"} to start with. These steps are weeks 1 to ${items.length * 2} of your 12-week roadmap: check them off here or there, and each week's steps open in turn.`)}
+    ${sectionHead("focus-title", one ? "Start here: your top priority" : "Start here: your top priorities", "Do these first", "focus", lang,
+      `You do not have to do everything at once. Out of everything you could work on, ${one ? "this is the one priority" : "these are the two priorities"} to start with. ${one ? "Its steps are weeks 1 and 2" : "Their steps are weeks 1 to 4"} of your 12-week roadmap. Tick them off here or on your roadmap. Each week's steps open in turn.`)}
     <ol class="focus-list" id="focus-body" role="list">${items.map((f, i) => `
       <li class="card focus-card" data-focus="${i}">
         <div class="focus-card__head">
@@ -205,9 +212,10 @@ function focusSection(items: Focus[], gaps: Map<string, Gap>, lang: string): str
           <legend class="mini-label">What to do</legend>
           <ul role="list" ${L}>${f.steps.map((s, j) => `
             <li><input type="checkbox" id="focus-${i}-step-${j}" data-focus="${i}" data-step="${j}" aria-describedby="focus-status-${i}" disabled>
-              <label for="focus-${i}-step-${j}">${esc(s)}</label></li>`).join("")}
+              <label for="focus-${i}-step-${j}">${esc(s)}<span class="checklist__later" id="focus-${i}-later-${j}" lang="en" hidden></span></label></li>`).join("")}
           </ul>
-        </fieldset>` : ""}
+        </fieldset>
+        <p class="field-error" id="focus-error-${i}" role="alert" hidden></p>` : ""}
         ${resource(f.resource, lang)}
       </li>`).join("")}
     </ol>
@@ -247,13 +255,13 @@ function planSection(plan: PlanItem[], gaps: Map<string, Gap>, lang: string): st
   </section>`;
 }
 
-/** One growth priority: priority and stage badges, statement, the engine's next steps. */
+/** One growth priority: priority, stage and statement id as quiet meta text, the statement, the engine's next steps. */
 function gapItem(g: Gap): string {
   const steps = g.next_steps.flatMap((s) => s.split("\n")).map((s) => s.trim().replace(/^[-•*]\s*/, "").trim()).filter(Boolean);
   const pr = g.priority.toLowerCase();
   return `<li class="gap gap--${esc(pr)}">
         <div class="gap__meta">
-          <span class="badge badge--${esc(pr)}">${pr === "high" ? icon("flag") : ""}${esc(g.priority)} priority</span>
+          <span class="badge badge--${esc(pr)}">${esc(g.priority)} priority</span>
           <span class="badge badge--stage">Stage ${g.stage}: ${esc(g.stage_name)}</span>
           <span class="chip">${esc(g.question_id)}</span>
         </div>
@@ -276,7 +284,7 @@ function gapsSection(sub: Assessment, meta: Meta): string {
   }).join("");
   return `<section class="section" aria-labelledby="gaps-title">
     ${sectionHead("gaps-title", "All growth priorities", "Everything you could work on", undefined, "en",
-      "These are the statements you answered in a way that points to room to grow, ordered by priority within each area. Priority comes from the fixed scoring method.")}
+      "These are the statements that are not in place yet, ordered by priority within each area. The priority comes from the fixed scoring method, not from AI.")}
     ${body}
   </section>`;
 }
@@ -286,8 +294,8 @@ function reassessCallout(): string {
   return `<section class="reassess" aria-labelledby="reassess-title" data-no-print>
     <div>
       <h2 id="reassess-title">Take the assessment again in 90 days to see your progress</h2>
-      <p>Work through your plan, then answer the same statements again. Your next report will show which growth priorities you closed and how your stages changed.</p>
-      <p class="hint">Progress compares with earlier assessments from this sign-in session (demo shortcut).</p>
+      <p>Work through your plan, then answer the same statements again. Your next report will show which growth priorities are now in place and how your stages changed.</p>
+      <p class="hint">In this demo, progress compares only with assessments from the same sign-in.</p>
     </div>
     <button type="button" class="btn btn-secondary" id="reminder-btn">${icon("calendar-plus")}<span>Add a 90-day reminder to my calendar</span></button>
   </section>`;
@@ -315,7 +323,7 @@ function supportBody(sub: Assessment, editing: boolean): string {
   return `<form id="support-form" novalidate>
     <fieldset id="support-fieldset" aria-describedby="support-hint">
       <legend class="mini-label">Which areas would you like help with?</legend>
-      <p class="hint" id="support-hint">${s ? "Change the areas and send again. Your newest request replaces the old one." : "We checked the areas of your top priorities. Change them if you like."}</p>
+      <p class="hint" id="support-hint">${s ? "Change the areas and send again. Your newest request replaces the old one." : chosen.length ? "We checked the areas of your top priorities. Change them if you like." : "Choose one or more areas."}</p>
       <p class="field-error" id="support-error" role="alert" hidden></p>
       <ul class="area-options" role="list">${sub.domains.map((d) => `
         <li><label class="choice">
@@ -372,7 +380,7 @@ export function wireSupport(sub: Assessment, root: ParentNode) {
       btn.removeAttribute("aria-disabled");
       if (ex instanceof ApiError && ex.status === 403) fail("Only the person who submitted this assessment can send a request.");
       else if (ex instanceof ApiError && ex.status === 400) fail("Choose at least one area.");
-      else fail("We could not send your request. Please try again.");
+      else fail(errorText(ex, "We could not send your request. Please try again."));
     }
   });
 }
@@ -398,17 +406,20 @@ export function researchHeadline(research: NonNullable<V10["research"]>): string
 function researchSection(sub: Assessment): string {
   const res = v10(sub).research;
   if (!res || !Array.isArray(res.sources)) return "";
-  const found = res.strength !== "none" && res.sources.some((s) => s.used);
+  // pipeline.write_report sets profile_withheld when the guardrail kept the website profile out of the report.
+  const withheld = !!(sub.report as { profile_withheld?: boolean } | null)?.profile_withheld;
+  const found = !withheld && res.strength !== "none" && res.sources.some((s) => s.used);
+  const status = (s: ResearchSource) => (withheld ? "Not used this time" : s.used ? "Used for your plan" : "We could not read this one");
   return `<section class="section" aria-labelledby="learned-title">
     ${sectionHead("learned-title", "What we learned about you", "Personalized for you")}
     <div class="card learned">
-      <p class="learned__headline">${icon(found ? "sprout" : "info")}<span>${esc(researchHeadline(res))}</span></p>
+      <p class="learned__headline">${icon(found ? "sprout" : "info")}<span>${esc(withheld ? "We could not use what we found online this time, so this plan is based on your answers." : researchHeadline(res))}</span></p>
       ${res.sources.length ? `<ul class="learned__sources" role="list">${res.sources.map((s) => `
-        <li class="learned__source${s.used ? "" : " is-unused"}">
+        <li class="learned__source${s.used && !withheld ? "" : " is-unused"}">
           ${icon(KIND[s.kind]?.[1] ?? "globe")}
           <span><span class="learned__kind">${esc(KIND[s.kind]?.[0] ?? s.kind)}</span>
             <a href="${esc(safeUrl(s.url))}" rel="noopener">${esc(s.title || hostOf(s.url))}</a> <span class="url-domain">(${esc(hostOf(s.url))})</span>
-            <span class="learned__status">${s.used ? "Used for your plan" : "We could not read this one"}</span></span>
+            <span class="learned__status">${status(s)}</span></span>
         </li>`).join("")}
       </ul>` : ""}
       <p class="hint">We read public pages only to tailor your plan. What we find online never changes your scores.</p>
@@ -424,7 +435,7 @@ function peersBody(sub: Assessment, staff: boolean): string {
     return `<p class="support__sent" id="peers-status" tabindex="-1">${icon("circle-check")}<span>${staff ? "This organization asked to be connected" : "Request sent"} on ${esc(req.requested_at)}. ${staff ? "" : "Community Safety Fund staff will reach out when they find a good match."}</span></p>`;
   }
   return `<p class="field-error" id="peers-error" role="alert" hidden></p>
-    <button type="button" class="btn btn-primary" id="peers-btn">${icon("users")}<span>Ask CSF to connect me</span></button>`;
+    <button type="button" class="btn btn-primary" id="peers-btn">${icon("users")}<span>Ask to be connected</span></button>`;
 }
 
 function peersSection(sub: Assessment, staff: boolean): string {
@@ -458,7 +469,7 @@ export function wirePeers(sub: Assessment, root: ParentNode) {
       const err = body.querySelector<HTMLElement>("#peers-error")!;
       err.innerHTML = `${icon("alert")}<span>${esc(ex instanceof ApiError && ex.status === 403
         ? "Only the person who submitted this assessment can ask to be connected."
-        : "We could not send your request. Please try again.")}</span>`;
+        : errorText(ex, "We could not send your request. Please try again."))}</span>`;
       err.hidden = false;
     }
   });
@@ -494,7 +505,7 @@ export function areaDetail(sub: Assessment, meta: Meta, id: string): string {
     ${track(d, names)}
     <ul class="explore-facts" role="list">
       <li>${icon("circle-check")}<span><strong>${inPlace.length} of ${d.total_questions}</strong> statements in place</span></li>
-      <li>${icon("flag")}<span><strong>${plural(dg.length, "growth priority", "growth priorities")}</strong>${d.high_count ? `, ${d.high_count} high` : ""}</span></li>
+      <li>${icon("sprout")}<span><strong>${dg.length ? plural(dg.length, "growth priority", "growth priorities") : "No growth priorities"}</strong></span></li>
       ${by ? `<li>${icon("user")}<span>Answered by: <strong>${esc(by)}</strong></span></li>` : ""}
     </ul>
     ${info ? `<details class="about"><summary>About ${esc(d.domain_name)}</summary><p>${esc(info.about)}</p>${info.connects ? `<p>${esc(info.connects)}</p>` : ""}</details>` : ""}
@@ -518,10 +529,12 @@ function exploreSection(sub: Assessment, meta: Meta): string {
   if (!sub.domains.length) return "";
   const start = focusAreas(sub);
   const first = sub.domains.find((d) => !start.includes(d.domain_id)) ?? sub.domains[0];
+  // With one assessed area there is nothing to pick: show its detail straight away.
+  const one = sub.domains.length === 1;
   return `<section class="section" aria-labelledby="explore-title">
     ${sectionHead("explore-title", "Explore any area", "Deep dive", undefined, "en",
-      "Pick any area you assessed, not just the ones we pulled out for you. See your stage, what is already in place, and what to work on next.")}
-    <fieldset class="area-picker">
+      one ? "See your stage, what is already in place, and what to work on next." : "Pick any area you assessed, not just the ones we pulled out for you. See your stage, what is already in place, and what to work on next.")}
+    ${one ? "" : `<fieldset class="area-picker">
       <legend class="mini-label">Choose an area</legend>
       <ul class="area-picker__list" role="list">${sub.domains.map((d) => `
         <li><label class="area-chip">
@@ -530,7 +543,7 @@ function exploreSection(sub: Assessment, meta: Meta): string {
           <span class="area-chip__meta">${esc(d.estimated_stage)}${start.includes(d.domain_id) ? " · In Start here" : ""}</span></span>
         </label></li>`).join("")}
       </ul>
-    </fieldset>
+    </fieldset>`}
     <div class="card explore-area" id="explore-body" aria-labelledby="explore-area-title" role="region">${areaDetail(sub, meta, first.domain_id)}</div>
   </section>`;
 }
@@ -600,7 +613,7 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
   if (lang === "es") {
     top.push(`<p class="notice section-gap" lang="es">${icon("info")}<span>Las preguntas están en inglés; este informe se escribió en español.</span></p>`);
   }
-  if (r) top.push(`<p class="notice section-gap">${icon("info")}<span>Recommendations generated with AI from your answers and the CVI resource library. Scores are calculated by a fixed scoring method. Please review them with your team before acting.</span></p>`);
+  // The AI and scoring note lives in the ready panel (statusPanel), so it is said once.
   if (opts.staff) top.push(traceLink(v10(sub).trace?.url));
 
   // Layer 1: the short, conversational version.
@@ -615,7 +628,7 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
     const teaser = roadmapTeaser(sub);
     if (teaser) plan.push(`<section class="section" aria-labelledby="roadmap-title" id="roadmap-section">${sectionHead("roadmap-title", "Your 12-week roadmap", "A little each week")}${teaser}</section>`);
     plan.push(`<section class="section coach" aria-labelledby="coach-title" data-no-print>
-      ${sectionHead("coach-title", "Ask about your report", "Questions and answers", undefined, "en", "Ask a question in your own words, like you would ask a coach. Answers are written with AI, so check them with your team.")}
+      ${sectionHead("coach-title", "Ask about your report", "Questions and answers", undefined, "en", "Ask a question in your own words, like you would ask a coach.")}
       ${coachBody(sub)}
     </section>`);
     if (opts.support) plan.push(supportSection(sub));
@@ -627,16 +640,16 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
   }
   if (sub.status === "done" && opts.reminder) plan.push(reassessCallout());
 
-  // Layer 3: every number behind the plan.
+  // Layer 3: every number behind the plan. Strengths come before the plan (strength first).
   const details: string[] = [stagesSection(sub, meta), progressSection(sub)];
   if (r) {
-    details.push(planSection(r.plan ?? [], gaps, lang));
     if (r.strengths?.length) {
       details.push(`<section class="section" aria-labelledby="strengths-title">
         ${sectionHead("strengths-title", "What you already do well", "Your strengths", "strengths", lang)}
         <ul class="check-list prose" id="strengths-body" lang="${esc(lang)}" role="list">${r.strengths.map((s) => `<li>${icon("circle-check")}<span>${esc(s)}</span></li>`).join("")}</ul>
       </section>`);
     }
+    details.push(planSection(r.plan ?? [], gaps, lang));
     if (r.conversation?.length) {
       details.push(`<section class="section" aria-labelledby="conversation-title">
         ${sectionHead("conversation-title", "Team conversation guide", "Talk it through", "conversation", lang, "Use these questions at your next team or board meeting.")}
@@ -661,12 +674,12 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
 /* ---------- Behaviors ---------- */
 
 /** Start-here checklists: each step is a task in roadmap weeks 1-2 (priority 1) and 3-4 (priority 2), so the roadmap
- *  is the only store. Steps of a week that has not opened stay disabled; a viewer who may not use the roadmap
- *  (the API answers 403) sees the steps without checkboxes. Announce the new count politely. */
-export function wireChecklists(sub: Assessment, root: ParentNode) {
+ *  is the only store. Steps of a week that has not opened stay disabled and say when they open; a viewer who may not
+ *  use the roadmap (the API answers 403) sees the steps without checkboxes. Announce the new count politely. */
+export function wireChecklists(sub: Assessment, root: ParentNode, roadmap: Promise<Roadmap> | null) {
   const focus = sub.report?.focus ?? [];
   const boxes = $$<HTMLInputElement>("input[data-focus][data-step]", root);
-  if (!boxes.length) return;
+  if (!boxes.length || !roadmap) return;
   const refresh = (i: number) => {
     const mine = boxes.filter((b) => Number(b.dataset.focus) === i);
     const done = mine.filter((b) => b.checked).length;
@@ -687,10 +700,19 @@ export function wireChecklists(sub: Assessment, root: ParentNode) {
       box.dataset.task = t?.id ?? "";
       box.checked = !!t?.done;
       box.disabled = !t;
+      // Locked weeks send no tasks, only counts; the server splits a priority's steps over its two weeks in order.
+      let k = j;
+      const week = t ? undefined : r.weeks.filter((w) => w.focus && Math.floor((w.n - 1) / 2) === i).find((w) => (k -= w.task_count) < 0);
+      const later = root.querySelector<HTMLElement>(`#focus-${i}-later-${j}`);
+      if (later) {
+        const locked = week?.state === "locked";
+        later.textContent = locked ? `Opens in week ${week.n}, on ${shortDate(week.unlocks_on)} or sooner.` : "";
+        later.hidden = !locked;
+      }
     });
     focus.forEach((_, i) => refresh(i));
   };
-  getRoadmap(sub.id).then(sync).catch(() => boxes.forEach((box) => box.remove()));
+  roadmap.then(sync).catch(() => boxes.forEach((box) => box.remove()));
   let chain = Promise.resolve();
   root.addEventListener("change", (e) => {
     const box = e.target as HTMLInputElement;
@@ -706,9 +728,29 @@ export function wireChecklists(sub: Assessment, root: ParentNode) {
       } catch (ex) {
         box.checked = !done;
         refresh(i);
-        announce(ex instanceof ApiError ? ex.message : "We could not save that. Please try again.");
+        const err = root.querySelector<HTMLElement>(`#focus-error-${i}`);
+        if (err) {
+          err.innerHTML = `${icon("alert")}<span>${esc(errorText(ex, "We could not save that step. Please try again."))}</span>`;
+          err.hidden = false;
+        }
+        return;
       }
+      root.querySelector<HTMLElement>(`#focus-error-${i}`)?.setAttribute("hidden", "");
     });
+  });
+}
+
+/** A signed-in viewer who did not submit this assessment (the roadmap answers 403) gets a notice instead of forms
+ *  the server would refuse. Staff never get 403 here. */
+export function wireOwnerOnly(root: ParentNode, roadmap: Promise<Roadmap> | null) {
+  roadmap?.catch((ex) => {
+    if (!(ex instanceof ApiError && ex.status === 403)) return;
+    const note = (what: string) => `<p class="notice">${icon("info")}<span>Only the person who submitted this assessment can ${what}.</span></p>`;
+    const form = root.querySelector("#support-form");
+    if (form) form.outerHTML = note("send a request");
+    root.querySelector("#support-edit")?.remove();
+    const peers = root.querySelector("#peers-btn");
+    if (peers) peers.outerHTML = note("ask to be connected");
   });
 }
 

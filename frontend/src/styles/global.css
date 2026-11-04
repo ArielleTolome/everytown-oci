@@ -161,6 +161,8 @@ svg { max-width: 100%; }
   background: var(--color-surface); color: var(--color-foreground);
   border: 2px solid var(--color-foreground); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); padding: var(--space-md);
 }
+/* On phones the Display button sits near the left edge: open the panel rightward so it stays on screen. */
+@media (max-width: 599px) { .display-menu__panel { left: 0; right: auto; } }
 .display-menu__panel :focus-visible { outline-color: var(--color-ring); }
 .display-menu__title { font-weight: 700; margin-bottom: var(--space-sm); }
 .display-menu .hint { margin: var(--space-sm) 0 0; }
@@ -1071,3 +1073,150 @@ main h2[id] { scroll-margin-top: var(--space-lg); }
 .trace-link { display: flex; align-items: center; gap: var(--space-sm); margin: var(--space-md) 0 0; }
 .trace-link .icon { color: var(--color-secondary); flex: none; }
 .trace-link a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
+
+/* == v1.5 intake == */
+/* Notices inside the pale title band sit on white so they read as a box; long or unbroken names wrap. */
+.title-band .notice { margin: var(--space-md) 0 0; background: var(--color-surface); }
+.draft-resume p, .draft-team p { margin: 0; min-width: 0; overflow-wrap: break-word; }
+/* ".field label" (block) outranked ".choice" (flex): long options wrapped under their radio and the check icon stuck
+   to the text. Choice cards in the start form and the share panel lay out as flex rows again. */
+#org-form .field label.choice, .draft-panel .field label.choice { display: flex; margin-bottom: 0; }
+/* Yes / No side by side at every width: one thumb reaches both, and an area is half as long on a phone. */
+.answer-row, .quick__answers { grid-template-columns: 1fr 1fr; }
+@media (max-width: 479px) {
+  .answer { flex-wrap: wrap; gap: var(--space-xs) var(--space-sm); padding-inline: var(--space-sm); }
+  .quick__btn { flex-wrap: wrap; gap: var(--space-xs) var(--space-sm); padding-inline: var(--space-sm); }
+  #org-form .actions .btn-primary { width: 100%; justify-content: center; }
+}
+/* An area answered part way (not the current one): dashed mark, like "Not answered yet", plus the "Started" label. */
+.area-card.is-started .area-card__mark { border-style: dashed; }
+/* One at a time: less space above the card, so the first statement is on the first screen. */
+[data-view="quick"] .q-progress { margin-bottom: var(--space-md); }
+[data-view="quick"] .quick { margin-top: 0; }
+@media (min-width: 1024px) { #q-root .title-band { padding-block: var(--space-xl); } }
+/* Phones: "Next: <area>" shows only "Next" (the progress line names the area), so the label never wraps. */
+@media (max-width: 599px) {
+  .q-next-name { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  #q-root .title-band { padding-block: var(--space-md); }
+  /* Area nav as one row of numbered marks (check = completed, filled = this area); names and states stay readable
+     by screen readers, and the progress line names this area and the next. */
+  .area-stepper ol { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+  .area-card > a, .area-card > .area-card__body, .area-card.is-done > *, .area-card.is-current > * { min-height: 0; padding: 0; border: 0; background: none; }
+  .area-card__mark { width: 2.75rem; height: 2.75rem; font-size: 1rem; }
+  .area-card__text { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+}
+/* == end v1.5 intake == */
+
+/* == v1.5 staff == */
+/* Quieter: the section heading is each tab's one anchor; cards, chips and tabs recede; every number keeps its words. */
+#staff-root .measure { max-width: 75ch; }
+#staff-root .title-band__action { margin: var(--space-md) 0 0; }
+#kpis .kpi, #panel-change .kpi { border-top-width: 3px; box-shadow: none; }
+#kpis .kpi__num, #panel-change .kpi__num { font-size: 2.25rem; }
+#staff-root .sub-head { border-bottom-width: 1px; }
+#staff-root .chip, #org-drawer .chip { font-weight: 600; border-color: var(--color-border); background: var(--color-surface-alt); }
+#staff-root .staff-tabs .layer-tab { min-height: var(--target); }
+#staff-root .staff-tabs .layer-tab[aria-selected="true"] { box-shadow: none; }
+#staff-root .need-card { border-top-width: 1px; box-shadow: none; }
+#staff-root .need-card h3 { font-size: var(--text-base); }
+.need-card__count { font-size: var(--text-lg); line-height: 1.3; }
+.need-card__label { display: block; margin-bottom: var(--space-xs); }
+#staff-root .cohort { box-shadow: none; }
+.need-legend { flex-direction: column; gap: var(--space-xs); }
+.need-legend li { align-items: flex-start; }
+.need-legend .icon { flex: none; margin-top: 0.2em; }
+/* Matrix: plain text cells ("5 High priority", number in bold); the pale fill marks a need, the words say what it is. */
+.needs-matrix .need__tag { font-weight: 400; }
+.needs-matrix .need__tag strong { font-weight: 700; }
+.needs-matrix thead th { white-space: normal; min-width: 7.5rem; }
+.needs-matrix thead th.need-count-col { min-width: 5.5rem; }
+.needs-matrix tbody th, .needs-matrix thead th:first-child { position: sticky; left: 0; z-index: 1; background: var(--color-surface); box-shadow: 1px 0 0 var(--color-border); }
+.needs-matrix thead th:first-child { background: var(--color-surface-alt); }
+.needs-matrix tbody th { max-width: 16rem; }
+#staff-root .link-btn, #staff-root .cohort, #staff-root .peer-list, #org-drawer .drawer__head > div { min-width: 0; overflow-wrap: anywhere; }
+/* Sideways-scrolling tables: a hint when columns are off screen, and a soft shade on the edge that still has more. */
+.scroll-frame { display: grid; grid-template-columns: minmax(0, 1fr); margin: var(--space-lg) 0; }
+.scroll-frame > .table-wrap { grid-row: 2; grid-column: 1; margin: 0; }
+.scroll-hint { display: none; grid-row: 1; margin: 0 0 var(--space-xs); font-size: var(--text-sm); color: var(--color-muted-foreground); }
+.scroll-frame[data-scrollable] > .scroll-hint { display: block; }
+.scroll-frame::after { content: ""; grid-row: 2; grid-column: 1; justify-self: end; position: relative; z-index: 2; width: 2.5rem; margin: 1px; border-radius: 0 var(--radius-lg) var(--radius-lg) 0; background: linear-gradient(to right, rgba(0, 28, 96, 0), rgba(0, 28, 96, 0.16)); opacity: 0; pointer-events: none; }
+.scroll-frame[data-more]::after { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) { .scroll-frame::after { transition: opacity 150ms ease-out; } }
+/* Filters: a visible result line with Clear filters, an inline error with Try again. */
+.toolbar__status { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm) var(--space-md); }
+.toolbar__status:empty { display: none; }
+.toolbar__status p { margin: 0; }
+.ask-retry { margin: var(--space-sm) 0 0; }
+#org-drawer .preview-col { white-space: normal; min-width: 6rem; }
+#org-drawer .drawer__head > .btn { flex: none; }
+#org-drawer { border-left-width: 1px; border-left-color: var(--color-border-strong); }
+@media (max-width: 639px) {
+  #staff-root .staff-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #staff-root .staff-tabs .layer-tab { padding: var(--space-sm); gap: var(--space-xs); }
+  #filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm) var(--space-md); }
+  #filters .field { min-width: 0; }
+  #filters .input { padding-inline: 0.75rem; }
+  #filters .toolbar__note, #filters .toolbar__status { grid-column: 1 / -1; }
+  /* Two KPI columns on phones so the tabs start sooner; the fifth card spans the row. */
+  #kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #kpis .kpi { flex-direction: column; align-items: flex-start; }
+  #kpis .kpi:last-child { grid-column: 1 / -1; }
+  #kpis .kpi__label { font-size: 0.875rem; letter-spacing: 0.03em; flex-basis: auto; }
+  #kpis .kpi__num { font-size: 1.75rem; }
+  .needs-matrix thead th.need-count-col { min-width: 4.5rem; }
+  #staff-root .need-card { padding: var(--space-md); }
+  .needs-matrix tbody th { min-width: 8.5rem; max-width: 9.5rem; }
+  .needs-matrix th, .needs-matrix td { padding-inline: var(--space-sm); }
+  #org-drawer .drawer__body { padding: var(--space-md); }
+  #org-drawer .drawer__head { top: calc(-1 * var(--space-md)); margin: calc(-1 * var(--space-md)) calc(-1 * var(--space-md)) var(--space-md); padding: var(--space-md); }
+  #org-drawer .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* The drawer head is sticky: keep long organization names from filling the screen. */
+  #org-drawer .drawer__head h2 { font-size: var(--text-lg); }
+}
+@media print { .scroll-hint, .toolbar__status { display: none !important; } .scroll-frame::after { content: none; } }
+/* == end v1.5 staff == */
+
+/* == v1.5 results == */
+/* Quieter: each section keeps one anchor; badges, chips and stage pills recede; growth priorities never read as alarms. */
+#results-root .panel > :last-child { margin-bottom: 0; }
+#results-root .panel--ready, #results-root .panel--error { border-left-width: 2px; }
+#results-root .stage-pill { background: var(--color-selected-bg); color: var(--color-foreground); text-transform: none; letter-spacing: normal; font-size: var(--text-sm); }
+#results-root .gap { border-left: 1px solid var(--color-border); }
+#results-root .badge--high { background: var(--color-surface); color: var(--color-foreground); }
+#results-root .gap__meta .badge--stage, #results-root .gap__meta .chip { border: 0; padding-inline: 0; background: none; font-weight: 400; color: var(--color-muted-foreground); }
+#results-root .basis__list .chip { border-color: var(--color-border); font-weight: 400; color: var(--color-muted-foreground); }
+/* Start here: a step whose week has not opened says when it opens. */
+.checklist__later { display: block; font-size: var(--text-sm); color: var(--color-muted-foreground); }
+#results-root .checklist input:disabled, #results-root .checklist input:disabled + label { cursor: default; }
+/* Roadmap teaser: the step count gets its own line, so it never breaks after the dot on a phone. */
+#results-root .rm-teaser__count { display: block; margin-top: var(--space-xs); font-size: var(--text-base); }
+.rm-teaser__note { display: flex; gap: var(--space-sm); align-items: flex-start; margin: 0; }
+.rm-teaser__note .icon { flex: none; margin-top: 0.15em; color: var(--color-secondary); }
+/* "Explore any area" is its own layer: set it apart in "On this page" instead of under "Your plan". */
+.toc__solo:not(:first-child) { margin-top: var(--space-md); border-top: 1px solid var(--color-border); }
+/* PDF downloads: "Preparing" and errors appear on their own line under the button. */
+.download-msg { display: flex; flex-basis: 100%; justify-content: inherit; align-items: center; gap: var(--space-xs); margin: var(--space-xs) 0 0; font-size: var(--text-sm); color: var(--color-muted-foreground); }
+.download-msg.field-error { color: var(--color-error); }
+.download-msg:empty { display: none; }
+/* Roadmap page: locked weeks are one quiet line each (the lock disc and the opening date say it). */
+#plan-root .rm-week--locked { padding-block: var(--space-md); }
+#plan-root .rm-week--locked h3 { font-size: var(--text-base); }
+@media (max-width: 639px) {
+  /* Report views as one compact row of three, like a segmented control; the hints stay for screen readers. */
+  #results-root .layer-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #results-root .layer-tab { flex-direction: column; justify-content: center; gap: var(--space-xs); min-height: 4rem; padding: var(--space-sm) var(--space-xs); text-align: center; }
+  #results-root .layer-tab__text { align-items: center; }
+  #results-root .layer-tab__label { font-size: var(--text-sm); }
+  #results-root .layer-tab__hint { position: absolute !important; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+}
+@media (max-width: 559px) {
+  /* Listen stays beside its heading instead of wrapping between the heading and its rule. */
+  #results-root .section-head { flex-wrap: nowrap; }
+  #results-root .section-head > div { min-width: 0; }
+  #results-root .section-head .btn-listen { flex: none; }
+  #results-root .peers__icon { display: none; }
+  #plan-root .rm-badges { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
+  #plan-root .rm-badge { padding-inline: var(--space-xs); }
+  #plan-root .rm-week--done > details, #plan-root .rm-week--locked > details { margin-left: 0; }
+}
+/* == end v1.5 results == */

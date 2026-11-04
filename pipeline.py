@@ -383,7 +383,7 @@ REPORT_TOOL = {"toolSpec": {
         "required": ["summary", "focus", "strengths", "plan", "conversation"],
         "properties": {
             "summary": {"type": "string", "description": "A coach talking to the leader: what I learned about you, "
-                                                         "where you are strong, where you are a little weaker, and "
+                                                         "where you are strong, where you have room to grow, and "
                                                          "what I would start with. 2-3 short paragraphs separated "
                                                          "by a blank line, in plain words."},
             "focus": {"type": "array", "description": "One 'start here' item per growth priority id that code "
@@ -419,10 +419,11 @@ SYSTEM = (
     "understands every sentence: short sentences, everyday words, no jargon, explain any term you must use. "
     "The Organizational Capacity Index is a learning tool, not an evaluation: strength-based, people-first and "
     "trauma-informed. Call gaps 'growth priorities'. Describe maturity by stage name, not percentages. "
-    "Never use em dashes.\n"
+    "Never use em dashes. Never call the organization, its people or its work weak, weaker or a weakness, and "
+    "never mention 'the engine' or 'the scoring engine' to the reader: say 'your answers show'.\n"
     "Structure: the summary speaks to the leader as 'you', like a trusted coach, in this order: what you learned "
-    "('Here's what I've learned about you...'), their strengths ('You are strong in...'), where they are a little "
-    "weaker ('You are a little weaker in...'), and what you would do first ('If I were you, I would start "
+    "('Here's what I've learned about you...'), their strengths ('You are strong in...'), where they have room "
+    "to grow ('You have room to grow in...'), and what you would do first ('If I were you, I would start "
     "with...', naming the start-here growth priorities in plain words, never by id). 'focus' explains the one or "
     "two growth priorities that fixed code chose to do first, so the reader is not overwhelmed, and why they come "
     "first (foundations that unlock funding and sustainability). The plan then spreads the rest over 90 days.\n"

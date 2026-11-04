@@ -5,6 +5,7 @@ import Icon from "../components/Icon.astro";
 <Base title="Questionnaire">
   <div id="q-root" aria-busy="true">
     <p class="loading"><Icon name="loader" class="spin" />Loading your questionnaire</p>
+    <noscript><p class="notice"><Icon name="info" /><span>The questionnaire needs JavaScript. Turn it on in your browser settings, then reload the page.</span></p></noscript>
   </div>
 </Base>
 
@@ -12,7 +13,7 @@ import Icon from "../components/Icon.astro";
   import { api, ApiError, getMeta, requireUser, type Domain, type Question, type Stage } from "../lib/api";
   import { $, $$, esc, focusEl, plural } from "../lib/dom";
   import { icon } from "../lib/icons";
-  import { clearDraft, draftToken, loadDraft, saveDraft, SECONDS_PER_STATEMENT, type Draft } from "../lib/draft";
+  import { clearDraft, DraftLinkError, draftToken, loadDraft, saveDraft, savedLocally, SECONDS_PER_STATEMENT, type Draft } from "../lib/draft";
   import { mountQuick, scopeLadders, type Ladder } from "../lib/quick";
 
   const root = $("#q-root")!;
@@ -82,11 +83,13 @@ import Icon from "../components/Icon.astro";
       const canLink = !cur && done && reachable;
       reachable = reachable && done;
       const state = cur ? "current" : done ? "done" : "upcoming";
-      const label = done ? "Completed" : cur ? "In progress" : "Upcoming";
+      // An area left part way (a teammate's, or one answered on another device) says so instead of "Upcoming".
+      const started = !done && d.questions.some((q) => draft.answers[q.id]);
+      const label = done ? "Completed" : cur ? "In progress" : started ? "Started" : "Upcoming";
       const mark = done ? icon("check") : `<span>${i + 1}</span>`;
       const inner = `<span class="area-card__mark" aria-hidden="true">${mark}</span>
         <span class="area-card__text"><span class="area-card__state">${label}</span><span class="area-card__name">${i + 1}. ${esc(d.name)}</span></span>`;
-      return `<li class="area-card is-${state}"${cur ? ' aria-current="step"' : ""}>${canLink ? `<a href="#${i + 1}">${inner}</a>` : `<span class="area-card__body">${inner}</span>`}</li>`;
+      return `<li class="area-card is-${state}${started && !cur ? " is-started" : ""}"${cur ? ' aria-current="step"' : ""}>${canLink ? `<a href="#${i + 1}">${inner}</a>` : `<span class="area-card__body">${inner}</span>`}</li>`;
     }).join("");
   }
 
@@ -149,7 +152,8 @@ import Icon from "../components/Icon.astro";
     const nextName = last ? "" : domains[n].name;
     document.title = `${here.length ? "Check your answers: " : ""}${d.name} (${n} of ${domains.length}) · OCI Capacity Coach`;
 
-    // One at a time: the card comes right after the progress line; area info and tips move below it.
+    // One at a time: the card comes right after the progress line; the view and language switches, area info and
+    // tips move below it, so the first statement is on the first screen (also on a phone).
     const quickView = view === "quick";
     const context = `
       <details class="about-card">
@@ -171,16 +175,31 @@ import Icon from "../components/Icon.astro";
           <li>In the checklist, press Space to tick or untick a statement.</li>
         </ul></div>
       </details>
-      <p class="hint">All ${d.questions.length} statements are required. Your answers are saved on this device as you go.</p>`;
+      <p class="hint">Answer all ${d.questions.length} statements to finish this area. We save your answers on this device as you go.</p>`;
+    const tools = `
+      <div class="q-tools">
+        <fieldset class="seg"><legend>How to answer</legend><div class="seg__opts">
+          ${seg("q-view", "quick", "One at a time", view === "quick")}${seg("q-view", "yn", "Yes / No for each", view === "yn")}${seg("q-view", "check", "Checklist: tick what's true", view === "check")}
+        </div></fieldset>
+        ${es[d.questions[0].id] ? `<fieldset class="seg"><legend>Questions in</legend><div class="seg__opts">
+          ${seg("q-lang", "en", "English", !spanish())}${seg("q-lang", "es", '<span lang="es">Español</span>', spanish())}
+        </div></fieldset>` : ""}
+      </div>
+      ${demo ? `<p class="q-demo"><button type="button" class="q-demo__btn" id="demo-fill">${icon("clipboard")}<span>Demo: fill this area with sample answers</span></button></p>` : ""}`;
+    // Save and share are secondary in One at a time view, so they follow the card there; a teammate keeps the notice
+    // about which area they answer on top.
+    const draftTools = `<div id="draft-tools" data-area="${esc(d.id)}"></div>`;
+    const toolsBelow = quickView && !new URLSearchParams(location.search).has("area");
+    root.dataset.view = view;
     root.innerHTML = `
       <div class="title-band">
         <span class="eyebrow">Step 2 of 3: Questionnaire</span>
         <h1 id="area-title" tabindex="-1">${esc(d.name)}</h1>
       </div>
       <nav aria-label="Capacity areas" class="area-stepper"><ol role="list">${stepper(n)}</ol></nav>
-      <div id="draft-tools" data-area="${esc(d.id)}"></div>
+      ${toolsBelow ? "" : draftTools}
       <div class="q-progress">
-        <p class="q-progress__where"><span class="dot" aria-hidden="true"></span>Area ${n} of ${domains.length}${last ? " · Last area" : ` · Next: ${esc(nextName)}`}</p>
+        <p class="q-progress__where">Area ${n} of ${domains.length}. ${last ? "This is the last area." : `Next: ${esc(nextName)}`}</p>
         <label for="overall-progress" class="q-progress__label" id="progress-text"></label>
         <progress id="overall-progress" max="${totalQuestions()}" value="0"></progress>
         <p class="q-progress__meta"><span class="q-progress__time" id="time-left"></span><span class="q-streak" id="area-streak" hidden></span></p>
@@ -191,24 +210,15 @@ import Icon from "../components/Icon.astro";
         <h2 id="error-summary-title">${icon("alert")}Please answer ${plural(here.length, "more statement", "more statements")}</h2>
         <ul>${here.map((q) => `<li><a href="#q-${esc(q.id)}" data-jump="${esc(q.id)}"${spanish() ? ' lang="es"' : ""}>${esc(textOf(q))}</a></li>`).join("")}</ul>
       </div>` : ""}
-      <div class="q-tools">
-        <fieldset class="seg"><legend>How to answer</legend><div class="seg__opts">
-          ${seg("q-view", "quick", "One at a time", view === "quick")}${seg("q-view", "yn", "Yes / No for each", view === "yn")}${seg("q-view", "check", "Checklist: tick what's true", view === "check")}
-        </div></fieldset>
-        ${es[d.questions[0].id] ? `<fieldset class="seg"><legend>Questions in</legend><div class="seg__opts">
-          ${seg("q-lang", "en", "English", !spanish())}${seg("q-lang", "es", '<span lang="es">Español</span>', spanish())}
-        </div></fieldset>` : ""}
-      </div>
-      ${demo ? `<p class="q-demo"><button type="button" class="q-demo__btn" id="demo-fill">${icon("clipboard")}<span>Demo: fill this area with sample answers</span></button></p>` : ""}
-      ${quickView ? "" : tips}
+      ${quickView ? "" : tools + tips}
       <form id="area-form" novalidate>
         <div class="questions" id="questions"></div>
-        ${quickView ? context + tips : ""}
+        ${quickView ? (toolsBelow ? draftTools : "") + tools + context + tips : ""}
         <p class="field-error" id="submit-error" role="alert" hidden></p>
         <div class="q-bar" id="q-bar">
           <button type="button" class="btn btn-secondary" id="back-btn">${icon("arrow-left")}<span class="q-bar__back-label">Back${n === 1 ? '<span class="visually-hidden"> to your organization</span>' : ""}</span></button>
           <p class="q-bar__status" id="save-status" role="status" aria-live="polite">${icon("circle-check")}<span>Saved on this device</span></p>
-          <button type="submit" class="btn btn-primary" id="next-btn"><span>${last ? "Review and finish" : `Next: ${esc(nextName)}`}</span>${icon("arrow-right")}</button>
+          <button type="submit" class="btn btn-primary" id="next-btn">${last ? "<span>Review and finish</span>" : nextHtml(nextName)}${icon("arrow-right")}</button>
         </div>
       </form>`;
     root.removeAttribute("aria-busy");
@@ -233,7 +243,8 @@ import Icon from "../components/Icon.astro";
     form.addEventListener("change", (e) => {
       const input = e.target as HTMLInputElement;
       const id = input.type === "radio" ? input.name : input.dataset.q;
-      if (!id) return;
+      // Only this area's statements are answers: in One at a time view the view and language switches sit in this form too.
+      if (!id || !d.questions.some((q) => q.id === id)) return;
       const wasComplete = isComplete(d);
       draft.answers[id] = input.type === "radio" ? (input.value as "yes" | "no") : input.checked ? "yes" : "no";
       saveDraft(draft);
@@ -281,7 +292,12 @@ import Icon from "../components/Icon.astro";
       $("#error-summary")?.remove();
       saved(d, wasComplete, rest.length ? `Recorded No for ${plural(rest.length, "statement", "statements")} you did not tick. ` : "");
     });
-    form.addEventListener("submit", (e) => { e.preventDefault(); next(n); });
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      // Enter in the save or share panel (it sits in this form in One at a time view) must not move to the next area.
+      if (document.activeElement?.closest("#draft-tools")) return;
+      next(n);
+    });
     $("#back-btn")!.addEventListener("click", () => {
       if (n === 1) location.assign("/"); else location.hash = String(n - 1);
     });
@@ -311,6 +327,9 @@ import Icon from "../components/Icon.astro";
   const seg = (name: string, value: string, label: string, on: boolean) => `
     <label class="seg__opt"><input type="radio" name="${name}" value="${value}"${on ? " checked" : ""}><span class="seg__check" aria-hidden="true">${icon("check")}</span><span>${label}</span></label>`;
 
+  /** "Next: <area>". Under 600px the area name is read out but not shown, so the button never wraps (the progress line names it). */
+  const nextHtml = (name: string) => `<span>Next<span class="q-next-name">: ${esc(name)}</span></span>`;
+
   /** Statements, About text and the answer instructions for the current view and language. */
   function fillQuestions(d: Domain) {
     const check = view === "check";
@@ -319,7 +338,7 @@ import Icon from "../components/Icon.astro";
       ${view === "quick" ? '<div id="quick-host"></div>' : groupedStatements(d)}
       ${check ? `<div class="check-done">
         <p>Anything you did not tick will be saved as No. That is fine: every No is simply a place to grow.</p>
-        <p class="field-error" id="done-error" hidden>${icon("alert")}<span>Please press the button below to confirm, then go on.</span></p>
+        <p class="field-error" id="done-error" hidden>${icon("alert")}<span>Before you go on, press the button below. It saves every statement you did not tick as No.</span></p>
         <button type="button" class="btn btn-secondary" id="done-btn">${icon("list-checks")}<span>Done: everything I didn't tick is a No</span></button>
       </div>` : ""}`;
     const i = domains.indexOf(d);
@@ -334,8 +353,8 @@ import Icon from "../components/Icon.astro";
       },
       cheer: cheerFor(d),
       // Teammate links (?area=) send the area back instead of moving on (draft.ts relabels the bar button the same way).
-      nextLabel: new URLSearchParams(location.search).has("area") ? "Send my answers back"
-        : i === domains.length - 1 ? "Review and finish" : `Next: ${domains[i + 1].name}`,
+      nextHtml: new URLSearchParams(location.search).has("area") ? "<span>Send my answers back</span>"
+        : i === domains.length - 1 ? "<span>Review and finish</span>" : nextHtml(domains[i + 1].name),
     }) : null;
     const t = spanish() ? es[d.id] : undefined;
     const about = $("#about-body")!;
@@ -350,9 +369,11 @@ import Icon from "../components/Icon.astro";
   function saved(d: Domain, wasComplete: boolean, prefix = "") {
     updateProgress();
     const done = d.questions.filter((q) => draft.answers[q.id]).length;
-    const msg = !wasComplete && done === d.questions.length
-      ? cheerFor(d)
-      : `Saved on this device. ${done} of ${d.questions.length} answered in this area.`;
+    const msg = !savedLocally()
+      ? "Your browser did not let us save on this device. Keep this page open until you finish."
+      : !wasComplete && done === d.questions.length
+        ? cheerFor(d)
+        : `Saved on this device. ${done} of ${d.questions.length} answered in this area.`;
     $("#save-status span")!.textContent = prefix + msg;
   }
 
@@ -467,8 +488,10 @@ import Icon from "../components/Icon.astro";
     if (submitting) return;
     submitting = true;
     const btn = $<HTMLButtonElement>("#next-btn")!;
+    const label = btn.querySelector("span")!;
+    const before = label.innerHTML;
     btn.setAttribute("aria-disabled", "true");
-    btn.querySelector("span")!.textContent = "Submitting";
+    label.textContent = "Sending your answers";
     try {
       const { id } = await api.post<{ id: string }>("/assessments", {
         org_name: draft.org_name, org_url: draft.org_url, language: draft.language,
@@ -497,11 +520,20 @@ import Icon from "../components/Icon.astro";
         location.assign("/");
         return;
       }
+      if (ex instanceof ApiError && ex.status === 401) {
+        // The sign-in ended while answering. The answers are on this device: sign in and come straight back here.
+        location.assign(`/login/?next=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+        return;
+      }
       btn.removeAttribute("aria-disabled");
-      btn.querySelector("span")!.textContent = "See my results";
+      label.innerHTML = before;
+      const why = !(ex instanceof ApiError) ? "We could not reach the server. Check your internet connection, then try again."
+        : ex.status === 429 ? ex.body.error ?? "We have made as many reports as we can this hour. Please try again later."
+        : "Something went wrong on our side. Please try again in a few minutes.";
       const err = $("#submit-error")!;
-      err.innerHTML = `${icon("alert")}<span>We could not submit your answers. They are saved on this device. Please try again.</span>`;
+      err.innerHTML = `${icon("alert")}<span>${esc(why)} Your answers are saved on this device, so nothing is lost.</span>`;
       err.hidden = false;
+      focusEl(err);
     }
   }
 
@@ -528,7 +560,11 @@ import Icon from "../components/Icon.astro";
     if (!domains.length) { location.replace("/"); return; }
     byId = new Map(domains.flatMap((x) => x.questions.map((q) => [q.id, { q, area: x.name }] as const)));
     ladders = scopeLadders(ladderFile?.ladders ?? [], new Set(byId.keys()));
-    if (!location.hash) history.replaceState(null, "", "#1");
+    // No step in the link (a resume link, the start page): open the first area that still needs answers.
+    if (!location.hash) {
+      const open = domains.findIndex((x) => !isComplete(x));
+      history.replaceState(null, "", open < 0 ? "#done" : `#${open + 1}`);
+    }
     if (location.hash === "#done") renderFinish(); else render(stepFromHash(), false);
     // Only numeric hashes (and #done) are steps; the skip link (#main) must not re-render the page.
     window.addEventListener("hashchange", () => {
@@ -537,8 +573,15 @@ import Icon from "../components/Icon.astro";
     });
   }
 
-  init().catch(() => {
+  init().catch((ex) => {
     root.removeAttribute("aria-busy");
-    root.innerHTML = `<h1>Questionnaire</h1><p class="field-error" role="alert">${icon("alert")}<span>We could not load the questions. Please reload the page.</span></p>`;
+    document.title = "Questionnaire · OCI Capacity Coach";
+    root.innerHTML = ex instanceof DraftLinkError
+      ? `<div class="title-band"><h1 id="q-error" tabindex="-1">This teammate link does not work anymore</h1></div>
+        <div class="card stack"><p>It may be old, or part of it may be missing. Ask the person who sent it to make a new one with <strong>Send this area to a teammate</strong>.</p>
+        <p><a href="/">Go to the start page</a></p></div>`
+      : `<div class="title-band"><h1 id="q-error" tabindex="-1">We could not load the questions</h1></div>
+        <p class="field-error" role="alert">${icon("alert")}<span>Check your internet connection, then reload the page. Any answers you gave are saved on this device.</span></p>`;
+    focusEl($("#q-error"));
   });
 </script>

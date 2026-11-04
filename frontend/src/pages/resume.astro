@@ -78,7 +78,8 @@ import Icon from "../components/Icon.astro";
       const areas = meta.domains.filter((d) => data.domain_ids.includes(d.id));
       const total = areas.reduce((n, d) => n + d.questions.length, 0);
       const done = areas.reduce((n, d) => n + d.questions.filter((q) => data.answers[q.id]).length, 0);
-      const href = `/questionnaire/?d=${encodeURIComponent(token)}${area ? `&area=${encodeURIComponent(area)}` : ""}#1`;
+      // No step in the URL: the questionnaire opens the first area not finished yet.
+      const href = `/questionnaire/?d=${encodeURIComponent(token)}${area ? `&area=${encodeURIComponent(area)}` : ""}`;
       found.innerHTML = `
         <h2 id="found-title" tabindex="-1">${esc(data.org_name || "Your assessment")}</h2>
         ${area ? `<p class="notice">${icon("users")}<span>This is a teammate link. You will answer only <strong>${esc(areas[0]?.name ?? area)}</strong>.</span></p>` : ""}

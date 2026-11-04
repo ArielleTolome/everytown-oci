@@ -3,6 +3,7 @@
 import { api, ApiError, type Assessment, type Resource } from "./api";
 import { esc, hostOf, safeUrl } from "./dom";
 import { icon } from "./icons";
+import { errorText } from "./report-ui";
 
 interface Turn { question: string; answer: string; gap_ids: string[]; resources: Resource[] }
 interface AskResponse extends Turn { remaining: number }
@@ -27,7 +28,7 @@ export function starters(sub: Assessment): string[] {
 /** Inner markup of the section (results.ts adds the section heading). */
 export function coachBody(sub: Assessment): string {
   const lang = esc(sub.language || "en");
-  return `<p class="notice">${icon("shield")}<span>Answers come from your report and the CVI library. They never change your scores.</span></p>
+  return `<p class="notice">${icon("shield")}<span>Answers are written with AI from your report and the CVI library, so check them with your team. Asking never changes your scores.</span></p>
     <div class="coach-log" id="coach-log" role="log" aria-live="polite" aria-label="Your questions and answers"></div>
     <form class="card coach-form" id="coach-form" novalidate>
       <p class="mini-label" id="coach-starters-label">Try one of these</p>
@@ -55,7 +56,7 @@ function turnHtml(t: Turn, sub: Assessment): string {
     <div class="coach-turn__q"><p class="mini-label">You asked</p><p>${esc(t.question)}</p></div>
     <div class="coach-turn__a"><p class="mini-label mini-label--blue">Answer</p><div class="coach-turn__text" lang="${lang}">${paras}</div>
       ${t.gap_ids.length ? `<div class="basis" lang="en"><p class="mini-label">Based on your answers to</p><ul class="basis__list" role="list">${t.gap_ids.map((id) =>
-        `<li>${icon("flag")}<span><span class="chip">${esc(id)}</span> ${esc(gaps.get(id)?.question_text ?? "")}</span></li>`).join("")}</ul></div>` : ""}
+        `<li>${icon("circle-dashed")}<span><span class="chip">${esc(id)}</span> ${esc(gaps.get(id)?.question_text ?? "")}</span></li>`).join("")}</ul></div>` : ""}
       ${t.resources.map((r) => `<p class="resource-link">${icon("book")}<span><span class="visually-hidden">Resource: </span><a href="${esc(safeUrl(r.url))}" rel="noopener">${esc(r.title)}</a> <span class="url-domain">(${esc(hostOf(r.url))})</span></span></p>`).join("")}
     </div>
   </div>`;
@@ -121,7 +122,7 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
       setRemaining(res.remaining);
     } catch (ex) {
       status.textContent = "";
-      const msg = ex instanceof ApiError && ex.body.error ? ex.body.error : "We could not answer right now. Please try again in a minute.";
+      const msg = errorText(ex, "We could not answer right now. Please try again in a minute.");
       if (ex instanceof ApiError && (ex.status === 429 || ex.status === 403)) { closed(msg); return; }
       showError(msg);
       input.focus();
