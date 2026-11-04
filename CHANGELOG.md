@@ -2,6 +2,12 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.9.1 — Technical guide to the whole project
+
+- New [`docs/technical-guide.md`](docs/technical-guide.md), also attached to this release as a 20-page PDF: what the OCI Capacity Coach does and why, the architecture and the reasons behind each choice, a repository map, the questionnaire and scoring engine, the data model, every API route with who may call it, the fixed AI report pipeline step by step (models, prompt rules, validation, guardrails, cost), the coach, read-aloud, roadmap, drafts and teammate links, the staff dashboard and Ask the data, the frontend (pages, one-at-a-time navigation, design, accessibility, phone-first, Spanish), infrastructure and deployment (stacks, configuration, container, cost, scale), security and privacy, observability, tests, evals and end-to-end bug bashes, how we built it, the release history from v0.1.0 to v1.9.0, an operations runbook with troubleshooting, known limits and a glossary. Every fact was checked against the code.
+- `scripts/build_guide_pdf.py` rebuilds the PDF (Markdown and Mermaid rendered in Chromium, the app's fonts and colors, page numbers).
+- README corrections found while writing it: Lambda reserved concurrency is 10 (not 5), the research step is `pipeline.research`, and organizations store a list of states.
+
 ## v1.9.0 — Team requests: one language switch, several states, a progress bar and Previous that follow you
 
 From the team's review of the organization leader's form. Filed as GitHub issues #23 to #27; each fix has a regression test that failed on the v1.8.2 build. The name was already required since v1.8.2 (with the job title).

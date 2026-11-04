@@ -12,6 +12,7 @@ Build, deploy and one-off content scripts. Run them from anywhere; each shell sc
 | `teardown.sh` | Removes the deployment: turns off Bedrock invocation logging, empties the app buckets, deletes the app, database and Phoenix stacks (final snapshots kept), then the artifact bucket. Asks you to type `delete` unless given `--yes`. Optional env: `STACK`, `DB_STACK`, `OBS_STACK`, `AWS_REGION`. Usage: `scripts/teardown.sh [--yes]`. |
 | `gen_content.py` | Offline content step: asks Claude (through `pipeline._converse`) for a plain-language glossary and a Spanish questionnaire, written to `frontend/public/content/glossary.json` and `questions_es.json`. Answers stay keyed by statement id, so scoring is untouched. Usage: `python3 scripts/gen_content.py` with AWS credentials. |
 | `build_pitch_pdf.py` | Renders `docs/pitch/index.html` to `docs/pitch/OCI-Capacity-Coach-pitch.pdf`, one 1920x1080 page per slide, with Playwright Chromium. Usage: `python3 scripts/build_pitch_pdf.py`. |
+| `build_guide_pdf.py` | Renders `docs/technical-guide.md` (Markdown and Mermaid, through marked and mermaid from the jsDelivr CDN) to `docs/OCI-Capacity-Coach-technical-guide.pdf`, A4 with the app's fonts and page numbers, with Playwright Chromium. Needs network. Usage: `python3 scripts/build_guide_pdf.py`. |
 
 ## Changing it safely
 

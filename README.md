@@ -21,7 +21,7 @@ AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/
 
 Everything in the app is synthetic, the login is mocked, and the URL is temporary: it is torn down after judging. New reports are capped per hour across all visitors, so if one is refused, try again later or open an existing report. Pitch deck: [`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf).
 
-**Current release:** v1.9.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)). AI observability runs on Amazon CloudWatch and Arize Phoenix (see [Observability and evals](#observability-and-evals-amazon-cloudwatch-and-arize-phoenix)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 8-minute run of show and demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md). Next steps from the CSF director walkthrough: [`docs/next-steps.md`](docs/next-steps.md).
+**Current release:** v1.9.1. The full technical guide to the whole system is [`docs/technical-guide.md`](docs/technical-guide.md) (also attached to the release as a PDF). See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)). AI observability runs on Amazon CloudWatch and Arize Phoenix (see [Observability and evals](#observability-and-evals-amazon-cloudwatch-and-arize-phoenix)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 8-minute run of show and demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md). Next steps from the CSF director walkthrough: [`docs/next-steps.md`](docs/next-steps.md).
 
 The tool is designed to sit inside the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) Grantee Portal: CSF says new grantees "complete a self-assessment that shapes their participation in cohort-based and customized training through our Community Training Institute", and the portal is where grantees "sign up for future training opportunities and complete surveys". The look follows that site (navy and royal blue, serif headlines, pill buttons, pale-blue title bands).
 
@@ -107,7 +107,7 @@ The pipeline is hardcoded, not agentic, as the tech doc prefers:
 | Step | Code | Model |
 |---|---|---|
 | Score | `engine/scoring.py` (unchanged reference implementation) | none |
-| Research the website | `pipeline.research_org` | `OCI_FAST_MODEL_ID` (Claude Haiku) |
+| Research the website, social links and news | `pipeline.research` | `OCI_FAST_MODEL_ID` (Claude Haiku) |
 | Consult the CVI library | `pipeline.gather_library`: one Knowledge Base retrieval per assessed area, queried with its top growth priorities | Titan Text Embeddings v2 |
 | Write the report | `pipeline.write_report`: Converse tool use with a JSON schema, then `validate_report` drops ungrounded actions and unknown links | `OCI_MODEL_ID` (Claude Sonnet) |
 | Check reading level | `pipeline.plain_language`: fixed Flesch-Kincaid grade; above 8.5, one rewrite step, rejected if any id or link changes | `OCI_FAST_MODEL_ID` (Claude Haiku) |
@@ -133,7 +133,7 @@ Why Aurora PostgreSQL Serverless v2: the Everytown interview asked for network a
 | `peer_requests` (`features/peers_request.sql`) | Organizations that asked CSF to connect them with similar groups. |
 | `assessments.respondent_role`, `organizations.budget`, `draft_shares.role` (`features/respondent.sql`) | Who filled it out, yearly budget band, and the role of each teammate who answered a shared area. |
 | `drafts`, `draft_shares` (`features/drafts.sql`) | Server-side questionnaire drafts and per-area teammate share links. |
-| `organizations.program_models`, `staff_size`, `state` (`features/orgmeta.sql`) | Optional organization details for grouping; never scored. |
+| `organizations.program_models`, `staff_size`, `states` (`features/orgmeta.sql`) | Optional organization details for grouping (up to 10 states or territories since v1.9; the old `state` column is unused); never scored. |
 
 ## Deploying to AWS
 
@@ -150,7 +150,7 @@ DB_MIN_CAPACITY=0 scripts/deploy.sh    # Aurora auto-pause after 1 idle hour (ab
 scripts/teardown.sh                    # after judging: empty the buckets, delete both stacks (asks you to type "delete")
 ```
 
-Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Knowledge Base documents), `RESERVED_CONCURRENCY` (default 5), `MONTHLY_BUDGET_USD` (default 100, 0 skips the budget). The script is idempotent: the Lambda zip is uploaded under a content-hash key to `oci-artifacts-<account>-<region>`, the Flask session secret is generated once into `infra/.secret` (git-ignored), and fingerprinted `_astro/*` assets get a one-year cache while HTML is always revalidated. Cost: about $45 a month at the 0.5 ACU Aurora minimum (kept warm for the hackathon), about $1 to $3 a month with auto-pause, plus roughly $0.05 to $0.10 of Bedrock tokens per report (the static prompt is cached). `scripts/teardown.sh` also deletes the artifact bucket and keeps a final Aurora snapshot.
+Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Knowledge Base documents), `RESERVED_CONCURRENCY` (default 10), `MONTHLY_BUDGET_USD` (default 100, 0 skips the budget). The script is idempotent: the Lambda zip is uploaded under a content-hash key to `oci-artifacts-<account>-<region>`, the Flask session secret is generated once into `infra/.secret` (git-ignored), and fingerprinted `_astro/*` assets get a one-year cache while HTML is always revalidated. Cost: about $45 a month at the 0.5 ACU Aurora minimum (kept warm for the hackathon), about $1 to $3 a month with auto-pause, plus roughly $0.05 to $0.10 of Bedrock tokens per report (the static prompt is cached). `scripts/teardown.sh` also deletes the artifact bucket and keeps a final Aurora snapshot.
 
 ## Container (GitHub Packages)
 
@@ -318,7 +318,7 @@ Cost at demo volume: CloudWatch Logs ingestion and storage for spans, invocation
 
 - Login is mocked (`demo` / `demo` for organizations, `staff` / `staff` for the Everytown dashboard), as the vision doc specifies, and the public URL is temporary: it is torn down after judging. Anyone signed in can open a report by its id, so this build is for synthetic data only. Re-assessment progress compares only within one sign-in session. Session cookies are signed, `HttpOnly`, `SameSite=Lax`, and `Secure` on AWS. POSTs must be JSON, which blocks cross-site form posts.
 - The API can only be reached through CloudFront: the Lambda Function URL uses `AWS_IAM` auth with origin access control, so direct calls get 403. The browser sends `x-amz-content-sha256` for request bodies, as Lambda OAC requires.
-- Spend guards: Lambda reserved concurrency of 5, at most `OCI_MAX_REPORTS_PER_HOUR` new reports per hour, and an optional monthly AWS Budget.
+- Spend guards: Lambda reserved concurrency of 10, at most `OCI_MAX_REPORTS_PER_HOUR` new reports per hour, and an optional monthly AWS Budget.
 - Model output is checked for truncation and refusal (`stopReason`) before parsing; website text and the website profile are passed to the model as untrusted data.
 - Amazon Bedrock Guardrails apply to every Claude call: content filters, prompt-attack blocking on input, and masking of emails, phone numbers, SSNs and card numbers. Staff training briefs receive only aggregated counts, never organization names.
 - The database has no network ingress: the app reaches it only through the IAM-authorized RDS Data API; the password is an RDS-managed secret.
