@@ -2,6 +2,11 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.6.1 — Pitch in plain English, with a demo-first 8-minute run of show
+
+- `docs/pitch/demo-script.md` leads with a demo-first run of show (7:20 plus 40 seconds of slack): two opening slides, a 3:30 live demo of the leader and staff views, then one slide each for how it works, feasibility, scale and the ask. Every step has the exact clicks, plain-English lines to say, and the judging criterion it serves. A "Say it plainly" table swaps tech words for everyday ones. The slides-first version is kept below it.
+- The deck's visible text is in plain English for the Everytown audience: no "tokens", "evals", "Lambda", "ACU" or "JSON schema" on the main slides (AWS service names stay on slide 6 and in the appendix for the judges). Slide 7's right column no longer runs into its footer.
+
 ## v1.6.0 — Arize Phoenix is back, alongside Amazon CloudWatch
 
 - **Traces in both, at the same time.** `observability.py` sends every span to X-Ray / CloudWatch Transaction Search and, when `OCI_PHOENIX_ENDPOINT` is set, also to Arize Phoenix (project = service name: `everytown-oci`, evals `everytown-oci-evals`). The code checks run on every live report go to both: CloudWatch metrics as before, and Phoenix CODE annotations on the report's root span. Each report stores both links, and staff see **View AI trace in Phoenix (staff)** and **View AI trace in CloudWatch (staff)** in the organization drawer and on the staff report view.
