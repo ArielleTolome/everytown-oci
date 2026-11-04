@@ -65,9 +65,19 @@ CRISIS_ANSWER = {
     "es": "Si usted u otra persona está en peligro ahora mismo, llame al 911; si es una crisis de salud mental, "
           "llame o envíe un mensaje de texto al 988, la Línea de Prevención del Suicidio y Crisis.",
 }
-# The guardrail blocked the question or the answer (usually an attempt to override the rules or the scores).
-# Asking again gets the same block, so the reader gets this fixed answer instead of an error.
+# The guardrail blocked the question or the answer. Asking again gets the same block, so the reader gets a fixed
+# answer instead of an error. Its prompt-attack filter also blocks plain role-play ("Act as our board chair..."),
+# so the scores wording is only for questions about scores or stages.
 BLOCKED_ANSWER = {
+    "en": "I can't answer that one as it's written. Please try asking it another way. You can ask me about your "
+          "report, your growth priorities or your plan.",
+    "es": "No puedo responder esa pregunta tal como está escrita. Intente preguntarla de otra manera. Puede "
+          "preguntarme sobre su informe, sus prioridades de crecimiento o su plan.",
+}
+SCORE_QUESTION = re.compile(r"\b(scores?|stages?|percent\w*|rat(e|ing)|rank\w*|mark|seeding|emerging|developing|"
+                            r"strengthening|transformational|puntajes?|puntuaci\w+|etapas?|porcentaje|calificaci\w+|"
+                            r"transformacional)\b|%", re.I)
+BLOCKED_SCORE_ANSWER = {
     "en": "I can't help with that one. Your stages and scores come only from your answers, and I can't change "
           "them; to change them, take the assessment again. You can ask me about your report, your growth "
           "priorities or your plan.",
@@ -165,7 +175,7 @@ def respond(sub, question, turns):
         try:
             return answer_question(sub, question, turns)
         except pipeline.GuardrailBlocked:
-            fixed = BLOCKED_ANSWER
+            fixed = BLOCKED_SCORE_ANSWER if SCORE_QUESTION.search(question) else BLOCKED_ANSWER
     return {"answer": fixed.get(sub["language"], fixed["en"]), "gap_ids": [], "resources": []}
 
 

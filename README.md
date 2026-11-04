@@ -21,7 +21,7 @@ AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/
 
 Everything in the app is synthetic, the login is mocked, and the URL is temporary: it is torn down after judging. New reports are capped per hour across all visitors, so if one is refused, try again later or open an existing report. Pitch deck: [`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf).
 
-**Current release:** v1.2.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 8-minute run of show and demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+**Current release:** v1.3.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 8-minute run of show and demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 The tool is designed to sit inside the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) Grantee Portal: CSF says new grantees "complete a self-assessment that shapes their participation in cohort-based and customized training through our Community Training Institute", and the portal is where grantees "sign up for future training opportunities and complete surveys". The look follows that site (navy and royal blue, serif headlines, pill buttons, pale-blue title bands).
 
@@ -204,6 +204,7 @@ Open http://127.0.0.1:8000 and sign in with `demo` / `demo` or `staff` / `staff`
 | `infra/template.yaml`, `infra/database.yaml`, `scripts/` | CloudFormation (app and database stacks) and build/deploy scripts. |
 | `tests/` | Unit tests: model-output grounding and Start-here selection, reading level and rewrite checks, guardrail handling, coach validation and limits, drafts merge rules, re-assessment comparison. |
 | `docs/pitch/` | Hackathon pitch deck (open `index.html`, arrow keys, `n` for notes) and demo script. |
+| `qa/` | End-to-end tests and bug bash with [e2e](https://e2e.com) (see [End-to-end tests](#end-to-end-tests-and-bug-bash-e2e)). |
 
 ## Scoring
 
@@ -236,6 +237,21 @@ priority_score    = stage_weight * domain_weight * gap_density_bonus
 - Tokens and rules: `design-system/everytown-oci/MASTER.md` plus per-page overrides (kept outside this repo in the workshop folder), built with the `ui-ux-pro-max` skill.
 - Reference research: Mobbin MCP searches for assessment results, multi-step questionnaires, onboarding pickers and admin analytics; the screens we adapted are linked in the v0.6.0 changelog.
 - Visual exploration: Google Stitch project "Everytown OCI Capacity Coach" with an Everytown design system (navy, royal blue, red, Atkinson Hyperlegible). Stitch's layouts were re-implemented in Astro; its placeholder copy was discarded.
+
+## End-to-end tests and bug bash (e2e)
+
+`qa/` holds browser tests written with [e2e](https://e2e.com), the open source agentic test runner (Playwright underneath). Agent steps use Claude Sonnet on Amazon Bedrock through `@ai-sdk/amazon-bedrock`, with the standard AWS credentials; the regression tests themselves use exact locators and need no model. Needs Node 24.8 or newer.
+
+```
+cd qa && npm ci
+docker run -d --name oci-qa -p 127.0.0.1:8092:8000 --env-file oci.env oci-coach   # the container from "Container", or any running copy
+npm run test:e2e                     # sign-in setups, smoke tests and regressions/ against APP_URL (default http://127.0.0.1:8092)
+npm run test:live                    # read-only checks against the deployed site (LIVE_URL)
+```
+
+A bug bash runs one `e2e explore` per charter in `qa/bugbash-charters.txt` (one area and one posture each: first-time user, edge input, numbers and copy, state, error paths), four at a time, with personas from `qa/e2e.bugbash.config.ts` (a skeptic that cross-checks every number, a fuzzer that runs the input matrix first). Every finding is a model's claim until a repro test fails for the reported reason; confirmed bugs become GitHub issues with the `bugbash` label, and each fixed repro test moves to `qa/tests/regressions/`. Install the e2e skill for the full procedure with `npx skills add tester-army/e2e` (`npx e2e guide bug-bash`).
+
+The first bug bash (v1.3.0) ran 8 charters on the production build in the container (about 7.6M Bedrock tokens), plus an API fuzz of every route and a read of the sign-in code: 19 findings, 9 confirmed and fixed (issues #1 to #9, among them an open redirect on sign-in and 500 errors on non-object JSON bodies), 10 rejected with the reason (intended design, explorer artifacts, or not reproducible). axe-core found no WCAG 2.2 A or AA violations on any page or staff tab at 1280 and 375 px.
 
 ## Observability and evals
 

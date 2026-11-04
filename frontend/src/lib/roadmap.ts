@@ -59,26 +59,34 @@ export function roadmapTeaser(sub: Assessment): string {
 
 /** Fill the teaser from the API; hide the whole section when this session may not see the roadmap. */
 export function wireRoadmapTeaser(root: HTMLElement, sub: Assessment): void {
+  if (!$("[data-rm-teaser]", root)) return;
+  getRoadmap(sub.id).then((r) => fillRoadmapTeaser(root, r)).catch(() => { root.hidden = true; });
+}
+
+/** (Re)draw the teaser from roadmap state, also after a Start here tick on the same page. */
+export function fillRoadmapTeaser(root: ParentNode, r: Roadmap): void {
   const box = $("[data-rm-teaser]", root);
   if (!box) return;
-  getRoadmap(sub.id).then((r) => {
-    const now = where(r);
-    const week = r.weeks.find((w) => w.n === now);
-    const todo = (week?.tasks ?? []).filter((t) => !t.done).slice(0, 3);
-    const allDone = r.weeks_done === r.weeks.length;
-    box.innerHTML = `
-      <div class="rm-teaser__head">
-        <h3>${allDone ? "All 12 weeks done" : `Week ${now} of ${r.weeks.length}`} <span class="rm-teaser__count">· ${r.done_tasks} of ${plural(r.total_tasks, "step", "steps")} done</span></h3>
-        <span class="rm-chip">${svg("first-step")}${esc(r.level)} · ${r.points} points</span>
-      </div>
-      ${bar(r.pct, "Roadmap progress")}
-      ${allDone ? `<p>You finished every step. Take the assessment again to see how far you have come.</p>`
-        : r.current_week === null && r.next_unlock ? `<p>${icon("lock")} <span>This week is done. Week ${r.next_unlock.week} opens on ${esc(shortDate(r.next_unlock.date))}.</span></p>`
-        : todo.length ? `<p class="mini-label">This week</p><ul class="rm-teaser__list" role="list">${todo.map((t) => `<li>${icon("circle-dashed")}<span lang="${esc(t.lang)}">${esc(t.text)}</span></li>`).join("")}</ul>` : ""}
-      <p class="rm-teaser__cta"><a class="btn btn-primary" href="/plan/?id=${encodeURIComponent(sub.id)}"><span>Open my roadmap</span>${icon("arrow-right")}</a></p>`;
-    box.removeAttribute("aria-busy");
-  }).catch(() => { root.hidden = true; });
+  const now = where(r);
+  const week = r.weeks.find((w) => w.n === now);
+  const todo = (week?.tasks ?? []).filter((t) => !t.done).slice(0, 3);
+  const allDone = r.weeks_done === r.weeks.length;
+  box.innerHTML = `
+    <div class="rm-teaser__head">
+      <h3>${allDone ? "All 12 weeks done" : `Week ${now} of ${r.weeks.length}`} <span class="rm-teaser__count">· ${r.done_tasks} of ${plural(r.total_tasks, "step", "steps")} done</span></h3>
+      <span class="rm-chip">${svg("first-step")}${esc(r.level)} · ${r.points} points</span>
+    </div>
+    ${bar(r.pct, "Roadmap progress")}
+    ${allDone ? `<p>You finished every step. Take the assessment again to see how far you have come.</p>`
+      : r.current_week === null && r.next_unlock ? `<p>${icon("lock")} <span>This week is done. Week ${r.next_unlock.week} opens on ${esc(shortDate(r.next_unlock.date))}.</span></p>`
+      : todo.length ? `<p class="mini-label">This week</p><ul class="rm-teaser__list" role="list">${todo.map((t) => `<li>${icon("circle-dashed")}<span lang="${esc(t.lang)}">${esc(t.text)}</span></li>`).join("")}</ul>` : ""}
+    <p class="rm-teaser__cta"><a class="btn btn-primary" href="/plan/?id=${encodeURIComponent(r.assessment_id)}"><span>Open my roadmap</span>${icon("arrow-right")}</a></p>`;
+  box.removeAttribute("aria-busy");
 }
+
+/** Mark one roadmap task done or not; returns the new roadmap state. */
+export const setRoadmapTask = (id: string, task: string, done: boolean) =>
+  api.post<Roadmap>(`${path(id)}/tasks/${encodeURIComponent(task)}`, { done });
 
 // ---------- /plan/ page ----------
 
@@ -235,7 +243,7 @@ export async function mountPlan(root: HTMLElement, id: string): Promise<void> {
     const task = box.dataset.task!, week = Number(box.dataset.week), done = box.checked;
     chain = chain.then(async () => {
       try {
-        state = await api.post<Roadmap>(`${path(id)}/tasks/${encodeURIComponent(task)}`, { done });
+        state = await setRoadmapTask(id, task, done);
       } catch (ex) {
         box.checked = !done;
         const err = $(`#week-${week}-error`, root);

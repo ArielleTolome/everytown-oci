@@ -1,0 +1,20 @@
+{
+  "name": "oci-qa",
+  "version": "1.0.0",
+  "description": "End-to-end tests and bug bash for the OCI Capacity Coach (e2e, Claude on Bedrock)",
+  "scripts": {
+    "test:e2e": "e2e run --exclude-tag live",
+    "test:live": "e2e run --tag live"
+  },
+  "type": "commonjs",
+  "devDependencies": {
+    "@e2e-dev/web": "^0.15.4",
+    "ai": "^7.0.0",
+    "e2e": "^0.22.0",
+    "zod": "^4.1.8"
+  },
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^5.0.132"
+  },
+  "private": true
+}

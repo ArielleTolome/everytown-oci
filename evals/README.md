@@ -161,6 +161,8 @@ explanation, so you can see which cases moved. Click a run to open its trace (pr
   `coach.respond` is now the single decision the route and the evals share.
 - `20261104T015350Z-coach.md`: gate PASSES, no errors. `20261104T014647Z-staff_ask.md`: gate PASSES; all unsafe
   requests rejected.
+- `20261104T030439Z-coach.md` (v1.3, after the e2e bug bash found #7): a guardrail-blocked question that is not about
+  scores now gets a neutral answer, and score-change attempts still get the scores refusal; gate PASSES.
 - `20261104T012708Z-judge_calibration.md`: every judge scores both bad outputs below both good ones (twice in a
   row). Two rubric fixes came from reading judge explanations: the faithfulness judge now sees the CVI library
   (it had counted library citations as invented), and a suggested owner role no longer counts as an invented fact.

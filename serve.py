@@ -6,6 +6,7 @@ On AWS, CloudFront serves the site from S3 and only /api/* reaches the Lambda; t
 import os
 
 from flask import abort, send_from_directory
+from werkzeug.exceptions import NotFound
 
 from app import app
 
@@ -20,4 +21,7 @@ def site(path):
     # Pages are folders with an index.html (trailingSlash "always"); send_from_directory rejects paths outside DIST.
     if os.path.isdir(os.path.join(DIST, path)):
         path = os.path.join(path, "index.html")
-    return send_from_directory(DIST, path)
+    try:
+        return send_from_directory(DIST, path)
+    except NotFound:  # missing file or a path outside DIST: the site's own 404 page, as CloudFront serves it
+        return send_from_directory(DIST, "404.html"), 404

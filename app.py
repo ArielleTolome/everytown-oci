@@ -75,7 +75,9 @@ def json_posts_only():
 
 
 def body():
-    return request.get_json(silent=True) or {}
+    """The JSON request body as a dict; anything else (123, "text", [1]) counts as an empty body (#2)."""
+    b = request.get_json(silent=True)
+    return b if isinstance(b, dict) else {}
 
 
 def load(sid):

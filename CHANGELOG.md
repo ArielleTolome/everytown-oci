@@ -2,6 +2,23 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.3.0 — End-to-end QA with e2e: bug bash, 9 bugs filed and fixed
+
+**QA setup** (`qa/`, see README "End-to-end tests and bug bash")
+- [e2e](https://e2e.com) test runner with Claude Sonnet on Amazon Bedrock (`@ai-sdk/amazon-bedrock`) for agent steps; sign-in setups for the `demo` and `staff` sessions, smoke tests, and regression tests with exact locators (no model cost). `npm run test:e2e` runs against a local copy, `npm run test:live` runs read-only checks against the deployed site.
+- Bug bash: 8 `e2e explore` charters (`qa/bugbash-charters.txt`) with skeptic and fuzzer personas (`qa/e2e.bugbash.config.ts`) on the production build in the container, plus an API fuzz of every route. 19 findings; each was confirmed only by a test that failed for the reported reason. 9 confirmed bugs became GitHub issues #1 to #9 (label `bugbash`); 10 were rejected (intended design, explorer artifacts, not reproducible). axe-core: no violations on any page or staff tab at 1280 and 375 px.
+
+**Fixes**
+- #1 (security) Sign-in no longer follows `?next=/\host` to another site: `next` is resolved and must stay on this origin.
+- #2 A JSON body that is not an object (`123`, `"text"`, `[1]`) is treated as an empty body instead of returning 500 on 11 routes (`app.body()`).
+- #3 The report's Start here checkboxes read and write the 12-week roadmap (one store, any device, staff see the same progress); the local-only checklist is gone. Viewers who may not tick see the steps as text.
+- #4 The questionnaire's area nav shows Completed for a finished area, also the current one, and updates after each answer.
+- #5 One time estimate per statement (`SECONDS_PER_STATEMENT`) on the start page and in the questionnaire.
+- #6 Most common gaps says that an organization with two program models counts in both groups.
+- #7 Coach: a guardrail-blocked question that is not about scores gets a neutral "ask it another way" answer (English and Spanish); score-change attempts keep the scores refusal, and the coach eval gate still passes.
+- #8 The container answers unknown paths with the app's 404 page and status 404 (`serve.py`).
+- #9 The live site answers unknown paths with status 404 instead of 200: `404.html` carries `x-amz-meta-oci-status`, and a viewer-response CloudFront Function sets the status.
+
 ## v1.2.0 — Container package on GitHub Packages, and a "Try it live" link for judges
 
 - **Container image** `ghcr.io/arielletolome/everytown-oci` on GitHub Packages, published by `.github/workflows/package.yml` on every release tag (`latest`, the version and the commit). `Dockerfile` builds the Astro site and runs the Flask API plus the site on one port (`serve.py` under gunicorn, non-root), as CloudFront and S3 do on AWS. It needs AWS credentials with Bedrock access and the `everytown-oci-db` Aurora stack; `python -m db migrate` and `seed` run from the same image. `.dockerignore` keeps secrets, `infra/` and `instance/` out.

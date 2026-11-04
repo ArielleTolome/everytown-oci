@@ -3,7 +3,7 @@ import { api, ApiError, type Assessment, type Focus, type Gap, type Meta, type P
 import { $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
 import { coachBody } from "./coach";
 import { icon, type IconName } from "./icons";
-import { roadmapTeaser } from "./roadmap";
+import { fillRoadmapTeaser, getRoadmap, roadmapTeaser, setRoadmapTask, type Roadmap } from "./roadmap";
 import { traceLink } from "./staff-bi";
 
 /** v1.0 document fields (all optional; older documents lack them). Kept local so api.ts stays conflict-free. */
@@ -186,14 +186,14 @@ function focusSection(items: Focus[], gaps: Map<string, Gap>, lang: string): str
   const L = `lang="${esc(lang)}"`;
   return `<section class="section" aria-labelledby="focus-title">
     ${sectionHead("focus-title", "Start here: your top priorities", "Do these first", "focus", lang,
-      `Do not try to fix everything at once. Out of everything you could work on, ${items.length === 1 ? "this is the one priority" : "these are the two priorities"} to start with. Check off steps as you go; your checks are saved on this device.`)}
+      `Do not try to fix everything at once. Out of everything you could work on, ${items.length === 1 ? "this is the one priority" : "these are the two priorities"} to start with. These steps are weeks 1 to ${items.length * 2} of your 12-week roadmap: check them off here or there, and each week's steps open in turn.`)}
     <ol class="focus-list" id="focus-body" role="list">${items.map((f, i) => `
       <li class="card focus-card" data-focus="${i}">
         <div class="focus-card__head">
           <span class="focus-card__num" aria-hidden="true">${i + 1}</span>
           <div>
             <h3><span class="visually-hidden">Priority ${i + 1}: </span><span ${L}>${esc(f.title)}</span></h3>
-            <p class="focus-card__status" id="focus-status-${i}" data-status="none">${checklistStatus(0, f.steps.length)}</p>
+            <p class="focus-card__status" id="focus-status-${i}" data-status="none"></p>
           </div>
         </div>
         <div class="inset">
@@ -204,7 +204,7 @@ function focusSection(items: Focus[], gaps: Map<string, Gap>, lang: string): str
         ${f.steps.length ? `<fieldset class="checklist">
           <legend class="mini-label">What to do</legend>
           <ul role="list" ${L}>${f.steps.map((s, j) => `
-            <li><input type="checkbox" id="focus-${i}-step-${j}" data-focus="${i}" data-step="${j}" aria-describedby="focus-status-${i}">
+            <li><input type="checkbox" id="focus-${i}-step-${j}" data-focus="${i}" data-step="${j}" aria-describedby="focus-status-${i}" disabled>
               <label for="focus-${i}-step-${j}">${esc(s)}</label></li>`).join("")}
           </ul>
         </fieldset>` : ""}
@@ -660,44 +660,55 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
 
 /* ---------- Behaviors ---------- */
 
-type ChecklistState = Record<string, boolean[]>;
-const CHECKLIST_PREFIX = "oci-checklist:";
-
-function readChecklist(id: string): ChecklistState {
-  try {
-    const raw = JSON.parse(localStorage.getItem(CHECKLIST_PREFIX + id) || "{}") as unknown;
-    return raw && typeof raw === "object" ? (raw as ChecklistState) : {};
-  } catch { return {}; }
-}
-
-/** Start-here checklists: native checkboxes persisted per assessment id + item index; announce the new count politely. */
+/** Start-here checklists: each step is a task in roadmap weeks 1-2 (priority 1) and 3-4 (priority 2), so the roadmap
+ *  is the only store. Steps of a week that has not opened stay disabled; a viewer who may not use the roadmap
+ *  (the API answers 403) sees the steps without checkboxes. Announce the new count politely. */
 export function wireChecklists(sub: Assessment, root: ParentNode) {
   const focus = sub.report?.focus ?? [];
-  const state = readChecklist(sub.id);
+  const boxes = $$<HTMLInputElement>("input[data-focus][data-step]", root);
+  if (!boxes.length) return;
   const refresh = (i: number) => {
-    const total = focus[i]?.steps.length ?? 0;
-    const done = (state[i] ?? []).filter(Boolean).length;
+    const mine = boxes.filter((b) => Number(b.dataset.focus) === i);
+    const done = mine.filter((b) => b.checked).length;
     const el = root.querySelector<HTMLElement>(`#focus-status-${i}`);
     if (el) {
-      el.innerHTML = checklistStatus(done, total);
-      el.dataset.status = done === 0 ? "none" : done === total ? "done" : "some";
+      el.innerHTML = checklistStatus(done, mine.length);
+      el.dataset.status = done === 0 ? "none" : done === mine.length ? "done" : "some";
     }
     return done;
   };
-  $$<HTMLInputElement>("input[data-focus][data-step]", root).forEach((box) => {
-    const i = Number(box.dataset.focus), j = Number(box.dataset.step);
-    box.checked = !!state[i]?.[j];
-  });
-  focus.forEach((_, i) => refresh(i));
+  const sync = (r: Roadmap) => {
+    // Priority i owns focus weeks 2i+1 and 2i+2 (features/milestones.py build_roadmap); match its steps by text.
+    const tasks = new Map(r.weeks.filter((w) => w.focus).flatMap((w) =>
+      (w.tasks ?? []).map((t) => [`${Math.floor((w.n - 1) / 2)}:${t.text.trim().toLowerCase()}`, t] as const)));
+    boxes.forEach((box) => {
+      const i = Number(box.dataset.focus), j = Number(box.dataset.step);
+      const t = tasks.get(`${i}:${(focus[i]?.steps[j] ?? "").trim().toLowerCase()}`);
+      box.dataset.task = t?.id ?? "";
+      box.checked = !!t?.done;
+      box.disabled = !t;
+    });
+    focus.forEach((_, i) => refresh(i));
+  };
+  getRoadmap(sub.id).then(sync).catch(() => boxes.forEach((box) => box.remove()));
+  let chain = Promise.resolve();
   root.addEventListener("change", (e) => {
     const box = e.target as HTMLInputElement;
-    if (!box.matches("input[data-focus][data-step]")) return;
-    const i = Number(box.dataset.focus), j = Number(box.dataset.step);
-    const total = focus[i]?.steps.length ?? 0;
-    state[i] = Array.from({ length: total }, (_, k) => (k === j ? box.checked : !!state[i]?.[k]));
-    try { localStorage.setItem(CHECKLIST_PREFIX + sub.id, JSON.stringify(state)); } catch { /* storage disabled */ }
-    const done = refresh(i);
-    announce(`Priority ${i + 1}: ${done} of ${total} steps done.`);
+    if (!box.matches("input[data-focus][data-step]") || !box.dataset.task) return;
+    const i = Number(box.dataset.focus), task = box.dataset.task, done = box.checked;
+    const total = boxes.filter((b) => Number(b.dataset.focus) === i).length;
+    announce(`Priority ${i + 1}: ${refresh(i)} of ${total} steps done.`);
+    chain = chain.then(async () => {
+      try {
+        const r = await setRoadmapTask(sub.id, task, done);
+        sync(r);
+        fillRoadmapTeaser(root, r);
+      } catch (ex) {
+        box.checked = !done;
+        refresh(i);
+        announce(ex instanceof ApiError ? ex.message : "We could not save that. Please try again.");
+      }
+    });
   });
 }
 

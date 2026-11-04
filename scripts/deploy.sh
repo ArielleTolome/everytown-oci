@@ -91,6 +91,8 @@ aws s3 sync --only-show-errors frontend/dist/_astro "s3://$SITE/_astro" --cache-
 aws s3 sync --only-show-errors frontend/dist "s3://$SITE" --exclude '_astro/*' --exclude '*.html' --cache-control 'public,max-age=3600'
 aws s3 sync --only-show-errors frontend/dist "s3://$SITE" --exclude '*' --include '*.html' --cache-control 'no-cache'
 aws s3 sync --only-show-errors --delete frontend/dist "s3://$SITE"
+# The 404 page carries its status as metadata; the template's NotFoundStatusFunction turns it into HTTP 404.
+aws s3 cp --only-show-errors frontend/dist/404.html "s3://$SITE/404.html" --cache-control 'no-cache' --metadata oci-status=404
 aws cloudfront create-invalidation --distribution-id "$DIST" --paths '/*' --query Invalidation.Id --output text
 
 # 5. Database schema and seed data (idempotent; the first call may wake a paused cluster).

@@ -12,7 +12,7 @@ import Icon from "../components/Icon.astro";
   import { api, ApiError, getMeta, requireUser, type Domain, type Question, type Stage } from "../lib/api";
   import { $, $$, esc, focusEl, plural } from "../lib/dom";
   import { icon } from "../lib/icons";
-  import { clearDraft, draftToken, loadDraft, saveDraft, type Draft } from "../lib/draft";
+  import { clearDraft, draftToken, loadDraft, saveDraft, SECONDS_PER_STATEMENT, type Draft } from "../lib/draft";
   import { mountQuick, scopeLadders, type Ladder } from "../lib/quick";
 
   const root = $("#q-root")!;
@@ -82,8 +82,8 @@ import Icon from "../components/Icon.astro";
       const canLink = !cur && done && reachable;
       reachable = reachable && done;
       const state = cur ? "current" : done ? "done" : "upcoming";
-      const label = cur ? "In progress" : done ? "Completed" : "Upcoming";
-      const mark = state === "done" ? icon("check") : `<span>${i + 1}</span>`;
+      const label = done ? "Completed" : cur ? "In progress" : "Upcoming";
+      const mark = done ? icon("check") : `<span>${i + 1}</span>`;
       const inner = `<span class="area-card__mark" aria-hidden="true">${mark}</span>
         <span class="area-card__text"><span class="area-card__state">${label}</span><span class="area-card__name">${i + 1}. ${esc(d.name)}</span></span>`;
       return `<li class="area-card is-${state}"${cur ? ' aria-current="step"' : ""}>${canLink ? `<a href="#${i + 1}">${inner}</a>` : `<span class="area-card__body">${inner}</span>`}</li>`;
@@ -387,10 +387,12 @@ import Icon from "../components/Icon.astro";
     const time = $("#time-left");
     if (time && current) {
       const left = current.questions.filter((q) => !draft.answers[q.id]).length;
-      // shortcut: about 8 s per statement (the brief: 72 statements in roughly 10 minutes); measure real timings if people ask.
-      const min = Math.ceil((left * 8) / 60);
+      const min = Math.ceil((left * SECONDS_PER_STATEMENT) / 60);
       time.innerHTML = `${icon("clock")}<span>${left ? `About ${plural(min, "minute", "minutes")} left in ${esc(current.name)}` : `${esc(current.name)} is done`}</span>`;
     }
+    // The area nav shows Completed as soon as the current area is fully answered.
+    const nav = $(".area-stepper ol");
+    if (nav && current) nav.innerHTML = stepper(domains.indexOf(current) + 1);
     // Streak: areas finished in a row from the first one. It rewards finishing, never the answers given.
     const streak = $("#area-streak");
     if (streak) {

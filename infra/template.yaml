@@ -383,6 +383,31 @@ Resources:
           return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: location } } };
         }
 
+  # The viewer-request rewrite to /404.html is served by S3 with 200. scripts/deploy.sh uploads 404.html with
+  # x-amz-meta-oci-status: 404, and this sets the real status (in viewer-response, event.request is the viewer's
+  # original request, so the rewritten URI is not visible here).
+  NotFoundStatusFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub ${AWS::StackName}-not-found-status
+      AutoPublish: true
+      FunctionConfig:
+        Comment: HTTP 404 for the static site's 404 page (default behavior only)
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var response = event.response;
+          var status = response.headers['x-amz-meta-oci-status'];
+          if (status) {
+            delete response.headers['x-amz-meta-oci-status'];
+            if (status.value === '404') {
+              response.statusCode = 404;
+              response.statusDescription = 'Not Found';
+            }
+          }
+          return response;
+        }
+
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -417,6 +442,8 @@ Resources:
           FunctionAssociations:
             - EventType: viewer-request
               FunctionARN: !GetAtt DirectoryIndexFunction.FunctionMetadata.FunctionARN
+            - EventType: viewer-response
+              FunctionARN: !GetAtt NotFoundStatusFunction.FunctionMetadata.FunctionARN
         CacheBehaviors:
           - PathPattern: /api/*
             TargetOriginId: api

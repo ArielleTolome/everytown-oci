@@ -6,6 +6,10 @@ import { api, ApiError, getMeta } from "./api";
 import { $, announce, esc, focusEl } from "./dom";
 import { icon } from "./icons";
 
+// shortcut: about 8 s per statement (the brief: 72 statements in roughly 10 minutes); measure real timings if people ask.
+/** Time estimates on the start page and the questionnaire both use this, so they agree. */
+export const SECONDS_PER_STATEMENT = 8;
+
 export interface OrgMeta { program_models: string[]; staff_size: string | null; budget?: string | null; state: string | null }
 export interface Respondent { role: string | null; title: string | null; name: string | null }
 export interface OrgLinks { social: string[] }

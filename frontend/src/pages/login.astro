@@ -54,8 +54,11 @@ import Icon from "../components/Icon.astro";
   const params = new URLSearchParams(location.search);
   const nextUrl = (role: User["role"]) => {
     const next = params.get("next");
-    // Only same-site paths; never an absolute URL from the query string.
-    if (next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login/")) return next;
+    // Same-site paths only. Resolve first: browsers read "/\host" as "//host", so a prefix check is not enough (#1).
+    try {
+      const url = next?.startsWith("/") ? new URL(next, location.origin) : null;
+      if (url && url.origin === location.origin && !url.pathname.startsWith("/login/")) return url.pathname + url.search + url.hash;
+    } catch { /* not a URL: use the default page */ }
     return role === "staff" ? "/staff/" : "/";
   };
 

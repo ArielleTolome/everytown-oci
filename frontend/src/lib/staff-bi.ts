@@ -176,6 +176,7 @@ export function commonPanel(d: Bi) {
     <tr class="brief-row" hidden><td colspan="6"><div class="brief-slot" id="brief-gap-${i}"></div></td></tr>`).join("");
   return `${head("common-title", "Priority 3", "Most common gaps across all grantees")}
     <p>The statements most often marked as a growth priority. Open "By program model" to see who has it, out of those assessed in that area.</p>
+    <p class="hint">An organization with two program models counts in both groups.</p>
     ${gaps.length ? table("common-caption", "Most common growth priorities, with the number and share of organizations assessed in that area",
       `<tr><th scope="col" class="num">Rank</th><th scope="col">Statement</th><th scope="col">Area</th><th scope="col">Stage</th><th scope="col">Organizations</th><th scope="col">Training</th></tr>`, rows)
       : empty("No growth priorities yet.")}`;

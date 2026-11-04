@@ -114,7 +114,7 @@ import Icon from "../components/Icon.astro";
   import { api, ApiError, getMeta, requireUser, type Domain } from "../lib/api";
   import { $, $$, announce, esc, focusEl } from "../lib/dom";
   import { icon } from "../lib/icons";
-  import { loadDraft, saveDraft, type OrgMeta, type Respondent } from "../lib/draft";
+  import { loadDraft, saveDraft, SECONDS_PER_STATEMENT, type OrgMeta, type Respondent } from "../lib/draft";
 
   const form = $<HTMLFormElement>("#org-form")!;
   const nameEl = $<HTMLInputElement>("#org_name")!;
@@ -248,11 +248,11 @@ import Icon from "../components/Icon.astro";
     announce(`Link ${at + 1} removed.`);
   });
 
-  /** Checkbox cards with a "Recommended" tag (Airwallex "Primary interest"), statement count and time estimate (~15 s per statement). */
+  /** Checkbox cards with a "Recommended" tag (Airwallex "Primary interest"), statement count and time estimate. */
   function renderDomains(domains: Domain[], selected: string[]) {
     const ordered = [...domains.filter((d) => d.priority), ...domains.filter((d) => !d.priority)];
     $("#domain-groups")!.innerHTML = `<ul class="area-options" role="list">${ordered.map((d) => {
-      const minutes = Math.max(1, Math.ceil((d.questions.length * 15) / 60));
+      const minutes = Math.max(1, Math.ceil((d.questions.length * SECONDS_PER_STATEMENT) / 60));
       return `
       <li class="area-option">
         <label class="choice area-option__card">

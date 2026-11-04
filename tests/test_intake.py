@@ -43,6 +43,14 @@ class Validation(unittest.TestCase):
         self.assertTrue(clean_social(["https://a.org/%d" % i for i in range(6)])[1])
         self.assertEqual(clean_social("https://a.org"), ([], None))
 
+    def test_json_body_that_is_not_an_object_is_a_client_error(self):
+        # Found by the v1.3 API fuzz: 123, "text" or [1] reached b.get() and returned 500 on 11 routes.
+        c = oci.app.test_client()
+        for raw in (b"123", b'"text"', b"[1]", b"true"):
+            r = c.post("/api/login", data=raw, content_type="application/json")
+            self.assertEqual(r.status_code, 401, raw)
+            self.assertIn("did not match", r.get_json()["error"])
+
     def test_submit_validates_and_stores_intake(self):
         c = client()
         base = {"org_name": "Playwright Intake", "domain_ids": ["PL"], "answers": complete(["PL"])}
