@@ -186,18 +186,20 @@ Open http://127.0.0.1:8000 and sign in with `demo` / `demo` or `staff` / `staff`
 
 ## Layout
 
+Each folder has its own `README.md` that lists every file and what it does; working rules for teammates and AI assistants are in [AGENTS.md](AGENTS.md) (Claude Code reads it through `CLAUDE.md`).
+
 | Path | Purpose |
 |---|---|
 | `app.py` | Flask JSON API: auth (mocked roles), validation, scoring, progress comparison, job dispatch (thread or async Lambda), staff analytics. |
 | `serve.py`, `Dockerfile`, `.github/workflows/package.yml` | Container image: the API plus the built site on one port, published to GitHub Packages on each release tag. |
 | `db.py`, `schema.sql` | Aurora Data API layer, analytics queries, `migrate` (schema.sql plus `features/*.sql`) and `seed` CLI. |
 | `features/` | Feature modules, each a Flask Blueprint auto-registered by `app.py`: `coach.py` (Ask about your report), `tts.py` (Polly audio), `drafts.py` (save, resume, share an area), `orgmeta.py` (organization details, respondent roles, budgets), `staff_ai.py` (training briefs), `milestones.py` (12-week roadmap, gamification, weekly PDF), `bi.py` (staff BI, Ask the data, network report PDF), `peers.py` (similarity and peer groups), `peers_request.py` (connect requests). |
-| `frontend/public/content/` | `glossary.json` and `questions_es.json`, generated once offline by `scripts/gen_content.py` and reviewed (re-running it overwrites the manual fixes). |
+| `frontend/public/content/` | `glossary.json` and `questions_es.json`, generated once offline by `scripts/gen_content.py` and reviewed (re-running it overwrites the manual fixes); `ladders.json` (laddered statements asked as one multiple-choice question) and `sample_answers.json` (synthetic demo answers). |
 | `pipeline.py` | Website research, Knowledge Base retrieval, structured report generation and its validation. |
 | `observability.py` | OpenTelemetry tracing to AWS X-Ray (OpenInference and `gen_ai` attributes), the staff CloudWatch trace link, and online-check metrics in CloudWatch embedded metric format. |
 | `lambda_handler.py` | Lambda entry point: web requests to Flask, `{"oci_sid": ...}` events to the pipeline. |
 | `report.py` | PDF report, mirroring the sample reports' layout plus the AI sections. |
-| `frontend/` | Astro 5 static site (TypeScript, no UI framework) in Everytown colors. Fonts in `frontend/public/fonts/` (Atkinson Hyperlegible and Noto Sans Math, both OFL) are also used by the PDF. |
+| `frontend/` | Astro 5 static site (TypeScript, no UI framework) in Everytown colors. Fonts in `frontend/public/fonts/` (Atkinson Hyperlegible, Source Serif 4 and Noto Sans Math, all OFL) are also used by the PDF. |
 | `resources/catalog.json` | The only links the model may recommend (19 vetted resources). |
 | `resources/library/*.md` | Field guides per OCI domain, ingested into the Knowledge Base. |
 | `data/questions.json` | 143 statements across 8 domains, plus stage and domain weights. |
