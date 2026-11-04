@@ -2,6 +2,12 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.5.2 — Docs for the team: a guide in every folder and AGENTS.md
+
+- `AGENTS.md` (read by Claude Code through `CLAUDE.md`): the project in one minute, a map of the repo, the rules that never bend (code scores, statements and stage names unchanged, grounded or dropped, synthetic data, plain language and WCAG 2.2 AA, house style), the checks to run before pushing, and how to work alongside other people and AI sessions (stage only your own files, never commit secrets, name test organizations `QA `).
+- A `README.md` in `benchmark/`, `data/`, `docs/`, `engine/`, `features/` (every API route), `frontend/` and `frontend/src/lib/` (every page and module, with the API routes it calls), `infra/` (stacks and the parameters that matter), `qa/`, `resources/`, `scripts/` (each script's env vars and usual command), `tests/` and `utils/`, listing every file and what it does. `evals/README.md` gains a Files table.
+- The root README's Layout section points to these guides and now lists `ladders.json`, `sample_answers.json` and the Source Serif 4 font.
+
 ## v1.5.1 — Pitch aligned to the official judging criteria; Apache-2.0 license
 
 - The deck follows the five official criteria and weights: technical innovation (25%), social impact potential (25%), feasibility and sustainability (20%), scalability (15%) and presentation quality (15%). Every slide's top-right tag names the criterion it serves.

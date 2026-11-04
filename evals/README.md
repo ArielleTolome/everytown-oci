@@ -192,3 +192,15 @@ filter at random, and judge output is never shown to anyone.
   `expected` behavior it should have had.
 - New check: add it to `checks.py` with a pass and a fail test in `tests/test_checks.py`; add its name to
   `checks.GATES` only if a failure must block a release.
+
+## Files
+
+| File | What it does |
+|---|---|
+| `__init__.py` | Package marker; shipped in the Lambda zip with `checks.py` for the online checks. |
+| `checks.py` | Code checks: `report_checks`, `coach_checks`, `staff_ask_checks`, and `GATES` (the checks that fail a run). See [Evaluators](#evaluators). |
+| `judges.py` | LLM judges (`judge`) and calibration (`calibrate`, `python3 -m evals.judges`). |
+| `build_datasets.py` | Builds `datasets/*.jsonl` deterministically (`python3 -m evals.build_datasets`). |
+| `run.py` | CLI `python3 -m evals.run --suite reports\|coach\|staff_ask\|all`: runs the tasks, scores them, writes `results/`, publishes to CloudWatch (`PRICES` holds the cost table). |
+| `datasets/reports.jsonl`, `coach.jsonl`, `staff_ask.jsonl`, `judge_calibration.jsonl`, `coach_bases.json` | Synthetic datasets, see [Datasets](#datasets). |
+| `results/<UTC timestamp>-<suite>.json`, `.md` | One pair per run: every output and score, and the summary table. See [What the evals found](#what-the-evals-found-results-committed-in-results). |
