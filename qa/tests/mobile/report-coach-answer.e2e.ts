@@ -7,14 +7,18 @@ const ID = process.env.OCI_REPORT_ID ?? '5c818adc-0e76-483c-84be-9da91bd5cc09';
 // screen above the view, so nothing seemed to happen. The answer request is stubbed in the page: no AI cost, and the
 // shared report's question log is unchanged.
 test('a new coach answer is on screen after Ask', { session: 'staff' }, async ({ app, screen, browser }) => {
+  // The question log is stubbed before the page loads too, so the test never depends on how many of the shared
+  // report's 15 questions earlier runs and explorers used up.
+  await browser.addInitScript(() => {
+    const real = window.fetch;
+    const json = (body: unknown) => Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } }));
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => !String(input).endsWith('/ask') ? real(input, init)
+      : init?.method === 'POST' ? json({ answer: 'QA stub answer: list every funding source first.', gap_ids: [], resources: [], remaining: 5 })
+      : json({ messages: [], remaining: 15 });
+  });
   await app.open(`/results/?id=${ID}`);
   await expect(screen.getByRole('heading', 'Ask about your report')).toBeVisible({ timeout: 15_000 });
   await browser.evaluate(() => {
-    const real = window.fetch;
-    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => init?.method === 'POST' && String(input).endsWith('/ask')
-      ? Promise.resolve(new Response(JSON.stringify({ answer: 'QA stub answer: list every funding source first.', gap_ids: [], resources: [], remaining: 5 }),
-        { status: 200, headers: { 'content-type': 'application/json' } }))
-      : real(input, init);
     document.querySelector('#coach-form')!.closest('details')?.setAttribute('open', ''); // phones: "Ask a question"
   });
   await screen.getByLabel('Your question').fill('What is the first step this week?');

@@ -1553,3 +1553,7 @@ main h2[id] { scroll-margin-top: var(--space-lg); }
   }
 }
 /* == end v1.8.1 intake == */
+/* == v1.8.1 bb-staff == */
+/* #18: a heading link alone in a staff card is not inside a sentence, so it needs a 24px target (WCAG 2.5.8). */
+#staff-root .cohort h4 > a { display: inline-block; min-height: 24px; }
+/* == end v1.8.1 bb-staff == */

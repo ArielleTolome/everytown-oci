@@ -688,7 +688,7 @@ def build_network_pdf(data, ctx):
                    "; ".join("%s (%d)" % (s["question_id"], s["orgs"]) for s in g["shared_gaps"]) or "None yet"]
                   for g in data["peer_groups"]], [56, 24, 26, 64])
     else:
-        pdf.para("Not enough organizations have shared their program model and size yet.")
+        pdf.para("No two organizations have the same main program model and staff size yet.")
 
     pdf.h1("Appendix: training needs by organization (staff only)")
     names = {a["domain_id"]: a["domain_name"] for a in needs["areas"]}

@@ -61,6 +61,13 @@ class Feedback(Base):
         self.assertEqual(len(clears()), 2)
         self.assertIn("NOT helpful", clears()[-1].args[0])
 
+    def test_not_quite_for_the_whole_report_takes_back_an_older_part(self):
+        # #21: "Not quite: Your plan", then "Not quite: The report as a whole" kept the plan row and its comment.
+        self.post(section="overall", helpful=False, comment="The whole thing.")
+        (clear,) = [c for c in self.query.call_args_list if c.args[0].startswith("DELETE FROM report_feedback")]
+        self.assertIn("NOT helpful", clear.args[0])
+        self.assertEqual(clear.kwargs["section"], "overall")
+
     def test_bad_input_is_rejected_before_any_write(self):
         for b in ({"section": "scores", "helpful": True}, {"section": "plan", "helpful": "yes"},
                   {"section": "plan"}, {"section": "plan", "helpful": True, "comment": "x" * 1001},
@@ -157,6 +164,15 @@ class Optin(Base):
         self.assertTrue(self.query.call_args.args[0].startswith("DELETE FROM optins"))
         self.owner_of.return_value = "someone-else"
         self.assertEqual(self.client.get("/api/assessments/%s/optin" % SID).status_code, 403)
+
+    def test_staff_read_but_never_change_an_opt_in(self):
+        # issue #22: staff POSTs replaced or withdrew the organization's own choice and contact details
+        self.sign_in("staff")
+        self.assertEqual(self.client.get("/api/assessments/%s/optin" % SID).status_code, 200)
+        for b in ({"training": True, "updates": False, "email": "staff@example.org"}, {"training": False, "updates": False}):
+            self.query.reset_mock()
+            self.assertEqual(self.client.post("/api/assessments/%s/optin" % SID, json=b).status_code, 403)
+            self.query.assert_not_called()
 
     def test_staff_list_claims_no_grantee_status(self):
         # issue #13: grantee was (source <> 'demo'), so every new group showed "Grantee: Yes"

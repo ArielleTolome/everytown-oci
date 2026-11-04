@@ -90,9 +90,9 @@ def feedback(sid):
              ":section, :helpful, :comment) ON CONFLICT (assessment_id, section) DO UPDATE SET helpful = "
              "EXCLUDED.helpful, comment = EXCLUDED.comment, created_at = now()",
              assessment_id=sub["id"], section=b["section"], helpful=b["helpful"], comment=comment)
-    # The report card asks for one part that felt off: a new part, or "Yes" for the whole report, supersedes older
-    # not-helpful parts, so the staff queue never counts an answer the organization took back.
-    if b["section"] == "overall" and b["helpful"] or b["section"] != "overall" and not b["helpful"]:
+    # The report card asks for one part that felt off: any answer for the whole report (sent first), or a new part,
+    # supersedes older not-helpful parts, so the staff queue never counts an answer the organization took back.
+    if b["section"] == "overall" or not b["helpful"]:
         db.query("DELETE FROM report_feedback WHERE assessment_id = :assessment_id AND section NOT IN ('overall', "
                  ":section) AND NOT helpful", assessment_id=sub["id"], section=b["section"])
     return jsonify(feedback=_feedback(sub["id"]))

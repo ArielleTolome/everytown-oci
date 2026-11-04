@@ -75,7 +75,7 @@ import Icon from "../components/Icon.astro";
   const langEs = () => (spanish() ? ' lang="es"' : "");
   const nameOf = (d: Domain) => (spanish() && es[d.id]?.text) || d.name;
   const stmt = (q: Question) => `<span${spanish() ? ' lang="es"' : ""}>${esc(textOf(q))}</span>`;
-  const noState = (id: string) => (draft.answers[id] === "no" ? "Counted as No" : "");
+  const noState = (id: string) => (draft.answers[id] === "no" ? L("Counted as No", "Cuenta como No") : "");
 
   /** Spanish: English original. English: plain-language help for up to 2 glossary terms in the statement. */
   function helpFor(q: Question): string {
@@ -116,14 +116,14 @@ import Icon from "../components/Icon.astro";
     return `
       <fieldset class="question${miss ? " field--error" : ""}" id="q-${esc(q.id)}"${miss ? ` aria-describedby="${esc(q.id)}-error"` : ""}>
         <legend><span class="question__num">${num}.</span> ${stmt(q)}</legend>
-        ${miss ? `<p class="field-error" id="${esc(q.id)}-error">${icon("alert")}<span>Please choose Yes or No.</span></p>`
-          : draft.answers[q.id] ? "" : `<p class="q-pending" id="${esc(q.id)}-pending">${icon("circle-dashed")}<span>Not answered yet</span></p>`}
+        ${miss ? `<p class="field-error" id="${esc(q.id)}-error">${icon("alert")}<span>${tr("Please choose Yes or No.", "Elija Sí o No.")}</span></p>`
+          : draft.answers[q.id] ? "" : `<p class="q-pending" id="${esc(q.id)}-pending">${icon("circle-dashed")}<span>${tr("Not answered yet", "Sin responder todavía")}</span></p>`}
         ${helpFor(q)}
         <div class="answer-row">${(["yes", "no"] as const).map((v) => `
           <label class="answer">
             <input type="radio" name="${esc(q.id)}" value="${v}" id="${esc(q.id)}-${v}" required ${draft.answers[q.id] === v ? "checked" : ""}>
-            <span class="answer__text">${v === "yes" ? "Yes" : "No"}</span>
-            <span class="answer__tag" aria-hidden="true">${icon("check")}Selected</span>
+            <span class="answer__text">${v === "yes" ? tr("Yes", "Sí") : tr("No", "No")}</span>
+            <span class="answer__tag" aria-hidden="true">${icon("check")}${tr("Selected", "Seleccionada")}</span>
           </label>`).join("")}
         </div>
       </fieldset>`;
@@ -138,8 +138,8 @@ import Icon from "../components/Icon.astro";
           <input type="checkbox" id="${id}-check" data-q="${id}"${draft.answers[q.id] === "yes" ? " checked" : ""} aria-describedby="${id}-state${q.reverse ? ` ${id}-rev` : ""}">
           <span class="check-item__text"><span class="question__num">${num}.</span> ${stmt(q)}</span>
         </label>
-        ${q.reverse ? `<p class="check-item__note" id="${id}-rev">${icon("info")}<span>Ticking this one counts as a growth priority.</span></p>` : ""}
-        <p class="check-item__state" id="${id}-state">${noState(q.id)}</p>
+        ${q.reverse ? `<p class="check-item__note" id="${id}-rev">${icon("info")}<span>${tr("Ticking this one counts as a growth priority.", "Marcar esta cuenta como prioridad de crecimiento.")}</span></p>` : ""}
+        <p class="check-item__state" id="${id}-state"${langEs()}>${noState(q.id)}</p>
         ${helpFor(q)}
       </li>`;
   }
@@ -287,7 +287,7 @@ import Icon from "../components/Icon.astro";
       radio.focus();
       if (radio.checked) return;
       radio.checked = true;
-      keyed = `${k === "y" ? "Yes" : "No"} ${L("for statement", "para la afirmación")} ${parseInt(fs.querySelector(".question__num")?.textContent ?? "", 10)}. `;
+      keyed = `${k === "y" ? L("Yes", "Sí") : "No"} ${L("for statement", "para la afirmación")} ${parseInt(fs.querySelector(".question__num")?.textContent ?? "", 10)}. `;
       radio.dispatchEvent(new Event("change", { bubbles: true }));
     });
     // The deliberate step the brief asks for: the engine treats a missing answer as favorable, so unticked must become an explicit "no".

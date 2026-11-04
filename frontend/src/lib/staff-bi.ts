@@ -250,6 +250,8 @@ const peerList = (peers: Peer[]) => `<ul class="plain-list peer-list">${peers.ma
 
 export function peersPanel(d: Bi) {
   const reqs = d.peer_requests;
+  const grouped = new Set(d.peer_groups.flatMap((g) => g.members.map((m) => m.id)));
+  const left = d.organizations.filter((o) => !grouped.has(o.id)).length;
   return `${head("peers-title", "Peer learning", "Peer groups and requests to connect")}
     <p>Similarity is computed by code: program model (40%), size by staff or budget (30%) and shared growth priorities (30%). Peer percentiles in each organization's details compare it only with organizations of the same main program model. Organizations never see peer comparisons.</p>
     <h3 class="sub-head">Asked to be connected</h3>
@@ -259,12 +261,13 @@ export function peersPanel(d: Bi) {
         ${r.suggestions.length ? `<p class="meta">Suggested matches</p>${peerList(r.suggestions)}` : `<p class="meta">No similar organization yet.</p>`}
       </li>`).join("")}</ul>` : empty("No organization has asked to be connected yet. Requests show here when a leader selects \"Ask to be connected\" on their report.")}
     <h3 class="sub-head">Peer groups: same main program model and staff size</h3>
+    <p class="hint" id="peer-groups-note">A group needs at least 2 organizations.${left ? ` ${plural(left, "organization is", "organizations are")} not in a group: no other organization has the same main program model and staff size, or they did not share them.` : ""}</p>
     ${d.peer_groups.length ? `<ul class="cohorts" role="list">${d.peer_groups.map((g) => `<li class="card cohort">
         <span class="eyebrow">${esc(g.staff_size)} staff · ${plural(g.members.length, "organization", "organizations")}</span>
         <h4>${esc(g.program_model)}</h4>
         <ul>${g.members.map((m) => `<li><button type="button" class="link-btn" data-open-org="${esc(m.id)}">${esc(m.name)}</button></li>`).join("")}</ul>
         ${g.shared_gaps.length ? `<p class="meta">Growth priorities they share most</p><ul class="plain-list">${g.shared_gaps.map((s) => `<li><span class="chip">${esc(s.question_id)}</span> ${esc(s.question_text)} <span class="meta">(${s.orgs})</span></li>`).join("")}</ul>` : ""}
-      </li>`).join("")}</ul>` : empty("Not enough organizations have shared their program model and size yet.")}`;
+      </li>`).join("")}</ul>` : empty("No two organizations here have the same main program model and staff size yet.")}`;
 }
 
 // ---------- organization drawer ----------

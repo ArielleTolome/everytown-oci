@@ -85,20 +85,25 @@ import Icon from "../components/Icon.astro";
     toggle.setAttribute("aria-label", show ? "Hide password" : "Show password");
   });
 
-  const showError = (msg: string) => {
+  // Mark only the fields in error (#17); a wrong username or password marks both.
+  const showError = (msg: string, bad = [user, pass]) => {
     err.innerHTML = `${icon("alert")}<span></span>`;
     err.querySelector("span")!.textContent = msg;
     err.hidden = false;
-    for (const el of [user, pass]) { el.setAttribute("aria-invalid", "true"); el.setAttribute("aria-describedby", "login-error"); }
+    for (const el of [user, pass]) {
+      if (bad.includes(el)) { el.setAttribute("aria-invalid", "true"); el.setAttribute("aria-describedby", "login-error"); }
+      else { el.removeAttribute("aria-invalid"); el.removeAttribute("aria-describedby"); }
+    }
   };
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     // Enter in Username with no password yet is "Next" on a phone keyboard: go to Password, no error.
     if (document.activeElement === user && user.value.trim() && !pass.value) { pass.focus(); return; }
-    if (!user.value.trim() || !pass.value) {
-      showError("Enter your username and password.");
-      (user.value.trim() ? pass : user).focus();
+    const empty = [user, pass].filter((el) => !(el === user ? el.value.trim() : el.value));
+    if (empty.length) {
+      showError(empty.length === 2 ? "Enter your username and password." : empty[0] === user ? "Enter your username." : "Enter your password.", empty);
+      empty[0].focus();
       return;
     }
     const btn = form.querySelector<HTMLButtonElement>("button[type=submit]")!;

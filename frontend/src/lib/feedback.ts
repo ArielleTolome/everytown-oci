@@ -175,9 +175,10 @@ export function wireFeedback(sub: Assessment, root: ParentNode, staff: boolean) 
     if (btn.getAttribute("aria-disabled") === "true") return;
     btn.setAttribute("aria-disabled", "true");
     try {
-      // The comment rides on the part it is about; without a part it stays on the overall answer.
-      if (part !== "overall") await api.post(url, { section: part, helpful: false, comment });
-      const res = await api.post<{ feedback: Feedback[] }>(url, { section: "overall", helpful, comment: part === "overall" ? comment : "" });
+      // The whole-report answer goes first: the server then takes back older parts, and the part (with the
+      // comment) comes last. Without a part the comment stays on the overall answer.
+      let res = await api.post<{ feedback: Feedback[] }>(url, { section: "overall", helpful, comment: part === "overall" ? comment : "" });
+      if (part !== "overall") res = await api.post<{ feedback: Feedback[] }>(url, { section: part, helpful: false, comment });
       rows = res.feedback ?? [];
       show(false);
       focusEl(body.querySelector("#feedback-status"));

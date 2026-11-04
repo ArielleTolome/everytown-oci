@@ -1,7 +1,7 @@
 """Sign me up (v1.7): an organization may opt in to CSF trainings and occasional updates. Optional, no spam.
 
 The tool is open to any CVI organization, not only grantees, so this is how new groups join the network. Only the
-submitting session or staff can see or change an opt-in; ticking neither box withdraws it (the row is deleted).
+submitting session changes an opt-in (staff read it); ticking neither box withdraws it (the row is deleted).
 """
 import json
 import re
@@ -50,6 +50,8 @@ def optin(sid):
         return err
     if request.method == "GET":
         return jsonify(optin=_get(sub["id"]))
+    if session["user"]["role"] == "staff":  # the organization's own choice and contact details: staff only read them
+        return error("Only the organization can change this. Staff see opt-ins in the Quality tab.", 403)
     data, problem = clean(body())
     if problem:
         return error(problem, 400)

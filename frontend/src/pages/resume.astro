@@ -13,7 +13,7 @@ import Icon from "../components/Icon.astro";
     <div class="field" id="link-field">
       <label for="resume-link">Your saved link</label>
       <p class="hint" id="resume-link-hint">It starts with this site's address and has <code>?d=</code> in it. The short resume code is only for checking: you need the whole link.</p>
-      <p class="field-error" id="resume-link-error" hidden></p>
+      <p class="field-error" id="resume-link-error" role="alert" hidden></p>
       <input class="input" type="url" id="resume-link" name="link" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="go" aria-describedby="resume-link-hint">
     </div>
     <div class="actions">

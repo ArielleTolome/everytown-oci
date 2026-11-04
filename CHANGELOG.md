@@ -2,6 +2,29 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.8.1 — Known bugs fixed, then a full e2e bug bash: 13 GitHub issues filed and closed
+
+First the bugs we already knew about (#10 to #15) were filed on GitHub and fixed. Then e2e agents went through the whole process again on the live site, on desktop and on a phone: 16 exploratory charters (sign-in, start page, questionnaire, save and resume, report, coach, roadmap, staff dashboard, Ask the data), plus hand checks of the parts only a report's owner sees. Every finding was reproduced before it counted: 38 findings, 7 confirmed and filed as #16 to #22, 32 rejected with the reason (intended design, explorer artifacts, already decided, not reproducible). Every fix has a regression test that failed on the live build first.
+
+**Organizations**
+- #10 iPhone SE: every One at a time card (statements, multiple-choice questions, their "Based on your choice" step and the area-complete card) shows its question and first answer above the bottom bar. Walk of the four default areas at 320x568: 6 to 19 cards per area were under the bar, now none.
+- #14, #19 Questions in Español now also switch the questionnaire's own controls: the bottom bar, progress line, area navigation, Save and finish later, Send this area to a teammate, the area-complete and finish screens, and each statement's Sí / No, Seleccionada, Sin responder todavía and Cuenta como No in the Yes / No and Checklist views. Area names are in Spanish.
+- #15 Phones: the saved or teammate link box re-fits the whole link, and the 12-week roadmap switches between the phone and desktop order, when the phone turns.
+- #20 Continue an assessment: a wrong link sent with Enter or the phone's Go key is now announced to screen readers.
+- #21 "Does this feel right?": changing a "Not quite" answer from one part back to the whole report replaces the old part and its comment.
+- #11 The demo report (Riverbend) no longer says "a little weaker" (written before v1.5's "room to grow" prompt); the deck's slide 8 screenshot is refreshed.
+
+**Staff and sign-in**
+- #12, #22 Only the organization can answer "Does this feel right?" or change its "Stay connected" opt-in; staff read both and record their view with Mark reviewed or Flag, so a staff request can no longer overwrite what an organization said.
+- #13 The staff "Opted in" list no longer has a Grantee column (the app has no grantee list, so every new group showed as a grantee).
+- #16 Staff Peers says a peer group needs at least 2 organizations and how many are in no group, instead of claiming organizations did not share their details.
+- #17 Sign-in names the empty field ("Enter your username." or "Enter your password.") and marks only that field invalid.
+- #18 Staff Peers: report links in "Asked to be connected" cards meet the 24 px target size.
+
+**Testing and data**
+- The coach-answer and week-done e2e tests no longer depend on the shared demo report's state (question count, a repeated screen-reader announcement). The demo report's question log, used up by bug-bash explorers, is reset to 15 questions.
+- The bug bash ran with two workers after three at once ran this 7.8 GB machine out of memory (load average 55, half the time waiting on disk); the worker rules now cap browsers and check free memory first.
+
 ## v1.8.0 — Phone first: easier to complete on a phone, tested on a phone
 
 Many leaders of small CVI groups answer on their phones between shifts. Six omp agents worked in parallel Herdr terminals in one window: three made the start page, questionnaire, report and roadmap phone first, then three ran the end-to-end tests and a phone bug bash. Desktop at 1280 px is pixel-identical (checked page by page), so the demo for judging is unchanged.
