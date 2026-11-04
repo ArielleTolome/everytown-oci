@@ -49,9 +49,11 @@ Checks:
 
 ```
 python3 verify_benchmark.py                 # expect three PASS lines
-python3 -m unittest discover -s tests       # grounding validation and re-assessment comparison
+python3 -m unittest discover -s tests       # offline; needs `pip install pypdf` for the PDF tests
 cd frontend && npx astro check && npm run build
 ```
+
+The unit tests need no AWS credentials or database: Bedrock is faked and the few Aurora tests skip unless `OCI_DB_CLUSTER_ARN` is set.
 
 ## What it looks like (live, v1.0)
 
@@ -93,7 +95,7 @@ The pipeline is hardcoded, not agentic, as the tech doc prefers:
 | Step | Code | Model |
 |---|---|---|
 | Score | `engine/scoring.py` (unchanged reference implementation) | none |
-| Research the website | `pipeline.research_org` | `OCI_FAST_MODEL_ID` (Claude Haiku) |
+| Research the organization | `pipeline.research`: the website (SSRF-guarded fetch), up to 5 social links and news mentions, summarized into a profile with its sources | `OCI_FAST_MODEL_ID` (Claude Haiku) |
 | Consult the CVI library | `pipeline.gather_library`: one Knowledge Base retrieval per assessed area, queried with its top growth priorities | Titan Text Embeddings v2 |
 | Write the report | `pipeline.write_report`: Converse tool use with a JSON schema, then `validate_report` drops ungrounded actions and unknown links | `OCI_MODEL_ID` (Claude Sonnet) |
 | Check reading level | `pipeline.plain_language`: fixed Flesch-Kincaid grade; above 8.5, one rewrite step, rejected if any id or link changes | `OCI_FAST_MODEL_ID` (Claude Haiku) |
@@ -153,6 +155,41 @@ Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Know
 | `OCI_MAX_REPORTS_PER_HOUR` | `30` | New reports allowed per hour across the whole demo (429 beyond it). Caps Bedrock spend. |
 | `PORT` | `8000` | Local API port. |
 
+## API
+
+The Astro site is the only client. Every route is under `/api`, takes and returns JSON (POSTs must send `Content-Type: application/json`, which blocks cross-site form posts), and needs a signed-in session cookie from `POST /api/login` unless noted. Errors are `{"error": "..."}` with a plain-language message, except a rejected submission, which returns `{"errors": {field: message}, "missing": [statement ids]}` with 400.
+
+| Method and path | Who | What it does | Code |
+|---|---|---|---|
+| `GET /api/healthz` | anyone | Liveness check; returns `ok`. | `app.py` |
+| `POST /api/login`, `POST /api/logout`, `GET /api/me` | anyone / signed in | Mocked sign-in (`demo`/`demo`, `staff`/`staff`). Each sign-in gets a fresh owner id, which scopes re-assessment comparison and who may send requests. | `app.py` |
+| `GET /api/meta` | signed in | Question bank, stage names and descriptions, sample organizations, languages, pre-selected areas. | `app.py` |
+| `GET /api/org-meta` | signed in | Choices for program model, staff size, budget, state and respondent role. | `features/orgmeta.py` |
+| `POST /api/assessments` | signed in | Validate and score a submission, compare it with this owner's previous one, start the AI steps. Returns `{id}` with 201; 429 past `OCI_MAX_REPORTS_PER_HOUR`. | `app.py` |
+| `POST /api/demo` | signed in | Same, from a synthetic sample organization (`{sample, domain_ids?, language?}`). | `app.py` |
+| `GET /api/assessments/<id>` | signed in | The full assessment document. The AI trace link is removed for non-staff. | `app.py` |
+| `GET /api/assessments/<id>/status` | signed in | Pipeline status and per-step progress, polled by the results page. | `app.py` |
+| `POST /api/assessments/<id>/retry` | signed in | Rerun only the unfinished AI steps of a failed report. Returns 202. | `app.py` |
+| `GET /api/assessments/<id>/report.pdf` | signed in | The PDF report. | `app.py`, `report.py` |
+| `POST /api/assessments/<id>/support` | submitter | Ask CSF for training or coaching in chosen areas. | `app.py` |
+| `POST /api/assessments/<id>/peer-request` | submitter | Ask CSF to connect the organization with similar groups. | `features/peers_request.py` |
+| `GET`, `POST /api/assessments/<id>/ask` | submitter or staff | "Ask about your report": the conversation so far, or one validated answer to `{question}`. | `features/coach.py` |
+| `GET /api/assessments/<id>/audio/<section>` | signed in | Read-aloud audio of one report section (Amazon Polly). | `features/tts.py` |
+| `GET /api/assessments/<id>/roadmap` | submitter or staff | The 12-week roadmap with points, streak, level and badges. | `features/milestones.py` |
+| `POST /api/assessments/<id>/roadmap/tasks/<task>` | submitter or staff | Tick or untick a step (`{done}`); returns what to celebrate. | `features/milestones.py` |
+| `GET /api/assessments/<id>/roadmap/week/<n>.pdf` | submitter or staff | One roadmap week as a one-page PDF. | `features/milestones.py` |
+| `POST /api/drafts`, `GET`/`POST /api/drafts/<token>` | signed in | Create, resume and save a questionnaire draft. | `features/drafts.py` |
+| `POST /api/drafts/<token>/share` | signed in | A link that answers only one area, for a teammate (with their role). | `features/drafts.py` |
+| `GET /api/staff/analytics` | staff | Network dashboard data: totals, per-area results, most common gaps, cohorts, organizations, support requests. | `app.py`, `db.py` |
+| `GET /api/staff/bi` | staff | Gaps and training needs, filtered by program model, size, budget, state or who answered. | `features/bi.py` |
+| `POST /api/staff/ask` | staff | "Ask the data": the model picks a pre-built analysis; code computes the table. | `features/bi.py` |
+| `GET /api/staff/network-report.pdf` | staff | The network report PDF. | `features/bi.py` |
+| `GET /api/staff/peers/<org_id>` | staff | Similar grantees for one organization. | `features/peers.py` |
+| `GET /api/staff/roadmaps` | staff | Roadmap follow-through per organization. | `features/milestones.py` |
+| `POST /api/staff/briefs` | staff | AI training briefs from aggregated counts only. | `features/staff_ai.py` |
+
+"Submitter" means the sign-in session that created the assessment. To add a route, add a module to `features/` that defines a Blueprint named `bp` (and an optional `<name>.sql` schema); `app.py` registers it automatically.
+
 ## Layout
 
 | Path | Purpose |
@@ -172,7 +209,7 @@ Optional env: `STACK`, `DB_STACK`, `AWS_REGION`, `EXTRA_DOCS` (extra public Know
 | `data/samples.json` | Metadata for the three synthetic sample organizations (answers come from `benchmark/`). |
 | `engine/`, `utils/`, `benchmark/`, `verify_benchmark.py` | Reference scoring engine, loader, synthetic answer key and checker. |
 | `infra/template.yaml`, `infra/database.yaml`, `scripts/` | CloudFormation (app and database stacks) and build/deploy scripts. |
-| `tests/` | Unit tests: model-output grounding and Start-here selection, reading level and rewrite checks, guardrail handling, coach validation and limits, drafts merge rules, re-assessment comparison. |
+| `tests/` | Unit tests: scoring engine edge cases, model-output grounding and Start-here selection, reading level and rewrite checks, guardrail handling, coach validation and limits, drafts merge rules, re-assessment comparison. |
 | `docs/pitch/` | Hackathon pitch deck (open `index.html`, arrow keys, `n` for notes) and demo script. |
 
 ## Scoring

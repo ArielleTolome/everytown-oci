@@ -154,6 +154,8 @@ def report_quota(view):
 @login_required()
 @report_quota
 def create_assessment():
+    """Validate a submission, score it with the reference engine, and start the AI steps. 201 {id}, or 400 with
+    {errors, missing} where `missing` lists statements not answered yes or no."""
     b = body()
     errors = {}
     name = str(b.get("org_name", "")).strip()[:200]
@@ -256,6 +258,7 @@ def compare(prev, sub):
 
 
 def submit(org, answers, domains, source, profile=None):
+    """Score, compare with this sign-in's previous assessment of the same organization, store, start the AI job."""
     sub = build_assessment(org, answers, domains, profile)
     owner = session.get("owner")
     prev = db.latest_for(sub["org_name"], owner)
@@ -266,6 +269,7 @@ def submit(org, answers, domains, source, profile=None):
 
 
 def start_job(sid):
+    """Run the AI steps off the request: an async self-invoke on Lambda (OCI_WORKER_FN), else a local thread."""
     if WORKER_FN:
         boto3.client("lambda").invoke(FunctionName=WORKER_FN, InvocationType="Event",
                                       Payload=json.dumps({"oci_sid": sid}).encode())
@@ -340,6 +344,7 @@ def _run_steps(sub, raw, root):
 @app.route("/api/assessments/<sid>")
 @login_required()
 def get_assessment(sid):
+    """The stored assessment document: scores, gaps, progress since last time and, once ready, the report."""
     sub = load(sid)
     if sub and session["user"]["role"] != "staff":
         sub.pop("trace", None)  # the AI trace audit link is for Everytown staff only
@@ -349,6 +354,7 @@ def get_assessment(sid):
 @app.route("/api/assessments/<sid>/status")
 @login_required()
 def status(sid):
+    """Polled by the results page while the AI steps run (status: running, done or error)."""
     sub = load(sid)
     if not sub:
         return error("Report not found.", 404)
@@ -374,6 +380,7 @@ def request_support(sid):
 @app.route("/api/assessments/<sid>/retry", methods=["POST"])
 @login_required()
 def retry(sid):
+    """Rerun only the steps that did not finish; scores are never recomputed. A no-op unless the report failed."""
     sub = load(sid)
     if not sub:
         return error("Report not found.", 404)
@@ -390,6 +397,7 @@ def retry(sid):
 @app.route("/api/assessments/<sid>/report.pdf")
 @login_required()
 def pdf(sid):
+    """The PDF report, built on request from the stored document (nothing is cached)."""
     sub = load(sid)
     if not sub:
         return error("Report not found.", 404)
@@ -403,6 +411,7 @@ def pdf(sid):
 @app.route("/api/staff/analytics")
 @login_required(role="staff")
 def analytics():
+    """Network dashboard for Everytown staff, computed from each organization's latest assessment."""
     return jsonify(db.analytics(get_domains(), get_stage_names()))
 
 

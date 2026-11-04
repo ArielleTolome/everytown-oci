@@ -2,6 +2,8 @@
 
 _AWS Breaking Barriers hackathon MVP, derived from the OCI scoping session_
 
+> **Status:** this is the original pre-build brief, kept as written. The build kept its core rules (deterministic scoring, a hardcoded Bedrock pipeline, AWS only, synthetic data) but changed the hosting and storage: it runs on one Lambda behind CloudFront with Aurora PostgreSQL Serverless v2 and a Bedrock Knowledge Base, not locally with a local data store. See the [README](../README.md#architecture) for what was built and why.
+
 ## Technical Summary
 
 The MVP adds an LLM orchestration layer to an existing deterministic Python prototype. The current prototype has a Render back end, a minimal UI, a questionnaire, and a deterministic scoring algorithm with no AI component. The hackathon work keeps the scoring in code and adds a hardcoded, multi-step pipeline on Amazon Bedrock (Claude) that generates personalized recommendations. The build runs in sandbox hackathon environments and is handed off as a forkable GitHub repository with CloudFormation templates so Everytown Labs can iterate toward production rather than rebuild.
