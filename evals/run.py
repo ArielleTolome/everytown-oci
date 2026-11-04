@@ -1,29 +1,32 @@
-"""Run an eval suite against the real AI steps on Bedrock, score it, and optionally log it to Phoenix.
+"""Run an eval suite against the real AI steps on Bedrock, score it, and publish the scores to CloudWatch.
 
     python3 -m evals.run --suite reports|coach|staff_ask|all [--limit N] [--judges/--no-judges]
-                         [--phoenix/--no-phoenix] [--model ID] [--compare ID] [--name NAME]
+                         [--cloudwatch/--no-cloudwatch] [--model ID] [--compare ID] [--name NAME]
 
 Always writes evals/results/<timestamp>-<suite>.json and .md (per-evaluator mean score, pass rate, worst case) and
 prints the table. Exit code 1 when any gate check (checks.GATES) fails or errors, so it can block a release.
-With Phoenix (OCI_PHOENIX_ENDPOINT + OCI_PHOENIX_API_KEY), the dataset is uploaded once per content hash and
-the run is a Phoenix experiment named "<suite> <model> <git sha>" with every evaluator score attached.
+With CloudWatch (the default), each suite's metrics go to namespace EverytownOCI/Evals and one JSON event per
+example plus a summary event go to log group /everytown-oci/evals, one log stream per run.
 """
 import argparse
 import copy
-import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 RESULTS = os.path.join(HERE, "results")
 SUITES = ("reports", "coach", "staff_ask")
-EVALS_PROJECT = "everytown-oci-evals"
+NAMESPACE = "EverytownOCI/Evals"
+LOG_GROUP = "/everytown-oci/evals"
+CONSOLE = "https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2#"
 # USD per million tokens (input, output, cache read, cache write). shortcut: list prices of the Claude 4.5
 # generation as an estimate; update when Bedrock publishes prices for the model ids in use.
 PRICES = {"sonnet": (3.0, 15.0, 0.30, 3.75), "haiku": (1.0, 5.0, 0.10, 1.25), "opus": (5.0, 25.0, 0.50, 6.25)}
@@ -31,7 +34,7 @@ PRICES = {"sonnet": (3.0, 15.0, 0.30, 3.75), "haiku": (1.0, 5.0, 0.10, 1.25), "o
 
 def setup_env():
     """Must run before app, pipeline or observability are imported: they read these at import time."""
-    os.environ["OCI_PHOENIX_PROJECT"] = EVALS_PROJECT  # eval traces never mix with production traces
+    os.environ.setdefault("OCI_TRACE_SERVICE", "everytown-oci-evals")  # eval traces never mix with production
     if ROOT not in sys.path:
         sys.path.insert(0, ROOT)
     try:
@@ -237,60 +240,65 @@ def run_local(suite, rows, evals):
     return out
 
 
-# ---------- Phoenix ----------
+# ---------- CloudWatch ----------
 
-def phoenix_client():
-    from phoenix.client import Client
-    return Client(base_url=os.environ["OCI_PHOENIX_ENDPOINT"], api_key=os.environ.get("OCI_PHOENIX_API_KEY"))
+def metric_data(suite, table, gate_failures, cost):
+    """The summary table as CloudWatch MetricData; names and dimensions are what the dashboard searches for."""
+    out = []
+    for t in table:
+        dims = [{"Name": "Suite", "Value": suite}, {"Name": "Evaluator", "Value": t["evaluator"]}]
+        for metric, key in (("MeanScore", "mean"), ("PassRate", "pass_rate")):
+            if t[key] is not None:
+                out.append({"MetricName": metric, "Dimensions": dims, "Value": float(t[key]), "Unit": "None"})
+    suite_dim = [{"Name": "Suite", "Value": suite}]
+    return out + [{"MetricName": "GateFailures", "Dimensions": suite_dim, "Value": float(len(gate_failures)),
+                   "Unit": "Count"},
+                  {"MetricName": "CostUSD", "Dimensions": suite_dim, "Value": float(cost), "Unit": "None"}]
 
 
-def dataset_name(suite, rows):
-    digest = hashlib.sha256("\n".join(json.dumps(r, sort_keys=True) for r in rows).encode()).hexdigest()[:8]
-    return "oci-%s-%s" % (suite, digest)
-
-
-def upload(client, suite, rows):
-    """The dataset named by suite and content hash: reused when it exists, so experiments on the same data compare;
-    a changed dataset gets a new name instead of silently mixing versions."""
-    name = dataset_name(suite, rows)
+def _create(fn, **kw):
     try:
-        return client.datasets.get_dataset(dataset=name)
-    except Exception:
+        fn(**kw)
+    except fn.__self__.exceptions.ResourceAlreadyExistsException:
         pass
-    return client.datasets.create_dataset(
-        name=name, dataset_description="Everytown OCI %s eval set (evals/datasets/%s.jsonl), synthetic only."
-        % (suite, suite), inputs=[r["input"] for r in rows], outputs=[r["expected"] for r in rows],
-        metadata=[dict(r["metadata"], eval_id=r["id"]) for r in rows])
 
 
-def run_phoenix(client, suite, rows, chosen, evals, experiment_name, metadata):
-    from phoenix.client.experiments import create_evaluator
-    from phoenix.client.resources.datasets import Dataset
-
-    full = upload(client, suite, rows)
-    want = {r["id"] for r in chosen}
-    examples = [e for e in full.examples if (e.get("metadata") or {}).get("eval_id") in want]
-    dataset = Dataset(full._dataset_info, dict(full._examples_data, examples=examples))  # the --limit subset
-    wrapped = {name: create_evaluator(kind="CODE" if name == "code_checks" else "LLM", name=name)(fn)
-               for name, fn in evals.items()}
-    ran = client.experiments.run_experiment(
-        dataset=dataset, task=TASKS[suite], evaluators=wrapped, experiment_name=experiment_name,
-        experiment_metadata=metadata, timeout=900, retries=0, print_summary=False)
-    by_example = {e["id"]: e for e in examples}
-    by_run = {}
-    for run in ran["task_runs"]:
-        example = by_example[run["dataset_example_id"]]
-        by_run[run["id"]] = {"id": example["metadata"]["eval_id"],
-                             "metadata": {k: v for k, v in example["metadata"].items() if k != "eval_id"},
-                             "output": run.get("output") or {"error": run.get("error") or "no output"}, "evals": []}
-    for ev in ran["evaluation_runs"]:
-        row = by_run.get(ev.experiment_run_id)
-        if row is not None:
-            res = ev.result if isinstance(ev.result, dict) else {}
-            row["evals"].append({"name": ev.name, "score": res.get("score"), "label": res.get("label") or (
-                "error" if ev.error else None), "explanation": res.get("explanation") or ev.error})
-    url = client.experiments.get_experiment_url(dataset_id=full.id, experiment_id=ran["experiment_id"])
-    return sorted(by_run.values(), key=lambda r: [c["id"] for c in chosen].index(r["id"])), url
+def publish(suite, run, meta, results, table, gate_failures, cost):
+    """Metrics plus one log event per example and a summary event, in a new log stream for this run."""
+    import boto3
+    cw = boto3.client("cloudwatch")
+    data = metric_data(suite, table, gate_failures, cost)
+    for i in range(0, len(data), 1000):
+        cw.put_metric_data(Namespace=NAMESPACE, MetricData=data[i:i + 1000])
+    logs = boto3.client("logs")
+    _create(logs.create_log_group, logGroupName=LOG_GROUP)
+    logs.put_retention_policy(logGroupName=LOG_GROUP, retentionInDays=90)
+    stream = "%s-%s-%s" % (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"), suite,
+                           re.sub(r"[^A-Za-z0-9._-]+", "-", run).strip("-"))[:512]
+    _create(logs.create_log_stream, logGroupName=LOG_GROUP, logStreamName=stream)
+    base = {"run": run, "suite": suite, "model": meta["model"], "git_sha": meta["git_sha"]}
+    events = []
+    for row in results:  # bounded fields keep every event far under the 256 KB limit
+        ev = dict(base, id=row["id"], metadata=row["metadata"], evals=[
+            {"name": e["name"], "score": e.get("score"), "label": e.get("label"),
+             "explanation": (e.get("explanation") or "")[:1000]} for e in row["evals"]])
+        if isinstance(row["output"], dict) and row["output"].get("error"):
+            ev["error"] = str(row["output"]["error"])[:1000]
+        events.append(ev)
+    events.append(dict(base, summary=table, gate_failures=gate_failures[:200], cost=round(cost, 4)))
+    now = int(time.time() * 1000)
+    batch, size = [], 0
+    for ev in events + [None]:
+        msg = json.dumps(ev, ensure_ascii=False, default=str) if ev is not None else ""
+        if batch and (ev is None or size + len(msg.encode()) + 26 > 900_000):
+            logs.put_log_events(logGroupName=LOG_GROUP, logStreamName=stream, logEvents=batch)
+            batch, size = [], 0
+        if ev is not None:
+            batch.append({"timestamp": now, "message": msg})
+            size += len(msg.encode()) + 26
+    print("CloudWatch log stream: %s\n  %slogsV2:log-groups/log-group/$252Feverytown-oci-evals/log-events/%s\n"
+          "CloudWatch metrics: %smetricsV2?graph=~()&query=~'*7bEverytownOCI*2fEvals*2cEvaluator*2cSuite*7d"
+          % (stream, CONSOLE, quote(stream, safe="").replace("%", "$25"), CONSOLE), flush=True)
 
 
 # ---------- summary ----------
@@ -355,33 +363,31 @@ def run_suite(suite, args, model, meter):
     else:
         pipeline.FAST_MODEL_ID = model or pipeline.FAST_MODEL_ID
         model = pipeline.FAST_MODEL_ID
-    rows = load(suite)
-    chosen = pick(rows, args.limit)
-    evals = evaluators(suite, args.judges)
+    chosen = pick(load(suite), args.limit)
     sha = git_sha()
     name = "%s%s %s %s" % (args.name + " " if args.name else "", suite, model, sha)
     meta = {"suite": suite, "model": model, "git_sha": sha, "judges": args.judges, "limit": args.limit,
             "examples": len(chosen)}
     before = meter.cost()
     start = time.time()
-    url = None
-    if args.phoenix:
-        results, url = run_phoenix(phoenix_client(), suite, rows, chosen, evals, name, meta)
-    else:
-        results = run_local(suite, chosen, evals)
+    results = run_local(suite, chosen, evaluators(suite, args.judges))
     table, gate_failures = summarize(results)
+    cost = meter.cost() - before
     extra = {"Model": model, "Examples": len(chosen), "Minutes": round((time.time() - start) / 60, 1),
-             "Estimated Bedrock cost (USD)": "%.2f" % (meter.cost() - before)}
-    if url:
-        extra["Phoenix experiment"] = url
+             "Estimated Bedrock cost (USD)": "%.2f" % cost}
     md = markdown(name, table, gate_failures, extra)
     for row in results:  # keep result files reviewable: raw model output is summarized, not stored twice
         raw = row["output"].pop("raw", None) if isinstance(row["output"], dict) else None
         if isinstance(raw, dict):
             row["output"]["raw_counts"] = {k: len(raw.get(k) or []) for k in ("focus", "plan")}
     path = write_results(suite, {"experiment": name, "meta": meta, "summary": table, "gate_failures": gate_failures,
-                                 "usage": meter.report(), "phoenix_url": url, "results": results}, md)
+                                 "usage": meter.report(), "results": results}, md)
     print("\n" + md + "\nWrote %s.json and .md\n" % os.path.relpath(path, ROOT), flush=True)
+    if args.cloudwatch:
+        try:
+            publish(suite, name, meta, results, table, gate_failures, cost)
+        except Exception as exc:  # publishing is reporting only; it never changes the gate result
+            print("WARNING: CloudWatch publish failed: %s: %s" % (type(exc).__name__, exc), flush=True)
     return table, gate_failures
 
 
@@ -391,14 +397,12 @@ def parse_args(argv=None):
     p.add_argument("--limit", type=int, default=0, help="at most N examples per suite (0 = all)")
     p.add_argument("--judges", action=argparse.BooleanOptionalAction, default=True,
                    help="LLM judges (Claude Haiku); --no-judges for code checks only")
-    p.add_argument("--phoenix", action=argparse.BooleanOptionalAction, default=None,
-                   help="log datasets and experiments to Phoenix (default: on when OCI_PHOENIX_ENDPOINT is set)")
+    p.add_argument("--cloudwatch", action=argparse.BooleanOptionalAction, default=True,
+                   help="publish metrics and per-example log events to CloudWatch (default: on)")
     p.add_argument("--model", help="model under test: the report writer for reports, the fast model otherwise")
     p.add_argument("--compare", metavar="MODEL", help="run the same suite again with this model, for A/B")
     p.add_argument("--name", default="", help="experiment name prefix")
     args = p.parse_args(argv)
-    if args.phoenix is None:
-        args.phoenix = bool(os.environ.get("OCI_PHOENIX_ENDPOINT"))
     if args.limit < 0:
         p.error("--limit must be 0 or more")
     return args

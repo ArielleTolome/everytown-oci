@@ -34,9 +34,9 @@ export interface Bi {
 
 export const pct = (n: number | null | undefined) => (n == null ? "" : `${Math.round(n)}%`);
 export const report = (r: Ref, label = r.name) => `<a href="/results/?id=${encodeURIComponent(r.assessment_id)}">${esc(label)}<span class="visually-hidden"> report</span></a>`;
-/** v1.1 staff-only audit link to the latest report's AI trace in Arize Phoenix (its own sign-in). */
+/** Staff-only audit link to the latest report's AI trace in the Amazon CloudWatch console (AWS sign-in). */
 export const traceLink = (url: string | null | undefined) => (url && /^https?:\/\//.test(url)
-  ? `<p class="trace-link" data-no-print>${icon("search")}<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">View AI trace (staff)<span class="visually-hidden"> (opens Phoenix in a new tab)</span></a></p>`
+  ? `<p class="trace-link" data-no-print>${icon("search")}<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">View AI trace in CloudWatch (staff)<span class="visually-hidden"> (opens the AWS console in a new tab)</span></a></p>`
   : "");
 const head = (id: string, eyebrow: string, title: string, extra = "") =>
   `<div class="section-head"><div><span class="eyebrow">${esc(eyebrow)}</span><h2 id="${id}">${esc(title)}</h2></div>${extra}</div>`;

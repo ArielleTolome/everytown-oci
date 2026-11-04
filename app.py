@@ -21,7 +21,7 @@ import report
 from engine.scoring import calculate_recommendations
 from utils.data_loader import get_domains, get_stage_names, get_stage_weights
 
-observability.setup()  # no-op unless OCI_PHOENIX_ENDPOINT is set
+observability.setup()  # no-op unless OCI_TRACES=xray
 
 USERS = {"demo": ("demo", "org"), "staff": ("staff", "staff")}  # mocked login, per the vision doc
 PRIORITY_DOMAINS = ["PL", "FR", "FM", "ML"]
@@ -287,7 +287,7 @@ def run_job(sid):
         except Exception:
             app.logger.exception("trace attributes failed for %s", sid)
     with observability.span("oci.report", "CHAIN", **attrs) as root:
-        if observability.enabled():  # staff-only audit link to this run's trace in Phoenix
+        if observability.enabled():  # staff-only audit link to this run's trace in the CloudWatch console
             sub["trace"] = observability.trace_link(observability.current_trace_id())
         with observability.span("score", "CHAIN", **observability.score_attrs(sub)):
             pass  # the engine ran at submit time; this span records its result

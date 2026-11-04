@@ -5,8 +5,8 @@
 #   DB_MIN_CAPACITY (Aurora ACUs; 0 = auto-pause after an idle hour), EXTRA_DOCS (dir of extra KB docs),
 #   RESERVED_CONCURRENCY (Lambda cap, template default 5), MONTHLY_BUDGET_USD (cost budget, template default 100;
 #   0 skips it, needed where budgets:ModifyBudget is denied). Unset values keep the stack's previous setting.
-# AI tracing: when infra/.phoenix.env exists (from scripts/deploy_observability.sh), its PHOENIX_URL and PHOENIX_API_KEY
-#   are passed to the app; otherwise the stack keeps its previous Phoenix settings.
+# Observability (account and Region settings CloudFormation cannot express, both idempotent): CloudWatch Transaction
+#   Search receives the app's OpenTelemetry spans, and Bedrock model invocation logging writes to the stack's log group.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -71,11 +71,6 @@ APP_PARAMS=(CodeBucket="$ARTIFACTS" CodeKey="$KEY" SecretKey="$(cat infra/.secre
   DbClusterArn="$DB_CLUSTER_ARN" DbSecretArn="$DB_SECRET_ARN" DbName="$DB_NAME")
 [ -n "${RESERVED_CONCURRENCY:-}" ] && APP_PARAMS+=(ReservedConcurrency="$RESERVED_CONCURRENCY")
 [ -n "${MONTHLY_BUDGET_USD:-}" ] && APP_PARAMS+=(MonthlyBudgetUsd="$MONTHLY_BUDGET_USD")
-if [ -s infra/.phoenix.env ]; then
-  # shellcheck source=/dev/null
-  APP_PARAMS+=("PhoenixEndpoint=$(. infra/.phoenix.env; printf %s "${PHOENIX_URL:-}")"
-    "PhoenixApiKey=$(. infra/.phoenix.env; printf %s "${PHOENIX_API_KEY:-}")")
-fi
 aws cloudformation deploy --stack-name "$STACK" --template-file infra/template.yaml \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset \
   --parameter-overrides "${APP_PARAMS[@]}"
@@ -85,6 +80,20 @@ DIST=$(out "$STACK" DistributionId)
 DOCS=$(out "$STACK" DocsBucket)
 KB=$(out "$STACK" KnowledgeBaseId)
 DS=$(out "$STACK" DataSourceId)
+
+# 3b. CloudWatch Transaction Search: X-Ray may write spans to the aws/spans log group, and traces go there.
+aws logs put-resource-policy --policy-name TransactionSearchXRayAccess --policy-document "{\"Version\":\"2012-10-17\",
+  \"Statement\":[{\"Sid\":\"TransactionSearchXRayAccess\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"xray.amazonaws.com\"},
+  \"Action\":\"logs:PutLogEvents\",\"Resource\":[\"arn:aws:logs:$REGION:$ACCOUNT:log-group:aws/spans:*\",
+  \"arn:aws:logs:$REGION:$ACCOUNT:log-group:/aws/application-signals/data:*\"],\"Condition\":{\"ArnLike\":
+  {\"aws:SourceArn\":\"arn:aws:xray:$REGION:$ACCOUNT:*\"},\"StringEquals\":{\"aws:SourceAccount\":\"$ACCOUNT\"}}}]}" >/dev/null
+[ "$(aws xray get-trace-segment-destination --query Destination --output text)" = CloudWatchLogs ] ||
+  aws xray update-trace-segment-destination --destination CloudWatchLogs >/dev/null  # active after about 10 minutes
+
+# 3c. Bedrock model invocation logging (text only) for CloudWatch generative AI observability. Account-wide in this Region.
+aws bedrock put-model-invocation-logging-configuration --logging-config "{\"cloudWatchConfig\":
+  {\"logGroupName\":\"$(out "$STACK" BedrockInvocationLogGroup)\",\"roleArn\":\"$(out "$STACK" BedrockLoggingRoleArn)\"},
+  \"textDataDeliveryEnabled\":true,\"imageDataDeliveryEnabled\":false,\"embeddingDataDeliveryEnabled\":false}"
 
 # 4. Site upload: fingerprinted assets cached for a year, HTML always revalidated, the rest for an hour.
 aws s3 sync --only-show-errors frontend/dist/_astro "s3://$SITE/_astro" --cache-control 'public,max-age=31536000,immutable'

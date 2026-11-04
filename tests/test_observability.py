@@ -1,8 +1,12 @@
-"""Tracing: off without OCI_PHOENIX_ENDPOINT (no network, no errors); on, one run_job is one trace with the agreed
-span tree, token counts, retriever documents, a staff-only audit link and online-check annotations."""
+"""Tracing: off without OCI_TRACES=xray (no network, no errors); on, one run_job is one trace with the agreed span
+tree, token counts, retriever documents, a staff-only CloudWatch console link and online-check metrics."""
+import contextlib
 import copy
+import io
+import json
 import os
 import sys
+import time
 import types
 import unittest
 import urllib.request
@@ -16,8 +20,6 @@ import pipeline  # noqa: E402
 
 def reset():
     observability._provider = observability._tracer = None
-    observability._endpoint = observability._key = ""
-    del observability._pending[:]
 
 
 def sample_sub(profile=None):
@@ -63,10 +65,10 @@ class TracingOff(unittest.TestCase):
         reset()
         self.addCleanup(reset)
 
-    def test_unset_endpoint_is_a_silent_noop(self):
+    def test_unset_switch_is_a_silent_noop(self):
         with mock.patch.dict(os.environ, {}, clear=False), \
                 mock.patch.object(urllib.request, "urlopen", side_effect=AssertionError("network")):
-            os.environ.pop("OCI_PHOENIX_ENDPOINT", None)
+            os.environ.pop("OCI_TRACES", None)
             observability.setup()
             self.assertFalse(observability.enabled())
             with observability.span("x", "LLM", **{"input.value": "q"}) as s:
@@ -74,10 +76,8 @@ class TracingOff(unittest.TestCase):
                 observability.set_attrs(s, {"b": 2})
                 observability.llm_request(s, {"modelId": "m"})
                 self.assertIsNone(observability.current_trace_id())
-            observability.annotate("current", "check", score=1.0, label="pass")
             observability.record_error(s, ValueError("x"))
             observability.flush()
-            self.assertEqual(observability._pending, [])
 
     def test_run_job_without_tracing_stores_no_trace(self):
         sub = sample_sub(profile="Given profile.")
@@ -89,12 +89,18 @@ class TracingOff(unittest.TestCase):
         self.assertEqual(sub["status"], "done")
         self.assertNotIn("trace", sub)
 
-    def test_annotate_never_raises(self):
-        observability.setup(exporter=self._exporter())
-        observability.annotate(object(), "bad span")  # not a span: logged, not raised
-        with mock.patch.object(observability, "_endpoint", "http://127.0.0.1:9"):
-            observability.annotate("0123456789abcdef", "ok", score=1)
-            observability.flush(timeout_s=0.5)  # connection refused: swallowed
+    def test_metric_is_an_embedded_metric_line_on_lambda_only(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("AWS_LAMBDA_FUNCTION_NAME", None)
+            observability.metric("EverytownOCI/Quality", {"Check": "grounded"}, {"CheckScore": 1.0})
+            self.assertEqual(out.getvalue(), "")  # local and container runs write no metric lines
+            os.environ["AWS_LAMBDA_FUNCTION_NAME"] = "everytown-oci-app"
+            observability.metric("EverytownOCI/Quality", {"Check": "grounded"}, {"CheckScore": 1.0, "CheckFailed": 0})
+        line = json.loads(out.getvalue())
+        self.assertEqual((line["Check"], line["CheckScore"], line["CheckFailed"]), ("grounded", 1.0, 0))
+        self.assertEqual(line["_aws"]["CloudWatchMetrics"], [{"Namespace": "EverytownOCI/Quality", "Dimensions": [["Check"]],
+                                                              "Metrics": [{"Name": "CheckScore"}, {"Name": "CheckFailed"}]}])
 
     def _exporter(self):
         from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -106,13 +112,14 @@ class TracingOn(unittest.TestCase):
         from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
         reset()
         self.addCleanup(reset)
-        p = mock.patch.object(observability, "PROJECT", "everytown-oci")  # independent of the shell's env
+        p = mock.patch.object(observability, "SERVICE", "everytown-oci")  # independent of the shell's env
         p.start()
         self.addCleanup(p.stop)
         self.exporter = InMemorySpanExporter()
         observability.setup(exporter=self.exporter)
 
     def run_job(self):
+        self.stdout = io.StringIO()
         sub = sample_sub()
         fake = FakeBedrock([g["question_id"] for g in sub["gaps"]])
         page = "<html><title>Peace Org</title><body>%s</body></html>" % ("We stop violence in our city. " * 80)
@@ -129,7 +136,8 @@ class TracingOn(unittest.TestCase):
                 mock.patch.object(pipeline, "KB_ID", "kb"), \
                 mock.patch.dict(sys.modules, {"evals": types.ModuleType("evals"), "evals.checks": checks}), \
                 mock.patch.object(observability, "flush"), \
-                mock.patch.dict(os.environ, {"OCI_PHOENIX_UI": "https://phoenix.example"}):
+                mock.patch.dict(os.environ, {"AWS_LAMBDA_FUNCTION_NAME": "everytown-oci-app"}), \
+                contextlib.redirect_stdout(self.stdout):
             app.run_job(sub["id"])
         return sub, {s.name: s for s in self.exporter.get_finished_spans()}
 
@@ -160,6 +168,8 @@ class TracingOn(unittest.TestCase):
         self.assertEqual(llm["llm.output_messages.0.message.tool_calls.0.tool_call.function.name"], "submit_report")
         self.assertIn("NOPE2", llm["llm.output_messages.0.message.tool_calls.0.tool_call.function.arguments"])
         self.assertEqual(llm["oci.stop_reason"], "tool_use")
+        self.assertEqual((llm["gen_ai.system"], llm["gen_ai.usage.input_tokens"], llm["gen_ai.usage.output_tokens"],
+                          llm["gen_ai.response.finish_reasons"]), ("aws.bedrock", 1100, 50, ("tool_use",)))
         kb = spans["library.kb_retrieve"].attributes
         self.assertEqual((kb["retrieval.documents.1.document.id"], kb["retrieval.documents.1.document.score"]),
                          ("guide1.md", 0.6))
@@ -167,23 +177,22 @@ class TracingOn(unittest.TestCase):
         self.assertEqual((v["oci.plan_in"], v["oci.dropped.no_grounded_gap_id"], v["oci.dropped.unknown_gap_id_removed"]),
                          (2, 1, 2))
 
-    def test_audit_link_and_online_check_annotations(self):
+    def test_audit_link_and_online_check_metrics(self):
         sub, spans = self.run_job()
         root = spans["oci.report"]
         trace_id = format(root.context.trace_id, "032x")
-        self.assertEqual(sub["trace"]["trace_id"], trace_id)
-        self.assertEqual(sub["trace"], {"trace_id": trace_id, "project": "everytown-oci",
-                                        "url": "https://phoenix.example/redirects/traces/" + trace_id})
-        notes = {n["name"]: n for n in observability._pending}
-        self.assertEqual(set(notes), {"grounded", "raw_drop_rate"})
-        self.assertEqual(notes["raw_drop_rate"]["span_id"], format(root.context.span_id, "016x"))
-        self.assertEqual((notes["raw_drop_rate"]["annotator_kind"], notes["raw_drop_rate"]["result"]["label"]),
-                         ("CODE", "fail"))
+        self.assertLess(abs(int(trace_id[:8], 16) - time.time()), 120)  # X-Ray ids start with the epoch seconds
+        xid = "1-%s-%s" % (trace_id[:8], trace_id[8:])
+        self.assertEqual(sub["trace"], {"trace_id": trace_id, "project": "everytown-oci", "url":
+                                        "https://%s.console.aws.amazon.com/cloudwatch/home?region=%s#xray:traces/%s"
+                                        % (observability.REGION, observability.REGION, xid)})
+        metrics = {m["Check"]: m for m in map(json.loads, self.stdout.getvalue().splitlines()) if "_aws" in m}
+        self.assertEqual({k: v["CheckFailed"] for k, v in metrics.items()}, {"grounded": 0, "raw_drop_rate": 1})
         self.assertEqual(root.attributes["oci.checks.failed"], ("raw_drop_rate",))
 
     def test_orgs_never_get_the_trace_link(self):
         sub = sample_sub(profile="p")
-        sub["trace"] = {"trace_id": "t", "project": "everytown-oci", "url": "https://phoenix/redirects/traces/t"}
+        sub["trace"] = {"trace_id": "t", "project": "everytown-oci", "url": observability.trace_link("t" * 32)["url"]}
         client = app.app.test_client()
         with mock.patch.object(app.db, "get", side_effect=lambda sid: copy.deepcopy(sub)):
             for user, seen in (("demo", False), ("staff", True)):

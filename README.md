@@ -17,11 +17,11 @@ AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/
 
 1. Sign in as `demo`, open **Try a synthetic sample organization** and pick one: the answers are filled in, the stages appear at once and the AI report is ready in about 40 seconds. Or answer the questionnaire yourself (choose fewer areas to go faster).
 2. On the report: **Start here**, **Your 12-week roadmap**, **Ask about your report**, **Listen**, and **Download PDF report**.
-3. Sign out, sign in as `staff`: **Training needs**, **Ask the data**, **Peers**; click an organization for its drawer and its **View AI trace (staff)** link (the trace server asks for a login; we can share one on request).
+3. Sign out, sign in as `staff`: **Training needs**, **Ask the data**, **Peers**; click an organization for its drawer and its **View AI trace in CloudWatch (staff)** link (it opens the AWS console, which needs an AWS sign-in; we can show it on request).
 
 Everything in the app is synthetic, the login is mocked, and the URL is temporary: it is torn down after judging. New reports are capped per hour across all visitors, so if one is refused, try again later or open an existing report. Pitch deck: [`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf).
 
-**Current release:** v1.3.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 8-minute run of show and demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+**Current release:** v1.4.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)). AI observability runs on Amazon CloudWatch (see [Observability and evals](#observability-and-evals-amazon-cloudwatch)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 8-minute run of show and demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 The tool is designed to sit inside the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) Grantee Portal: CSF says new grantees "complete a self-assessment that shapes their participation in cohort-based and customized training through our Community Training Institute", and the portal is where grantees "sign up for future training opportunities and complete surveys". The look follows that site (navy and royal blue, serif headlines, pill buttons, pale-blue title bands).
 
@@ -181,6 +181,8 @@ Open http://127.0.0.1:8000 and sign in with `demo` / `demo` or `staff` / `staff`
 | `OCI_SECRET_KEY` | random per start | Flask session key. Set it to keep users signed in across restarts. |
 | `OCI_MAX_REPORTS_PER_HOUR` | `30` | New reports allowed per hour across the whole demo (429 beyond it). Caps Bedrock spend. |
 | `PORT` | `8000` | Local API port. |
+| `OCI_TRACES` | unset | `xray` sends OpenTelemetry spans to AWS X-Ray / CloudWatch Transaction Search (SigV4, needs `AWSXrayWriteOnlyAccess`); unset, tracing is off. |
+| `OCI_TRACE_SERVICE` | `everytown-oci` | OpenTelemetry `service.name` (the evals use `everytown-oci-evals`). |
 
 ## Layout
 
@@ -192,6 +194,7 @@ Open http://127.0.0.1:8000 and sign in with `demo` / `demo` or `staff` / `staff`
 | `features/` | Feature modules, each a Flask Blueprint auto-registered by `app.py`: `coach.py` (Ask about your report), `tts.py` (Polly audio), `drafts.py` (save, resume, share an area), `orgmeta.py` (organization details, respondent roles, budgets), `staff_ai.py` (training briefs), `milestones.py` (12-week roadmap, gamification, weekly PDF), `bi.py` (staff BI, Ask the data, network report PDF), `peers.py` (similarity and peer groups), `peers_request.py` (connect requests). |
 | `frontend/public/content/` | `glossary.json` and `questions_es.json`, generated once offline by `scripts/gen_content.py` and reviewed (re-running it overwrites the manual fixes). |
 | `pipeline.py` | Website research, Knowledge Base retrieval, structured report generation and its validation. |
+| `observability.py` | OpenTelemetry tracing to AWS X-Ray (OpenInference and `gen_ai` attributes), the staff CloudWatch trace link, and online-check metrics in CloudWatch embedded metric format. |
 | `lambda_handler.py` | Lambda entry point: web requests to Flask, `{"oci_sid": ...}` events to the pipeline. |
 | `report.py` | PDF report, mirroring the sample reports' layout plus the AI sections. |
 | `frontend/` | Astro 5 static site (TypeScript, no UI framework) in Everytown colors. Fonts in `frontend/public/fonts/` (Atkinson Hyperlegible and Noto Sans Math, both OFL) are also used by the PDF. |
@@ -253,119 +256,51 @@ A bug bash runs one `e2e explore` per charter in `qa/bugbash-charters.txt` (one 
 
 The first bug bash (v1.3.0) ran 8 charters on the production build in the container (about 7.6M Bedrock tokens), plus an API fuzz of every route and a read of the sign-in code: 19 findings, 9 confirmed and fixed (issues #1 to #9, among them an open redirect on sign-in and 500 errors on non-object JSON bodies), 10 rejected with the reason (intended design, explorer artifacts, or not reproducible). axe-core found no WCAG 2.2 A or AA violations on any page or staff tab at 1280 and 375 px.
 
-## Observability and evals
+## Observability and evals (Amazon CloudWatch)
 
-Every AI step (research, Knowledge Base search, report writing, coach, staff questions, read-aloud) is traced to
-[Arize Phoenix](https://github.com/Arize-ai/phoenix), an open source tracing and eval tool. Phoenix runs on its own
-server in its own CloudFormation stack, `everytown-oci-obs`, so the app and its audit trail have separate lifecycles.
-Staff use it to see what the AI was given, what it returned, what the code kept or dropped, and how long each step took.
-Eval runs (see `evals/README.md`) store their datasets and experiment results there too.
+Every AI step is traced with OpenTelemetry and lands in Amazon CloudWatch; there is no observability server to run.
 
 ```mermaid
 flowchart LR
-  L[App Lambda] -- OTLP/HTTP + system API key --> CF[CloudFront HTTPS]
-  E[evals/run.py] -- REST + API key --> CF
-  S[Staff browser] -- login, secure cookies --> CF
-  CF -- HTTP :6006, CloudFront addresses only --> P[EC2 t3.small: Phoenix container]
-  P --> V[(Encrypted EBS /data: SQLite)]
+  L[App Lambda] -- OTLP/HTTP spans, SigV4 --> X[X-Ray OTLP endpoint]
+  X --> TS[CloudWatch Transaction Search<br/>aws/spans log group]
+  L -- embedded metric format --> Q[CloudWatch metrics<br/>EverytownOCI/Quality]
+  B[Amazon Bedrock] -- model invocation logging --> BL[CloudWatch Logs<br/>model-invocations]
+  B -- AWS/Bedrock metrics --> GA[CloudWatch generative AI observability]
+  E[evals/run.py] -- PutMetricData, PutLogEvents --> EV[EverytownOCI/Evals metrics<br/>/everytown-oci/evals logs]
+  TS & Q & BL & EV --> D[CloudWatch dashboard + alarms]
 ```
 
-### Deploy
-
-```bash
-scripts/deploy_observability.sh   # about 6 minutes the first time, seconds afterwards
-scripts/deploy.sh                 # passes PHOENIX_URL and PHOENIX_API_KEY to the Lambda
-```
-
-`deploy_observability.sh` is idempotent. On the first run it generates the Phoenix secrets and the admin's initial
-password into `infra/.phoenix.env` (mode 600, git-ignored, never printed), picks a default-VPC subnet and the current
-Amazon Linux 2023 AMI, and deploys `infra/observability.yaml`. It then waits until `<PhoenixUrl>/healthz` answers through
-CloudFront, creates a system API key named `everytown-oci-app`, creates the projects `everytown-oci` (live app) and
-`everytown-oci-evals`, and saves `PHOENIX_URL` and `PHOENIX_API_KEY` in the same file. Later runs keep the subnet, AMI
-and a still-working key.
-
-The app reads `OCI_PHOENIX_ENDPOINT`, `OCI_PHOENIX_API_KEY`, `OCI_PHOENIX_PROJECT` (default `everytown-oci`) and
-`OCI_PHOENIX_UI`. Without an endpoint, tracing is off. For local development, point them at a local Phoenix
-(`http://127.0.0.1:6006`) or at the deployed URL and key from `infra/.phoenix.env`.
-
-### Log in
-
-Open the `PhoenixUrl` printed by the script (also the stack output). Sign in as `admin@localhost` with
-`PHOENIX_ADMIN_INITIAL_PASSWORD` from `infra/.phoenix.env`. Phoenix asks for a new password on the first login; keep
-the new one in your team's password manager (the deployed sandbox's current one is `PHOENIX_ADMIN_PASSWORD` in the same
-file). Add staff accounts under Settings, Users. Staff see a "View AI trace" link on each report that opens its trace.
-
-### Rotate the app's API key
-
-1. Delete the `PHOENIX_API_KEY=` line from `infra/.phoenix.env`.
-2. Run `scripts/deploy_observability.sh` (it creates a new system key), then `scripts/deploy.sh`.
-3. In Phoenix, Settings, API Keys, delete the old `everytown-oci-app` key.
-
-The Phoenix secrets and the admin initial password are fixed at the instance's first boot. To change them, edit
-`/etc/phoenix.env` on the instance and recreate the container (see Upgrade below), then update `infra/.phoenix.env`.
-
-### Operate
-
-- Shell access is through SSM Session Manager only (no SSH key, port 22 closed):
-  `aws ssm start-session --target <InstanceId>`.
-- Upgrade Phoenix: on the instance, `docker pull arizephoenix/phoenix:<tag>`, `docker rm -f phoenix`, then the same
-  `docker run` line as in `infra/observability.yaml` with the new tag. Also update the `PhoenixImage` default there.
-  The data on `/data` is kept.
-- A new AMI or subnet replaces the instance, and the data volume cannot attach to two instances. Do that with a
-  teardown and redeploy, or move the volume by hand.
-
-### Tear down
-
-`scripts/teardown.sh` deletes `everytown-oci-obs` along with the app and database stacks. The data volume keeps a final
-snapshot (`DeletionPolicy: Snapshot`); the script prints its id and the delete command. `infra/.phoenix.env` stays; a
-later deploy reuses its secrets and creates a fresh API key.
-
-### Cost (us-west-2, on-demand, always on)
-
-| Item | Monthly USD |
+| AWS service | What it holds |
 |---|---|
-| EC2 t3.small (730 h at $0.0208) | 15.18 |
-| EBS gp3, 20 GB root + 20 GB data ($0.08/GB) | 3.20 |
-| Public IPv4 address (Elastic IP, $0.005/h) | 3.65 |
-| CloudFront (demo traffic fits the always-free 1 TB and 10M requests) | 0 |
-| **Total** | **about 22** |
+| **CloudWatch Transaction Search** (X-Ray) | One trace per report and per coach, staff or read-aloud request (service `everytown-oci`; eval runs are `everytown-oci-evals`). Spans use OpenInference and `gen_ai.*` attributes, so CloudWatch generative AI observability and Omni read the model calls. |
+| **Bedrock model invocation logging** | Every Claude call's input and output text in `/aws/bedrock/everytown-oci/model-invocations` (14 days), behind the prebuilt Model Invocations view. |
+| **CloudWatch metrics** | `AWS/Bedrock` (invocations, tokens, latency by model), `EverytownOCI/Quality` (`CheckScore` and `CheckFailed` by `Check`, from the code checks run on every live report) and `EverytownOCI/Evals` (`MeanScore` and `PassRate` by `Suite` and `Evaluator`, `GateFailures`, `CostUSD`). |
+| **CloudWatch Logs** | `/everytown-oci/evals`: one event per eval example and one summary per run, for Logs Insights comparisons. |
+| **CloudWatch dashboard and alarms** | Dashboard `everytown-oci` (stack output `DashboardUrl`); alarms `everytown-oci-report-grounding` (a live report failed the grounded check) and `everytown-oci-app-errors`. |
 
-Stopping the instance when nobody uses it removes the EC2 line; the address and volumes are still billed. After
-teardown only the final snapshot remains (cents per month at demo size).
-
-### Security model
-
-- Phoenix authentication is on. Session cookies are `Secure` and `HttpOnly` because every browser request is HTTPS
-  through CloudFront (HTTP redirects to HTTPS).
-- The app and eval runs use a system API key, never the admin secret. The admin secret is only used by the deploy script
-  to create that key.
-- The security group admits TCP 6006 only from the AWS-managed CloudFront origin-facing prefix list; nothing else is
-  open. Direct requests to the instance time out.
-- Instance metadata needs IMDSv2 with a hop limit of 1, so the Phoenix container cannot reach the instance role, which
-  only has `AmazonSSMManagedInstanceCore`. Both EBS volumes are encrypted.
-- Known limits, acceptable for synthetic data in a sandbox: the CloudFront to instance hop is plain HTTP inside the AWS
-  network; any CloudFront distribution (not only ours) can reach the origin port, so Phoenix's own login is the access
-  control; and the secrets reach the instance as NoEcho parameters in user data, readable by anyone allowed
-  `ec2:DescribeInstanceAttribute`. Before real data: put Secrets Manager and TLS to the origin (or a private origin
-  through CloudFront VPC origins) in front of it.
+`scripts/deploy.sh` turns on the two account settings CloudFormation cannot (idempotent): Transaction Search (a CloudWatch Logs resource policy for X-Ray plus `update-trace-segment-destination CloudWatchLogs`, active about 10 minutes after the first time) and Bedrock model invocation logging to the stack's log group through `BedrockLoggingRole`. The Lambda has `OCI_TRACES=xray` and the `AWSXrayWriteOnlyAccess` managed policy; `observability.py` signs the OTLP requests itself (botocore SigV4), so there is no collector, layer or extra package. Locally, set `OCI_TRACES=xray` with AWS credentials to trace a dev run; unset, tracing is off.
 
 ### What a trace shows
 
-One trace per report (Phoenix session = assessment id): `oci.report` → `score` (fixed engine, no model) → `research.website` / `research.social` / `research.news` and `research.summarize` → `library.kb_retrieve` (documents with scores) → `report.write` (Claude: prompts, raw tool output before validation, token and cache counts, stop reason, guardrail action) → `report.validate` (how many items the code dropped and why) → `report.plain_language` (grade before and after) → `online_checks` (the code checks from `evals/checks.py`, also attached as annotations). Coach questions, staff "Ask the data", training briefs and read-aloud are traced too. Spans carry the user's role and a hashed session id, never the respondent's name. Staff open a report's trace from "View AI trace (staff)"; organizations never see it.
+One trace per report (`session.id` = assessment id): `oci.report` → `score` (fixed engine, no model) → `research.website` / `research.social` / `research.news` and `research.summarize` → `library.kb_retrieve` (documents with scores) → `report.write` (Claude: prompts, raw tool output before validation, token and cache counts, stop reason, guardrail action) → `report.validate` (how many items the code dropped and why) → `report.plain_language` (grade before and after) → `online_checks` (the code checks from `evals/checks.py`, as attributes and metrics). Coach questions, staff "Ask the data", training briefs and read-aloud are traced too. Spans carry the user's role and a hashed session id, never the respondent's name. Staff open a report's trace from "View AI trace in CloudWatch (staff)" (an AWS console sign-in); organizations never see it. Traces hold full prompts with synthetic data, so console access is the access control.
 
-![Phoenix trace of one live report: the span tree on the left, the Claude report call with its prompt, tokens and cost on the right](docs/screenshots/9-phoenix-trace.jpg)
+![CloudWatch trace of one live report: the span timeline with the Claude report call, its model, tokens and attributes](docs/screenshots/9-cloudwatch-trace.jpg)
 
 ### Evals
 
-`evals/` runs the real AI steps on synthetic datasets (16 reports, 21 coach questions, 15 staff questions) and scores them with deterministic code checks (grounding, code-chosen focus, catalog-only links, crisis and score-change handling, staff-question rejection, reading level, language) and calibrated Claude Haiku judges (personalization, actionability, plain language and tone, faithfulness, coach helpfulness). Each run is a Phoenix experiment; `--compare` runs an A/B between models. The command exits nonzero when a gate check fails, so it can gate a release. See [`evals/README.md`](evals/README.md).
+`evals/` runs the real AI steps on synthetic datasets (16 reports, 21 coach questions, 15 staff questions) and scores them with deterministic code checks (grounding, code-chosen focus, catalog-only links, crisis and score-change handling, staff-question rejection, reading level, language) and calibrated Claude Haiku judges (personalization, actionability, plain language and tone, faithfulness, coach helpfulness). Each run publishes its scores to CloudWatch metrics and logs; `--compare` runs an A/B between models. The command exits nonzero when a gate check fails, so it can gate a release. See [`evals/README.md`](evals/README.md).
 
 ```
 python3 -m evals.run --suite all --limit 4      # quick check, about $0.60
-python3 -m evals.run --suite reports            # full reports suite, about $2.40
-python3 -m evals.run --suite coach --model us.anthropic.claude-haiku-5-5 --compare us.anthropic.claude-sonnet-5-5
+python3 -m evals.run --suite reports            # full reports suite, about $3
+OCI_TRACES=xray python3 -m evals.run --suite coach --model us.anthropic.claude-haiku-5-5 --compare us.anthropic.claude-sonnet-5-5
 ```
 
-![Phoenix experiment for the reports suite: mean score per evaluator, and each synthetic organization's input, expected output, report and scores side by side](docs/screenshots/10-phoenix-experiment.jpg)
+![CloudWatch dashboard everytown-oci: Bedrock invocations, tokens and latency by model, live report checks, eval scores by evaluator, and the app Lambda](docs/screenshots/10-cloudwatch-dashboard.jpg)
+
+Cost at demo volume: CloudWatch Logs ingestion and storage for spans, invocation logs and eval logs is cents a month; a few custom metrics (about $0.30 each a month) and one dashboard ($3 a month); X-Ray and Transaction Search span indexing stay within the free tier at this traffic. The Phoenix EC2 server it replaces cost about $22 a month.
+
 
 ## Security notes
 

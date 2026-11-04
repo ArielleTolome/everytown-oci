@@ -1,8 +1,9 @@
-"""Tracing for every AI step: OpenTelemetry spans with OpenInference attributes, sent to Arize Phoenix.
+"""Tracing for every AI step: OpenTelemetry spans with OpenInference and gen_ai attributes, sent to AWS X-Ray's OTLP
+endpoint (SigV4), where CloudWatch Transaction Search, generative AI observability and Omni read them.
 
-Off unless OCI_PHOENIX_ENDPOINT is set: then nothing is imported and every helper is a cheap no-op. Tracing never
-breaks a request: setup, export and annotation failures are logged and swallowed. Never put a respondent's name, a
-raw sign-in owner id or a guardrail trace (it holds unmasked values) on a span.
+Off unless OCI_TRACES=xray: then nothing is imported and every helper is a cheap no-op. Tracing never breaks a
+request: setup and export failures are logged and swallowed. Never put a respondent's name, a raw sign-in owner id or
+a guardrail trace (it holds unmasked values) on a span.
 """
 import contextlib
 import contextvars
@@ -11,19 +12,17 @@ import hashlib
 import json
 import logging
 import os
-import threading
-import urllib.request
+import random
+import time
 
 log = logging.getLogger(__name__)
-PROJECT = os.environ.get("OCI_PHOENIX_PROJECT") or "everytown-oci"
-MAX_ATTR = 60_000  # characters per attribute: a whole prompt fits; a runaway value does not bloat the export
+SERVICE = os.environ.get("OCI_TRACE_SERVICE") or "everytown-oci"
+REGION = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or "us-west-2"
+MAX_ATTR = 60_000  # characters per attribute: a whole prompt fits in X-Ray's 200 KB span limit
+QUALITY_NAMESPACE = "EverytownOCI/Quality"
 
 _provider = None
 _tracer = None
-_endpoint = ""
-_key = ""
-_pending = []  # span annotations waiting for flush(): Phoenix needs the span exported first
-_lock = threading.Lock()
 
 
 class _NoSpan:
@@ -39,29 +38,47 @@ class _NoSpan:
 NOOP = _NoSpan()
 
 
+def _exporter():
+    """OTLP/HTTP to https://xray.<region>.amazonaws.com/v1/traces, each request signed with SigV4 (service "xray")
+    using the Lambda role's (or local) credentials; no collector or extra package."""
+    import botocore.session
+    import requests
+    from botocore.auth import SigV4Auth
+    from botocore.awsrequest import AWSRequest
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
+    creds = botocore.session.Session().get_credentials()
+
+    class SigV4Session(requests.Session):
+        def post(self, url, data=None, headers=None, **kw):
+            req = AWSRequest(method="POST", url=url, data=data, headers=dict(headers or {}))
+            SigV4Auth(creds.get_frozen_credentials(), "xray", REGION).add_auth(req)
+            return super().post(url, data=data, headers=dict(req.headers), **kw)
+
+    return OTLPSpanExporter(endpoint="https://xray.%s.amazonaws.com/v1/traces" % REGION, session=SigV4Session(),
+                            timeout=5)
+
+
 def setup(exporter=None):
-    """Idempotent. `exporter` (tests) replaces the OTLP exporter with an in-memory one, exported synchronously."""
-    global _provider, _tracer, _endpoint, _key
-    if _provider is not None:
-        return
-    _endpoint = (os.environ.get("OCI_PHOENIX_ENDPOINT") or "").rstrip("/")
-    _key = os.environ.get("OCI_PHOENIX_API_KEY") or ""
-    if not (_endpoint or exporter):
+    """Idempotent. `exporter` (tests) replaces the X-Ray exporter with an in-memory one, exported synchronously."""
+    global _provider, _tracer
+    if _provider is not None or not (exporter or os.environ.get("OCI_TRACES") == "xray"):
         return
     try:
         from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
+        from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
 
-        provider = TracerProvider(resource=Resource.create({
-            "service.name": "everytown-oci", "openinference.project.name": PROJECT}))
-        if exporter:
-            provider.add_span_processor(SimpleSpanProcessor(exporter))
-        else:
-            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-            provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(
-                endpoint=_endpoint + "/v1/traces", timeout=5,
-                headers={"authorization": "Bearer " + _key} if _key else None)))
+        class XRayIds(RandomIdGenerator):
+            """X-Ray trace ids start with the epoch seconds, so console links and time-range searches find them."""
+            def generate_trace_id(self):
+                return (int(time.time()) << 96) | random.getrandbits(96)
+
+        provider = TracerProvider(id_generator=XRayIds(), resource=Resource.create({
+            "service.name": SERVICE, "deployment.environment.name": os.environ.get("OCI_STAGE") or "demo",
+            "cloud.provider": "aws", "cloud.region": REGION}))
+        provider.add_span_processor(SimpleSpanProcessor(exporter) if exporter else BatchSpanProcessor(_exporter()))
         _tracer = provider.get_tracer("everytown-oci")
         _provider = provider
     except Exception:
@@ -132,20 +149,16 @@ def current_trace_id():
     return format(ctx.trace_id, "032x") if ctx.is_valid else None
 
 
-def _span_id(span):
-    if span in (None, "current"):
-        from opentelemetry import trace
-        span = trace.get_current_span()
-    if isinstance(span, str):
-        return span
-    ctx = span.get_span_context()
-    return format(ctx.span_id, "016x") if ctx.is_valid else None
+def xray_id(trace_id):
+    """The X-Ray form of a 32-hex OpenTelemetry trace id: 1-<8 hex epoch>-<24 hex>."""
+    return "1-%s-%s" % (trace_id[:8], trace_id[8:]) if trace_id else None
 
 
 def trace_link(trace_id):
-    """{trace_id, project, url} for the assessment document; Phoenix redirects /redirects/traces/<id> to the trace."""
-    ui = (os.environ.get("OCI_PHOENIX_UI") or _endpoint).rstrip("/")
-    return {"trace_id": trace_id, "project": PROJECT, "url": "%s/redirects/traces/%s" % (ui, trace_id) if ui else None}
+    """{trace_id, project, url} for the assessment document: the trace in the CloudWatch console (AWS sign-in)."""
+    url = ("https://%s.console.aws.amazon.com/cloudwatch/home?region=%s#xray:traces/%s" % (REGION, REGION, xray_id(trace_id))
+           if trace_id else None)
+    return {"trace_id": trace_id, "project": SERVICE, "url": url}
 
 
 def owner_hash(owner):
@@ -153,41 +166,25 @@ def owner_hash(owner):
     return hashlib.sha256(owner.encode()).hexdigest()[:12] if owner else None
 
 
-def annotate(span_id_or_current, name, score=None, label=None, explanation=None, kind="CODE"):
-    """Queue a Phoenix span annotation; flush() sends it after the span itself. Best effort, never raises."""
-    if _tracer is None:
+def metric(namespace, dimensions, values):
+    """One CloudWatch metric record in embedded metric format: on Lambda, a JSON line in the function's log that
+    CloudWatch turns into metrics (no API call, no latency). Elsewhere a no-op. Never raises."""
+    if not os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
         return
     try:
-        span_id = _span_id(span_id_or_current)
-        if not span_id:
-            return
-        with _lock:
-            _pending.append({"span_id": span_id, "name": name, "annotator_kind": kind,
-                             "result": {"label": label, "score": score,
-                                        "explanation": explanation[:2000] if isinstance(explanation, str) else None}})
+        print(json.dumps(dict(dimensions, **values, _aws={"Timestamp": int(time.time() * 1000), "CloudWatchMetrics": [
+            {"Namespace": namespace, "Dimensions": [list(dimensions)], "Metrics": [{"Name": k} for k in values]}]})),
+              flush=True)
     except Exception:
-        log.exception("could not queue annotation %s", name)
-
-
-def _send_annotations(timeout_s):
-    with _lock:
-        batch = _pending[:]
-        del _pending[:]
-    if not batch or not _endpoint:
-        return
-    req = urllib.request.Request(_endpoint + "/v1/span_annotations", data=json.dumps({"data": batch}).encode(),
-                                 headers={"Content-Type": "application/json", "Authorization": "Bearer " + _key},
-                                 method="POST")
-    urllib.request.urlopen(req, timeout=timeout_s).read()
+        log.exception("could not emit metric")
 
 
 def flush(timeout_s=5):
-    """Export finished spans, then queued annotations. Called after every Lambda invocation. Never raises."""
+    """Export finished spans. Called after every Lambda invocation. Never raises."""
     if _provider is None:
         return
     try:
         _provider.force_flush(int(timeout_s * 1000))
-        _send_annotations(timeout_s)
     except Exception as exc:
         log.warning("trace export failed: %s", exc)
 
@@ -241,6 +238,10 @@ def llm_request(span, kw):
         attrs["llm.tools.%d.tool.json_schema" % i] = t.get("toolSpec")
     attrs["input.value"] = _text(messages[-1].get("content")) if messages else None
     attrs["oci.guardrail.enabled"] = "guardrailConfig" in kw
+    # OpenTelemetry gen_ai semantic conventions, which CloudWatch generative AI observability reads.
+    attrs.update({"gen_ai.system": "aws.bedrock", "gen_ai.operation.name": "chat",
+                  "gen_ai.request.model": kw.get("modelId"),
+                  "gen_ai.request.max_tokens": (kw.get("inferenceConfig") or {}).get("maxTokens")})
     set_attrs(span, attrs)
 
 
@@ -268,6 +269,9 @@ def llm_response(span, resp, guardrail):
                       p + "function.arguments": t.get("input")})
     attrs["output.value"] = json.dumps(tools[0].get("input"), ensure_ascii=False) if tools else _text(content)
     attrs["output.mime_type"] = "application/json" if tools else "text/plain"
+    attrs.update({"gen_ai.usage.input_tokens": attrs["llm.token_count.prompt"],
+                  "gen_ai.usage.output_tokens": usage.get("outputTokens"),
+                  "gen_ai.response.finish_reasons": [resp["stopReason"]] if resp.get("stopReason") else None})
     set_attrs(span, attrs)
 
 
@@ -300,10 +304,9 @@ def score_attrs(sub):
 
 
 def online_checks(sub, raw, root):
-    """Run evals.checks.report_checks on the finished report; log each result as a CODE annotation on `root` and as
-    attributes. Skipped when tracing is off or the evals package is absent. Never raises."""
-    if _tracer is None:
-        return
+    """Run evals.checks.report_checks on every finished report: each result becomes a CloudWatch metric
+    (EverytownOCI/Quality, CheckScore and CheckFailed by Check) and, when tracing is on, attributes on the
+    online_checks span and on `root`. Skipped when the evals package is absent. Never raises."""
     try:
         from evals.checks import report_checks
     except ImportError:
@@ -315,7 +318,9 @@ def online_checks(sub, raw, root):
             for r in results:
                 attrs["oci.check.%s.score" % r["name"]] = r.get("score")
                 attrs["oci.check.%s.label" % r["name"]] = r.get("label")
-                annotate(root, r["name"], score=r.get("score"), label=r.get("label"), explanation=r.get("explanation"))
+                if isinstance(r.get("score"), (int, float)):
+                    metric(QUALITY_NAMESPACE, {"Check": r["name"]},
+                           {"CheckScore": r["score"], "CheckFailed": int(r.get("label") == "fail")})
             failed = [r["name"] for r in results if r.get("label") == "fail"]
             attrs.update({"oci.checks.failed": failed or None, "oci.checks.count": len(results),
                           "output.value": {r["name"]: r.get("label") for r in results}})

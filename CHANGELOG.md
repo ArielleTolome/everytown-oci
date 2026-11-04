@@ -2,6 +2,17 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.4.0 — Observability on Amazon CloudWatch (replaces the Phoenix server)
+
+- **Traces in CloudWatch Transaction Search.** `observability.py` sends the same OpenTelemetry spans to the AWS X-Ray OTLP endpoint, signed with SigV4 (botocore, no collector or extra package), with X-Ray trace ids. LLM spans also carry OpenTelemetry `gen_ai.*` attributes (model, input and output tokens, finish reason), so CloudWatch generative AI observability and Omni read the model calls. Tracing turns on with `OCI_TRACES=xray`; the Lambda role gets `AWSXrayWriteOnlyAccess`. The staff "View AI trace in CloudWatch (staff)" link opens the trace in the CloudWatch console.
+- **Bedrock model invocation logging** to `/aws/bedrock/everytown-oci/model-invocations` through a new `BedrockLoggingRole`, behind CloudWatch's prebuilt Model Invocations view.
+- **Live quality metrics.** The code checks that run on every live report become CloudWatch metrics (`EverytownOCI/Quality`, `CheckScore` and `CheckFailed` by `Check`) in embedded metric format, with no API call. Alarm `everytown-oci-report-grounding` fires if a live report ever fails the grounded check; `everytown-oci-app-errors` watches Lambda errors.
+- **Evals in CloudWatch.** `evals.run` publishes `MeanScore`, `PassRate`, `GateFailures` and `CostUSD` to `EverytownOCI/Evals` and one log event per example to `/everytown-oci/evals` (`--cloudwatch`, on by default); eval runs trace as service `everytown-oci-evals`. Phoenix datasets and experiments are gone; the JSONL datasets and result files stay in the repo.
+- **Dashboard** `everytown-oci` in CloudFormation: Bedrock invocations, tokens and latency by model, live check failures and scores, eval scores by evaluator, gate failures and cost, Lambda health and the latest app errors.
+- `scripts/deploy.sh` turns on CloudWatch Transaction Search (X-Ray resource policy and trace destination) and Bedrock invocation logging, both idempotent; `scripts/teardown.sh` turns the logging off first.
+- Removed: the Phoenix stack `everytown-oci-obs` (deleted; its data volume kept a final snapshot), `infra/observability.yaml`, `scripts/deploy_observability.sh` and the Phoenix template parameters. About $22 a month of EC2 replaced by a few dollars of CloudWatch.
+- Pitch deck, demo script, README and `evals/README.md` updated, with CloudWatch screenshots.
+
 ## v1.3.0 — End-to-end QA with e2e: bug bash, 9 bugs filed and fixed
 
 **QA setup** (`qa/`, see README "End-to-end tests and bug bash")

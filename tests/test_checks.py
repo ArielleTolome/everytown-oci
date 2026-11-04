@@ -224,23 +224,26 @@ class Datasets(unittest.TestCase):
         rows = build_datasets.load("reports")
         self.assertEqual(run.pick(rows, 0), rows)
 
-    def test_dataset_name_follows_content(self):
-        rows = build_datasets.load("staff_ask")
-        self.assertEqual(run.dataset_name("staff_ask", rows), run.dataset_name("staff_ask", copy.deepcopy(rows)))
-        self.assertNotEqual(run.dataset_name("staff_ask", rows), run.dataset_name("staff_ask", rows[1:]))
+    def test_metric_data_matches_dashboard_contract(self):
+        table = [{"evaluator": "grounded", "mean": 0.5, "pass_rate": 0.5},
+                 {"evaluator": "personalization", "mean": 0.75, "pass_rate": None}]
+        data = run.metric_data("reports", table, ["b: grounded"], 1.25)
+        got = {(d["MetricName"], tuple((x["Name"], x["Value"]) for x in d["Dimensions"])): d["Value"] for d in data}
+        ev = lambda e: (("Suite", "reports"), ("Evaluator", e))
+        self.assertEqual(got, {("MeanScore", ev("grounded")): 0.5, ("PassRate", ev("grounded")): 0.5,
+                               ("MeanScore", ev("personalization")): 0.75,
+                               ("GateFailures", (("Suite", "reports"),)): 1.0,
+                               ("CostUSD", (("Suite", "reports"),)): 1.25})
 
 
 class Cli(unittest.TestCase):
     def test_defaults_and_flags(self):
-        with mock.patch.dict(os.environ, {"OCI_PHOENIX_ENDPOINT": ""}):
-            a = run.parse_args([])
-        self.assertEqual((a.suite, a.limit, a.judges, a.phoenix, a.model, a.compare), ("all", 0, True, False, None,
-                                                                                       None))
-        with mock.patch.dict(os.environ, {"OCI_PHOENIX_ENDPOINT": "http://127.0.0.1:6006"}):
-            self.assertTrue(run.parse_args([]).phoenix)
-            a = run.parse_args(["--suite", "coach", "--limit", "3", "--no-judges", "--no-phoenix", "--model", "m1",
-                                "--compare", "m2", "--name", "nightly"])
-        self.assertEqual((a.suite, a.limit, a.judges, a.phoenix, a.model, a.compare, a.name),
+        a = run.parse_args([])
+        self.assertEqual((a.suite, a.limit, a.judges, a.cloudwatch, a.model, a.compare), ("all", 0, True, True, None,
+                                                                                          None))
+        a = run.parse_args(["--suite", "coach", "--limit", "3", "--no-judges", "--no-cloudwatch", "--model", "m1",
+                            "--compare", "m2", "--name", "nightly"])
+        self.assertEqual((a.suite, a.limit, a.judges, a.cloudwatch, a.model, a.compare, a.name),
                          ("coach", 3, False, False, "m1", "m2", "nightly"))
 
     def test_bad_arguments_exit(self):

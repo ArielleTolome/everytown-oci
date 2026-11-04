@@ -11,8 +11,12 @@ test('Start here shows the steps already ticked on the roadmap', { session: 'sta
   // Week 1 = the first two steps of priority 1; marking them done is idempotent.
   await browser.evaluate(async (id: string) => {
     for (const task of ['w1-1', 'w1-2']) {
+      const body = JSON.stringify({ done: true });
+      // CloudFront's Lambda origin access control needs the body's SHA-256, as frontend/src/lib/api.ts sends it.
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body));
+      const sha = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
       const res = await fetch(`/api/assessments/${id}/roadmap/tasks/${task}`, {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ done: true }),
+        method: 'POST', headers: { 'content-type': 'application/json', 'x-amz-content-sha256': sha }, body,
       });
       if (!res.ok) throw new Error(`${task}: ${res.status}`);
     }

@@ -8,4 +8,3 @@ api.md
 instance/
 build/
 infra/.secret
-infra/.phoenix*

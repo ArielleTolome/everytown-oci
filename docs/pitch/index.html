@@ -252,7 +252,7 @@ figure figcaption p { font-size: 27px; }
         <g><rect x="1144" y="40" width="250" height="170" rx="14" fill="#001C60"/><text x="1269" y="92" fill="#F89C25" font-size="19" font-weight="700" letter-spacing="2">CODE</text><text x="1269" y="132" fill="#fff" font-weight="700">5 Validate</text><text x="1269" y="168" fill="#fff">own answers only</text></g>
         <g><rect x="1430" y="40" width="250" height="170" rx="14" fill="#001C60"/><text x="1555" y="92" fill="#F89C25" font-size="19" font-weight="700" letter-spacing="2">CODE + AI</text><text x="1555" y="132" fill="#fff" font-weight="700">6 Reading level</text><text x="1555" y="168" fill="#fff">grade 8.5 or below</text></g>
         <g stroke="#001C60" stroke-width="3" marker-end="url(#ah)"><line x1="250" y1="125" x2="282" y2="125"/><line x1="536" y1="125" x2="568" y2="125"/><line x1="822" y1="125" x2="854" y2="125"/><line x1="1108" y1="125" x2="1140" y2="125"/><line x1="1394" y1="125" x2="1426" y2="125"/></g>
-        <text x="0" y="22" text-anchor="start" font-size="21" fill="#455FA0">Six fixed steps, not an agent. One trace per report in Arize Phoenix.</text>
+        <text x="0" y="22" text-anchor="start" font-size="21" fill="#455FA0">Six fixed steps, not an agent. One trace per report in Amazon CloudWatch.</text>
         <text x="0" y="244" text-anchor="start" font-size="21" fill="#455FA0">Bedrock Guardrails screen untrusted text (websites, user questions). Crisis questions to the coach get a fixed 988 / 911 answer and never reach the model.</text>
       </g>
     </svg>
@@ -262,7 +262,7 @@ figure figcaption p { font-size: 27px; }
       <div class="card mark"><h3>No invented links</h3><p class="small">Resources only from a vetted 19-entry catalog of CVI guides.</p></div>
     </div>
     <div class="chips" aria-label="AWS services used">
-      <span class="chip line">Amazon CloudFront</span><span class="chip line">Amazon S3</span><span class="chip line">AWS Lambda</span><span class="chip line">Aurora PostgreSQL Serverless v2</span><span class="chip line">Amazon Bedrock: Claude, Knowledge Bases, Guardrails</span><span class="chip line">S3 Vectors</span><span class="chip line">Amazon Polly</span><span class="chip line">Amazon EC2</span><span class="chip line">AWS CloudFormation</span>
+      <span class="chip line">Amazon CloudFront</span><span class="chip line">Amazon S3</span><span class="chip line">AWS Lambda</span><span class="chip line">Aurora PostgreSQL Serverless v2</span><span class="chip line">Amazon Bedrock: Claude, Knowledge Bases, Guardrails</span><span class="chip line">S3 Vectors</span><span class="chip line">Amazon Polly</span><span class="chip line">Amazon CloudWatch</span><span class="chip line">AWS X-Ray</span><span class="chip line">AWS CloudFormation</span>
     </div>
   </div>
   <div class="foot"><span>Open source: github.com/ArielleTolome/everytown-oci</span><span>6</span></div>
@@ -276,10 +276,10 @@ figure figcaption p { font-size: 27px; }
   <div class="body" style="padding-top:20px;">
     <div style="display:grid;grid-template-columns:960px 1fr;gap:56px;align-items:start;">
       <figure>
-        <img class="shot" style="height:600px;" src="img/phoenix-trace.jpg" alt="Arize Phoenix trace of one live report: the span tree oci.report, score, four library.kb_retrieve steps, report.write, report.validate, report.plain_language and online_checks, with the Claude prompt, 32,637 tokens and a cost of 11 cents.">
+        <img class="shot" style="height:464px;" src="img/cloudwatch-trace.jpg" alt="Amazon CloudWatch trace of one live report, service everytown-oci: 10 spans in 42 seconds, from oci.report through score, four library.kb_retrieve steps, report.write, report.validate, report.plain_language and online_checks.">
       </figure>
       <div style="display:grid;gap:26px;">
-        <div><p class="metric">52 <small>synthetic test cases</small></p><p>reports, coach questions and staff questions, scored by code checks and calibrated Claude judges. Every run is a Phoenix experiment.</p></div>
+        <div><p class="metric">52 <small>synthetic test cases</small></p><p>reports, coach questions and staff questions, scored by code checks and calibrated Claude judges. Every run lands in CloudWatch metrics and logs.</p></div>
         <div>
           <h3 style="margin-bottom:12px;">The evals caught 3 real bugs before any grantee did</h3>
           <ul class="ticks">
@@ -288,12 +288,12 @@ figure figcaption p { font-size: 27px; }
             <li>Tracing was silently off after a deploy</li>
           </ul>
         </div>
-        <p class="muted small">Arize Phoenix (open source) on its own EC2 server behind CloudFront, login required. Staff open any report's trace from the dashboard.</p>
+        <p class="muted small">All in Amazon CloudWatch: Transaction Search traces, generative AI observability, Bedrock invocation logs, a dashboard and alarms. Staff open any report's trace from the dashboard.</p>
       </div>
     </div>
   </div>
   <div class="foot"><span>Release gates: grounded, code-chosen focus, catalog links only, crisis and score-change handling, unsafe staff questions rejected</span><span>7</span></div>
-  <aside class="notes">5:00 to 5:50. We did not want a black box. Every report is one trace in Arize Phoenix, an open-source observability server we host on its own EC2 instance: every prompt, the model's raw output, tokens, cost, the guardrail decision, and how many items validation dropped. Staff can open any report's trace from the dashboard. Then we built 52 synthetic test cases with code checks and calibrated judges, and they paid off: they caught three real bugs before any grantee saw them. The guardrail was blocking a normal Spanish report, "change my score" returned an error, and tracing was silently off after one deploy. All three are fixed, and the gates pass.</aside>
+  <aside class="notes">5:00 to 5:50. We did not want a black box. Every report is one trace in Amazon CloudWatch, through X-Ray and Transaction Search: every prompt, the model's raw output, tokens, the guardrail decision, and how many items validation dropped. Bedrock invocation logging keeps every model call, and CloudWatch's generative AI observability charts them by model. Staff can open any report's trace from the dashboard. The code checks run on every live report and become CloudWatch metrics, with an alarm if a report ever ships an ungrounded action. Then we built 52 synthetic test cases with code checks and calibrated judges, and they paid off: they caught three real bugs before any grantee saw them. The guardrail was blocking a normal Spanish report, "change my score" returned an error, and tracing was silently off after one deploy. All three are fixed, and the gates pass.</aside>
 </section>
 
 <!-- 8. Accessibility -->
@@ -324,7 +324,7 @@ figure figcaption p { font-size: 27px; }
   <div class="body">
     <div class="grid4">
       <div class="card mark"><p class="metric">40<small> s</small></p><p class="small">from last answer to a finished AI report</p></div>
-      <div class="card mark"><p class="metric">$0.11</p><p class="small">of Bedrock per report, measured in Phoenix</p></div>
+      <div class="card mark"><p class="metric">$0.11</p><p class="small">of Bedrock per report, from the trace's token counts</p></div>
       <div class="card mark"><p class="metric">&lt; $50</p><p class="small">a year of tokens: 140 organizations, 2 assessments each</p></div>
       <div class="card mark"><p class="metric">$1<small> to 3 / mo</small></p><p class="small">hosting with Aurora auto-pause ($45 kept warm, as today)</p></div>
     </div>
@@ -334,8 +334,8 @@ figure figcaption p { font-size: 27px; }
       <div class="card pale"><h3>Forkable by Everytown</h3><p class="small">Open source, three CloudFormation stacks, one deploy script, serverless app.</p></div>
     </div>
   </div>
-  <div class="foot"><span>Spend guards: 5 concurrent requests, an hourly report cap, optional AWS Budget. Phoenix server about $22 a month.</span><span>9</span></div>
-  <aside class="notes">6:20 to 7:00. A report takes about 40 seconds and about 11 cents of Bedrock, measured per trace in Phoenix. The whole network twice a year is under 50 dollars of tokens. Hosting is one to three dollars a month with the database on auto-pause; we keep it warm for judging at about 45 dollars. The real impact is staff time: the two people who wrote 45 reports by hand can spend that time coaching. And it closes the loop: week 12 of the roadmap is retake the OCI, and staff see whether their support moved anyone.</aside>
+  <div class="foot"><span>Spend guards: 5 concurrent requests, an hourly report cap, optional AWS Budget. Observability: CloudWatch, a few dollars a month.</span><span>9</span></div>
+  <aside class="notes">6:20 to 7:00. A report takes about 40 seconds and about 11 cents of Bedrock, from the token counts on each trace. The whole network twice a year is under 50 dollars of tokens. Hosting is one to three dollars a month with the database on auto-pause; we keep it warm for judging at about 45 dollars. The real impact is staff time: the two people who wrote 45 reports by hand can spend that time coaching. And it closes the loop: week 12 of the roadmap is retake the OCI, and staff see whether their support moved anyone.</aside>
 </section>
 
 <!-- 10. The ask -->
@@ -395,10 +395,10 @@ figure figcaption p { font-size: 27px; }
   <div class="body">
     <div class="grid3">
       <div class="card mark"><h3>Data</h3><p class="small">Synthetic organizations only. Aurora encrypted at rest, reached through the RDS Data API with an RDS-managed secret. Traces carry a role and a hashed session id, never a respondent's name.</p></div>
-      <div class="card mark"><h3>Network</h3><p class="small">One CloudFront domain. The Lambda URL accepts only IAM-signed requests from that distribution. The website fetcher blocks private addresses. Phoenix accepts traffic only from CloudFront, with login on.</p></div>
+      <div class="card mark"><h3>Network</h3><p class="small">One CloudFront domain. The Lambda URL accepts only IAM-signed requests from that distribution. The website fetcher blocks private addresses. Traces and model logs stay in CloudWatch, behind AWS sign-in.</p></div>
       <div class="card mark"><h3>Spend and abuse</h3><p class="small">5 concurrent requests, an hourly cap on new reports, 15 coach questions per report, optional AWS Budget. Secrets stay out of git.</p></div>
     </div>
-    <div class="card pale"><h3>Before production</h3><p class="small">Real sign-in replaces the mocked demo logins (today anyone signed in can open a report by its id, acceptable only for synthetic data), HTTPS from CloudFront to the Phoenix server, and an Everytown data-retention policy for traces.</p></div>
+    <div class="card pale"><h3>Before production</h3><p class="small">Real sign-in replaces the mocked demo logins (today anyone signed in can open a report by its id, acceptable only for synthetic data), CloudWatch Logs data protection to mask personal data in traces and model logs, and an Everytown retention policy for them.</p></div>
   </div>
   <div class="foot"><span>Teardown after judging: scripts/teardown.sh deletes every stack</span><span>A2</span></div>
   <aside class="notes">If asked about security or real data. Be honest about the limits: mocked login and report-by-id access are fine only because everything is synthetic. Production needs real sign-in, which is the first step of the pilot plan.</aside>
@@ -411,7 +411,7 @@ figure figcaption p { font-size: 27px; }
   <div class="body">
     <div style="display:grid;grid-template-columns:1fr 720px;gap:48px;align-items:start;">
       <table style="border-collapse:collapse;font-size:23px;width:100%;">
-        <caption class="muted small" style="text-align:left;padding-bottom:12px;">v1.1 baseline on the hosted Phoenix server. Judge scores from 0 to 1.</caption>
+        <caption class="muted small" style="text-align:left;padding-bottom:12px;">v1.1 baseline; every run publishes to CloudWatch. Judge scores from 0 to 1.</caption>
         <thead><tr style="text-align:left;border-bottom:3px solid var(--navy);"><th style="padding:10px 12px 10px 0;">Suite</th><th style="padding:10px 12px;">Cases</th><th style="padding:10px 12px;">Gate</th><th style="padding:10px 0 10px 12px;">Judges</th></tr></thead>
         <tbody>
           <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 12px 14px 0;"><strong>Reports</strong><br><span class="muted small">EN/ES samples, edge cases, prompt injection</span></td><td style="padding:14px 12px;">16</td><td style="padding:14px 12px;">Pass</td><td style="padding:14px 0 14px 12px;">personalization 0.88, actionability 0.84, faithfulness 0.75, plain language 0.72</td></tr>
@@ -420,11 +420,11 @@ figure figcaption p { font-size: 27px; }
           <tr><td style="padding:14px 12px 14px 0;"><strong>Judge calibration</strong><br><span class="muted small">good vs deliberately bad outputs</span></td><td style="padding:14px 12px;">20</td><td style="padding:14px 12px;">Pass</td><td style="padding:14px 0 14px 12px;">every judge ranks bad below good, twice in a row</td></tr>
         </tbody>
       </table>
-      <img class="shot" style="height:454px;" src="img/phoenix-experiment.jpg" alt="Phoenix experiment comparison for the reports suite: mean score per evaluator, and for each synthetic organization its input, expected output, the generated report and every evaluator's score.">
+      <img class="shot" style="height:454px;" src="img/cloudwatch-dashboard.jpg" alt="Amazon CloudWatch dashboard everytown-oci: Bedrock invocations, tokens and latency by model, live report checks, and eval suite scores by evaluator.">
     </div>
   </div>
   <div class="foot"><span>python3 -m evals.run --suite all · --compare runs a model A/B · exits nonzero when a gate fails</span><span>A3</span></div>
-  <aside class="notes">If asked how we know it works. Code checks are the release gates; Claude Haiku judges with fixed rubrics measure quality and were calibrated against deliberately bad outputs. Faithfulness at 0.75 is the score we watch: most misses are a general claim about the field that is not in the library, which is visible in Phoenix for review.</aside>
+  <aside class="notes">If asked how we know it works. Code checks are the release gates; Claude Haiku judges with fixed rubrics measure quality and were calibrated against deliberately bad outputs. Faithfulness at 0.75 is the score we watch: most misses are a general claim about the field that is not in the library, which is visible in each trace for review.</aside>
 </section>
 
 <!-- A4. Cost detail -->
@@ -438,12 +438,12 @@ figure figcaption p { font-size: 27px; }
         <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 16px 14px 0;">One AI report</td><td style="padding:14px 16px;">about $0.11</td><td style="padding:14px 0 14px 16px;">Claude Sonnet with a cached prompt, plus Haiku research; measured per trace</td></tr>
         <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 16px 14px 0;">Whole network, twice a year</td><td style="padding:14px 16px;">under $50 a year</td><td style="padding:14px 0 14px 16px;">140 organizations × 2 assessments, with room for retries and coach questions</td></tr>
         <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 16px 14px 0;">App hosting</td><td style="padding:14px 16px;">$1 to $3 a month</td><td style="padding:14px 0 14px 16px;">Aurora on auto-pause; about $45 a month kept warm at 0.5 ACU (as for judging)</td></tr>
-        <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 16px 14px 0;">Phoenix observability server</td><td style="padding:14px 16px;">about $22 a month</td><td style="padding:14px 0 14px 16px;">EC2 t3.small and an encrypted volume; optional, the app runs without it</td></tr>
+        <tr style="border-bottom:2px solid var(--light);"><td style="padding:14px 16px 14px 0;">CloudWatch observability</td><td style="padding:14px 16px;">a few dollars a month</td><td style="padding:14px 0 14px 16px;">dashboard, a few custom metrics, spans and model logs at demo volume; no server</td></tr>
         <tr><td style="padding:14px 16px 14px 0;">A full eval run</td><td style="padding:14px 16px;">about $3.50</td><td style="padding:14px 0 14px 16px;">all three suites with judges; a quick check is about $0.60</td></tr>
       </tbody>
     </table>
   </div>
-  <div class="foot"><span>Costs from the live deployment and Phoenix traces, us-west-2</span><span>A4</span></div>
+  <div class="foot"><span>Costs from the live deployment and CloudWatch traces, us-west-2</span><span>A4</span></div>
   <aside class="notes">If asked about cost or sustainability. Tokens are the smallest line. The fixed cost is the database kept warm for judging; auto-pause brings it to a few dollars a month.</aside>
 </section>
 
@@ -453,7 +453,7 @@ figure figcaption p { font-size: 27px; }
   <div class="band"><p class="kicker">Appendix · roadmap</p><h2>Built to be iterated on, not rebuilt</h2></div>
   <div class="body">
     <div class="grid3">
-      <div class="card mark"><p class="chip">Live today</p><ul class="ticks" style="margin-top:18px;"><li>All 8 areas, 143 statements</li><li>Report, PDF letter, 12-week roadmap</li><li>Staff dashboard, Ask the data, Peers</li><li>English and Spanish</li><li>Tracing and evals in Phoenix</li></ul></div>
+      <div class="card mark"><p class="chip">Live today</p><ul class="ticks" style="margin-top:18px;"><li>All 8 areas, 143 statements</li><li>Report, PDF letter, 12-week roadmap</li><li>Staff dashboard, Ask the data, Peers</li><li>English and Spanish</li><li>Tracing and evals in CloudWatch</li></ul></div>
       <div class="card mark"><p class="chip">Next, with Everytown</p><ul class="ticks" style="margin-top:18px;"><li>Pilot with 3 to 4 grantees</li><li>Real sign-in in the Grantee Portal</li><li>CSF experts review the field guides</li><li>Add pilot feedback to the eval sets</li></ul></div>
       <div class="card mark"><p class="chip">Later, as data grows</p><ul class="ticks" style="margin-top:18px;"><li>Peer benchmarking beyond the staff preview</li><li>Match new grantees with established peers</li><li>More languages</li></ul></div>
     </div>

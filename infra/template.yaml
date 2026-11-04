@@ -39,18 +39,6 @@ Parameters:
     Default: 100
     MinValue: 0
     Description: Monthly AWS cost budget in USD (tracking only, no alerts until a subscriber is added). 0 skips it, for accounts that deny budgets:ModifyBudget.
-  PhoenixEndpoint:
-    Type: String
-    Default: ""
-    Description: Arize Phoenix base URL (PhoenixUrl output of the everytown-oci-obs stack). Empty turns tracing off.
-  PhoenixApiKey:
-    Type: String
-    NoEcho: true
-    Default: ""
-    Description: Phoenix system API key for OTLP traces (created by scripts/deploy_observability.sh).
-  PhoenixProject:
-    Type: String
-    Default: everytown-oci
 
 Conditions:
   CreateBudget: !Not [!Equals [!Ref MonthlyBudgetUsd, 0]]
@@ -225,6 +213,7 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess  # OTLP spans to X-Ray / CloudWatch Transaction Search
       Policies:
         - PolicyName: app
           PolicyDocument:
@@ -287,10 +276,7 @@ Resources:
           OCI_DOMAINS: !Ref Domains
           OCI_GUARDRAIL_ID: !GetAtt Guardrail.GuardrailId
           OCI_GUARDRAIL_VERSION: !GetAtt GuardrailVersion.Version
-          OCI_PHOENIX_ENDPOINT: !Ref PhoenixEndpoint
-          OCI_PHOENIX_API_KEY: !Ref PhoenixApiKey
-          OCI_PHOENIX_PROJECT: !Ref PhoenixProject
-          OCI_PHOENIX_UI: !Ref PhoenixEndpoint
+          OCI_TRACES: xray  # observability.py: OpenTelemetry spans to X-Ray (needs Transaction Search, see deploy.sh)
 
   AsyncConfig:
     Type: AWS::Lambda::EventInvokeConfig
@@ -457,6 +443,86 @@ Resources:
         # No CustomErrorResponses: they apply to every behavior and would replace the API's JSON errors.
         # Unknown site paths get /404.html from DirectoryIndexFunction instead.
 
+  # ---------- CloudWatch: Bedrock invocation logs, dashboard, alarms ----------
+
+  BedrockInvocationLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/bedrock/${AWS::StackName}/model-invocations
+      RetentionInDays: 14
+
+  BedrockLoggingRole:  # assumed by Bedrock to write model invocation logs (scripts/deploy.sh turns the logging on)
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: bedrock.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: { aws:SourceAccount: !Ref AWS::AccountId }
+              ArnLike: { aws:SourceArn: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:*" }
+      Policies:
+        - PolicyName: invocation-logs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub ${BedrockInvocationLogGroup.Arn}
+
+  Dashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Ref AWS::StackName
+      DashboardBody: !Sub
+        - |
+          {"start": "-P1D", "widgets": [
+            {"type": "text", "x": 0, "y": 0, "width": 24, "height": 2, "properties": {"markdown": "## Everytown OCI Capacity Coach: AI observability\nEvery report is one trace in [Transaction Search](#xray:traces/query) (service `everytown-oci`; evals are `everytown-oci-evals`). Model inputs and outputs: [generative AI observability](#gen-ai-observability/model-invocations) and the `${BedrockLogs}` log group. Code scores; these charts watch the AI steps around the scores."}},
+            {"type": "metric", "x": 0, "y": 2, "width": 8, "height": 6, "properties": {"title": "Bedrock invocations by model", "region": "${AWS::Region}", "view": "timeSeries", "stat": "Sum", "period": 300, "metrics": [[{"expression": "SEARCH('{AWS/Bedrock,ModelId} MetricName=\"Invocations\"', 'Sum', 300)", "id": "e1"}]]}},
+            {"type": "metric", "x": 8, "y": 2, "width": 8, "height": 6, "properties": {"title": "Bedrock tokens by model", "region": "${AWS::Region}", "view": "timeSeries", "stat": "Sum", "period": 300, "metrics": [[{"expression": "SEARCH('{AWS/Bedrock,ModelId} MetricName=\"InputTokenCount\" OR MetricName=\"OutputTokenCount\"', 'Sum', 300)", "id": "e2"}]]}},
+            {"type": "metric", "x": 16, "y": 2, "width": 8, "height": 6, "properties": {"title": "Bedrock latency p90 (ms)", "region": "${AWS::Region}", "view": "timeSeries", "stat": "p90", "period": 300, "metrics": [[{"expression": "SEARCH('{AWS/Bedrock,ModelId} MetricName=\"InvocationLatency\"', 'p90', 300)", "id": "e3"}]]}},
+            {"type": "metric", "x": 0, "y": 8, "width": 12, "height": 6, "properties": {"title": "Live report checks: failures", "region": "${AWS::Region}", "view": "timeSeries", "stat": "Sum", "period": 300, "metrics": [[{"expression": "SEARCH('{EverytownOCI/Quality,Check} MetricName=\"CheckFailed\"', 'Sum', 300)", "id": "e4"}]]}},
+            {"type": "metric", "x": 12, "y": 8, "width": 12, "height": 6, "properties": {"title": "Live report checks: mean score", "region": "${AWS::Region}", "view": "bar", "stat": "Average", "period": 300, "setPeriodToTimeRange": true, "metrics": [[{"expression": "SEARCH('{EverytownOCI/Quality,Check} MetricName=\"CheckScore\"', 'Average', 300)", "id": "e5"}]]}},
+            {"type": "metric", "x": 0, "y": 14, "width": 12, "height": 6, "properties": {"title": "Eval suites: mean score by evaluator", "region": "${AWS::Region}", "view": "bar", "stat": "Average", "period": 300, "setPeriodToTimeRange": true, "metrics": [[{"expression": "SEARCH('{EverytownOCI/Evals,Suite,Evaluator} MetricName=\"MeanScore\"', 'Average', 300)", "id": "e6"}]]}},
+            {"type": "metric", "x": 12, "y": 14, "width": 12, "height": 6, "properties": {"title": "Eval suites: gate failures and cost (USD)", "region": "${AWS::Region}", "view": "timeSeries", "stat": "Sum", "period": 300, "metrics": [[{"expression": "SEARCH('{EverytownOCI/Evals,Suite} MetricName=\"GateFailures\" OR MetricName=\"CostUSD\"', 'Sum', 300)", "id": "e7"}]]}},
+            {"type": "metric", "x": 0, "y": 20, "width": 12, "height": 6, "properties": {"title": "App Lambda", "region": "${AWS::Region}", "view": "timeSeries", "stat": "Sum", "period": 300, "metrics": [["AWS/Lambda", "Invocations", "FunctionName", "${Fn}"], [".", "Errors", ".", "."], [".", "Throttles", ".", "."]]}},
+            {"type": "log", "x": 12, "y": 20, "width": 12, "height": 6, "properties": {"title": "Latest app errors", "region": "${AWS::Region}", "view": "table", "query": "SOURCE '/aws/lambda/${Fn}' | fields @timestamp, @message | filter @message like /ERROR|Traceback/ | sort @timestamp desc | limit 20"}}
+          ]}
+        - Fn: !Sub ${AWS::StackName}-app
+          BedrockLogs: !Ref BedrockInvocationLogGroup
+
+  GroundingAlarm:  # a live report shipped an action that cites no growth priority: the validator should make this impossible
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-report-grounding
+      AlarmDescription: A live report failed the grounded check (evals/checks.py). Open the trace in Transaction Search.
+      Namespace: EverytownOCI/Quality
+      MetricName: CheckFailed
+      Dimensions: [{ Name: Check, Value: grounded }]
+      Statistic: Sum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+  ErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-app-errors
+      AlarmDescription: The app Lambda raised errors (see the dashboard's Latest app errors).
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{ Name: FunctionName, Value: !Ref Function }]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
   # Cost tracking only. To get email alerts, add under Properties:
   #   NotificationsWithSubscribers:
   #     - Notification: { NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 80, ThresholdType: PERCENTAGE }
@@ -488,3 +554,11 @@ Outputs:
     Value: !Ref KnowledgeBase
   DataSourceId:
     Value: !GetAtt DataSource.DataSourceId
+  DashboardUrl:
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards/dashboard/${AWS::StackName}
+  TracesUrl:
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#xray:traces/query
+  BedrockInvocationLogGroup:
+    Value: !Ref BedrockInvocationLogGroup
+  BedrockLoggingRoleArn:
+    Value: !GetAtt BedrockLoggingRole.Arn

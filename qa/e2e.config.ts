@@ -11,8 +11,8 @@ const context =
   '"Growth priorities" are the statements answered No; stages run Seeding, Emerging, Developing, Strengthening, Transformational. ' +
   'An AI report takes 30 to 60 seconds after submitting: wait for "Your report is ready" before judging it. ' +
   'Every new report costs money and counts against an hourly cap: start at most one new report or sample per goal, and start any organization name you type with "QA ". ' +
-  'Not bugs: links that open a new tab (resources, Phoenix traces) leave this tab unchanged; a 429 "limit of new reports for this hour" message is the spend cap working; ' +
-  'the Phoenix trace server asks for its own login.';
+  'Not bugs: links that open a new tab (resources, the staff CloudWatch trace link) leave this tab unchanged; a 429 "limit of new reports for this hour" message is the spend cap working; ' +
+  'the CloudWatch trace link opens the AWS console, which asks for an AWS sign-in.';
 
 export default {
   agents: {

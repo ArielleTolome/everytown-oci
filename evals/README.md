@@ -3,15 +3,15 @@
 The OCI app has four AI steps: the report writer (with its plain-language rewrite), the report coach ("Ask about
 your report") and staff "Ask the data". Scores never come from the model, but the text around them does. This
 package tests that text on fixed, synthetic datasets, with code checks (exact rules) and LLM judges (qualities
-code cannot measure), and logs every run to Arize Phoenix as an experiment so two models or two prompt versions
-can be compared side by side.
+code cannot measure), and publishes every run to Amazon CloudWatch (metrics plus one log event per example) so two
+models or two prompt versions can be compared side by side.
 
 ```
 evals/
   checks.py          pure code checks (no network). Also run ONLINE on every live report (observability.py)
   judges.py          LLM-as-judge with Claude Haiku and fixed rubrics; `python3 -m evals.judges` calibrates them
   build_datasets.py  builds datasets/*.jsonl from the engine and the synthetic samples (deterministic)
-  run.py             the CLI: runs a suite, scores it, writes results/, logs a Phoenix experiment
+  run.py             the CLI: runs a suite, scores it, writes results/, publishes to CloudWatch
   datasets/          committed, synthetic only
   results/           one .json + .md per run; the first full run is the committed baseline
 ```
@@ -84,11 +84,11 @@ set -a; . /workshop/api.md >/dev/null 2>&1; set +a          # AWS credentials (n
 export OCI_KB_ID=5MITHX0B5B                                 # optional: Knowledge Base passages, as in production
 export OCI_GUARDRAIL_ID=43wm8zo5gsgo OCI_GUARDRAIL_VERSION=1 # optional: the production guardrail
 export OCI_DB_CLUSTER_ARN=... OCI_DB_SECRET_ARN=...         # staff_ask only: it reads the synthetic seed data
-export OCI_PHOENIX_ENDPOINT=http://127.0.0.1:6006 OCI_PHOENIX_API_KEY=...   # optional: log to Phoenix
+export OCI_TRACES=xray                                      # optional: trace eval runs to X-Ray
 
 python3 -m evals.run --suite all --limit 4                   # quick check: 4 examples per suite, spread across case types
 python3 -m evals.run --suite reports                         # the full report suite
-python3 -m evals.run --suite coach --no-judges --no-phoenix  # code checks only, local results only
+python3 -m evals.run --suite coach --no-judges --no-cloudwatch  # code checks only, local results only
 python3 -m evals.run --suite reports --model us.anthropic.claude-haiku-5-5 --compare us.anthropic.claude-sonnet-5-5
 python3 -m evals.judges                                      # judge calibration
 python3 -m unittest tests.test_checks                        # checks, datasets and CLI (no network)
@@ -96,15 +96,16 @@ python3 -m unittest tests.test_checks                        # checks, datasets 
 
 - `--suite reports|coach|staff_ask|all`, `--limit N` (round-robin across each example's first tag, so 4 coach
   examples cover a how-to, a score change, a crisis and an off-topic question), `--judges/--no-judges`,
-  `--phoenix/--no-phoenix` (default: on when `OCI_PHOENIX_ENDPOINT` is set), `--model ID` (the report writer for
+  `--cloudwatch/--no-cloudwatch` (default on), `--model ID` (the report writer for
   `reports`, the fast model for `coach` and `staff_ask`), `--compare ID` (the same suite again with a second
   model, then a side-by-side table of mean scores), `--name` (experiment name prefix).
 - The tasks call the real code: reports run `pipeline.gather_library`, `write_report` and `plain_language`
   (research is skipped: the profile is part of the example, so runs repeat); coach runs the route's crisis pattern,
   then `features.coach.answer_question`; staff_ask posts to `/api/staff/ask` through Flask's test client as staff.
 - Every run writes `evals/results/<UTC timestamp>-<suite>.json` (every output and score) and `.md` (the summary
-  table: mean score, pass rate, errors and the worst case per evaluator, gate result, model, estimated cost, Phoenix
-  link) and prints the table. Exit code 1 if any gate check fails or errors.
+  table: mean score, pass rate, errors and the worst case per evaluator, gate result, model, estimated cost) and
+  prints the table, the CloudWatch log stream and console links. Exit code 1 if any gate check fails or errors; a
+  failed CloudWatch publish is only a warning.
 - `evals/` is not shipped in the Lambda zip, except `evals/__init__.py` and `evals/checks.py` for the online checks.
 
 ## Cost per run
@@ -123,25 +124,35 @@ results file has the exact token usage per model.
 A report costs about $0.10 to write (Sonnet, with the catalog and library prompt-cached) and each judge call about
 $0.015 (Haiku). `--no-judges` removes the judge share.
 
-## Phoenix
+## CloudWatch
 
-With `OCI_PHOENIX_ENDPOINT` set, a run:
+After each suite (unless `--no-cloudwatch`), a run publishes:
 
-1. Uploads the dataset as `oci-<suite>-<content hash>` (reused when it exists, so runs on the same data compare;
-   a changed dataset gets a new name instead of silently mixing versions).
-2. Runs a Phoenix experiment named `<suite> <model id> <git short sha>` (prefixed by `--name`) with metadata
-   (suite, model, sha, judges, limit). `code_checks` adds one score per check (CODE annotator); each judge adds
-   its own score (LLM annotator) with its explanation.
-3. Traces everything: the AI spans from `observability.py` during a task (`report.write`, `library.kb_retrieve`,
-   `report.validate`, ...) land in the experiment's own Phoenix project, linked to each run (the Traces button);
-   other eval traffic such as judge calls goes to the project `everytown-oci-evals`. Eval traffic never mixes with
-   production traces in `everytown-oci`.
-4. Uses the `--limit` subset of the uploaded dataset, so the experiment lists the other examples as not run.
+- Metrics in namespace `EverytownOCI/Evals`: `MeanScore` and `PassRate` (0 to 1) with dimensions `Suite` and
+  `Evaluator`; `GateFailures` (count) and `CostUSD` (estimated Bedrock cost) with dimension `Suite`. The
+  app stack's CloudWatch dashboard (`infra/template.yaml`) graphs them over time.
+- Log events in group `/everytown-oci/evals` (90 day retention), one stream per run named
+  `<UTC timestamp>-<suite>-<run name>`: one JSON event per example (`run`, `suite`, `model`, `git_sha`, `id`,
+  `metadata`, `evals` with name, score, label and explanation, and `error` when the task failed) and one summary
+  event (`summary` table, `gate_failures`, `cost`).
 
-Reading a comparison: open Datasets, pick `oci-reports-...`, open Experiments. Each row is one run with its mean
-score per evaluator. Select two experiments (for example the same suite with two models, or before and after a
-prompt change) and Compare: each example shows both outputs side by side with every evaluator's score and
-explanation, so you can see which cases moved. Click a run to open its trace (prompt, model output, token counts).
+Compare two runs in Logs Insights (log group `/everytown-oci/evals`): mean score per evaluator for each run, for
+example the same suite with two models (`run` is `<--name> <suite> <model> <git sha>`):
+
+```
+filter suite = "coach" and ispresent(id)
+| fields jsonParse(@message) as js
+| unnest js.evals into item
+| stats avg(item.score) as mean, count(*) as n by item.name, run
+| sort item.name, run
+```
+
+Drop the `stats` line and add `| display run, id, item.name, item.score, item.explanation` to see which examples
+moved.
+
+With `OCI_TRACES=xray`, the AI spans from `observability.py` during eval tasks and judge calls (`report.write`,
+`library.kb_retrieve`, `report.validate`, ...) go to X-Ray under service `everytown-oci-evals`, so eval traffic
+never mixes with production traces in `everytown-oci`.
 
 ## What the evals found (results committed in `results/`)
 
@@ -150,9 +161,9 @@ explanation, so you can see which cases moved. Click a run to open its trace (pr
   facts-and-instructions prompt at LOW confidence (11 of 16 prompts) and blocked normal reports. Fix: only untrusted
   text (website and social text, the profile, the user's question) is sent as `guardContent`, and a blocked profile
   is dropped instead of failing the report (`profile_withheld`).
-- `20261104T014317Z-reports.md` (after the fix, on the hosted Phoenix): gate PASSES on all 16; the injection case
+- `20261104T014317Z-reports.md` (after the fix): gate PASSES on all 16; the injection case
   is written without the injected profile. Judges: personalization 0.88, actionability 0.84, faithfulness 0.75,
-  plain language 0.72. One soft flag worth reading in Phoenix: `report-seeded-4` describes one area with another
+  plain language 0.72. One soft flag worth reading: `report-seeded-4` describes one area with another
   area's stage (`stages_consistent` 0.33).
 - `20261104T014543Z-coach.md`: gate FAILED on two "change my score" questions. Haiku sometimes declined in plain
   text instead of the answer tool (the route then returned an error), and the guardrail blocked "Ignore the answers
@@ -175,9 +186,9 @@ filter at random, and judge output is never shown to anyone.
 - New synthetic case: add it to the lists in `build_datasets.py` (`COACH`, `STAFF`, or an `add(...)` call in
   `reports()`), run `python3 -m evals.build_datasets`, and commit the `.jsonl` diff. Never put real organization
   data in this repo.
-- From a production trace: in Phoenix, open the trace in project `everytown-oci`, select the span and use "Add to
-  dataset" to keep it in a Phoenix-only dataset for investigation (real data stays in Phoenix, never in git). To
-  make it a permanent, gated case, rewrite it as a synthetic case in `build_datasets.py` with the same shape (the
-  same areas, answers pattern, program model or question) and the `expected` behavior it should have had.
+- From a production trace: find it in X-Ray or CloudWatch Transaction Search (service `everytown-oci`) and read it
+  there; real data never goes into git. To make it a permanent, gated case, rewrite it as a synthetic case in
+  `build_datasets.py` with the same shape (the same areas, answers pattern, program model or question) and the
+  `expected` behavior it should have had.
 - New check: add it to `checks.py` with a pass and a fail test in `tests/test_checks.py`; add its name to
   `checks.GATES` only if a failure must block a release.

@@ -2,7 +2,7 @@
 
 Deck: [`OCI-Capacity-Coach-pitch.pdf`](OCI-Capacity-Coach-pitch.pdf) (15 pages), or present [`index.html`](index.html) in a browser: arrows or space to move, `N` for speaker notes (timed per slide). Rebuild the PDF after editing the deck: `python3 scripts/build_pitch_pdf.py`.
 
-Live app: https://d2mi2h3eu8y69s.cloudfront.net. Sign in as `demo` / `demo` (organization) or `staff` / `staff` (Everytown staff). Phoenix: https://d1cmss8xszy1wo.cloudfront.net (`PHOENIX_ADMIN_USER` / `PHOENIX_ADMIN_PASSWORD` in `infra/.phoenix.env`).
+Live app: https://d2mi2h3eu8y69s.cloudfront.net. Sign in as `demo` / `demo` (organization) or `staff` / `staff` (Everytown staff). AI observability: the CloudWatch dashboard `everytown-oci` (stack output `DashboardUrl`) and Transaction Search, in the AWS console.
 
 Judging criteria tags: **[TECH]** Technical Capability, **[UI]** User Interface and Design, **[IMPACT]** Impact and Scalability, **[ORIG]** Originality and Uniqueness.
 
@@ -15,7 +15,7 @@ Judging criteria tags: **[TECH]** Technical Capability, **[UI]** User Interface 
 | 1:00 to 1:40 | 3 What Everytown told us | Four quotes from the CSF interview, four things we built. | [ORIG] [UI] |
 | 1:40 to 4:10 | 4 Live demo | Switch to the browser (below). Slides 4 and 5 are the backup if the network fails. | all |
 | 4:10 to 5:00 | 6 How it works | Code scores, AI writes, code checks. Six fixed steps, not an agent. | [TECH] |
-| 5:00 to 5:50 | 7 Traced and tested | Phoenix trace of every report; 52 synthetic test cases; the evals caught 3 real bugs. | [TECH] [ORIG] |
+| 5:00 to 5:50 | 7 Traced and tested | Every report is a trace in Amazon CloudWatch; 52 synthetic test cases; the evals caught 3 real bugs. | [TECH] [ORIG] |
 | 5:50 to 6:20 | 8 Accessible | Coach's letter, reading grade measured in code, Listen, Spanish, WCAG 2.2 AA. | [UI] |
 | 6:20 to 7:00 | 9 Impact and cost | 40 s and about $0.11 a report; the whole network twice a year for under $100 a year. | [IMPACT] |
 | 7:00 to 7:40 | 10 Our ask | Pilot with 3 to 4 CSF grantees this quarter. Leave this slide up for questions. | [IMPACT] |
@@ -28,7 +28,7 @@ Slide 5 (staff screenshots) is skipped when the live demo covers the staff view.
 2. **Tab B (prepared report).** Sign in as `demo` / `demo`. Open **Try a synthetic sample organization** and click **Riverbend Violence Interruption Network (synthetic sample)**. Wait for **Your report is ready**. Keep this tab at the top of the report. Do not sign out: the roadmap belongs to this sign-in session.
 3. **Tab A (live run).** In the same window, a new tab on the start page. Optional: choose **Español** under **Report language**.
 4. **Tab C (staff).** A private window, sign in as `staff` / `staff`, stay on **Training needs**.
-5. **Tab D (Phoenix).** In the private window, sign in to Phoenix once so the trace link opens without a login.
+5. **Tab D (AWS console).** In the private window, sign in to the AWS console in us-west-2 and open the CloudWatch dashboard `everytown-oci`, so the trace link opens without a sign-in.
 6. Open `OCI-Capacity-Coach-pitch.pdf` and `sample-report.pdf` locally as the offline backup. Browser zoom 125%. Notifications off.
 7. The hourly report cap allows a few reports: do not run practice reports in the last hour.
 
@@ -42,7 +42,7 @@ Slide 5 (staff screenshots) is skipped when the live demo covers the staff view.
 | 1:20 to 1:40 | Tab B: **Your 12-week roadmap**, open it, tick one step of week 1. | "Then a 12-week roadmap with an owner for every step, points and badges for following through. Week 12 is retake the OCI." |
 | 1:40 to 1:50 | Tab A: point at **Your report is ready**, click **Download PDF report**. | "That is the report we started a minute and a half ago, finished live, with a PDF letter for the board." |
 | 1:50 to 2:20 | Tab C: **Training needs** (top cards), then **Ask the data**, click **Which organizations need fundraising training?**, then **Peers**. | "Everytown's side: who needs which training, plain-language questions where the AI only picks an analysis and code computes every number, and similar grantees to connect." |
-| 2:20 to 2:30 | Tab C: back to **Training needs**, scroll to the matrix, click **Southside Youth Peace Collective (synthetic sample)** to open its drawer, then **View AI trace (staff)**. | "And every AI step is auditable: this is the trace of the report we just ran, every prompt, token and cost." Back to the deck, slide 6. |
+| 2:20 to 2:30 | Tab C: back to **Training needs**, scroll to the matrix, click **Southside Youth Peace Collective (synthetic sample)** to open its drawer, then **View AI trace in CloudWatch (staff)**. | "And every AI step is auditable in Amazon CloudWatch: this is the trace of the report we just ran, every prompt, token and check." Back to the deck, slide 6. |
 
 If a new report is refused because of the hourly cap, say "that is the hourly report cap doing its job" and stay in Tab B. If a report shows **We could not finish your recommendations**, say "the scores are saved, it only reruns the AI steps", click **Try again** and continue in Tab B.
 
@@ -50,9 +50,9 @@ If a new report is refused because of the hourly cap, say "that is the hourly re
 
 - 45 organizations in the manual 2025 pilot; 2 CSF staff wrote every report; 140+ organizations in the network. CSF has granted $15.7 million to 141 CVI programs in 72 cities since 2019.
 - 8 areas, 143 statements; the reference scoring engine passes all 3 answer keys (`verify_benchmark.py`).
-- About 40 seconds and about $0.11 of Bedrock per report (Phoenix trace). 15 coach questions per report.
-- Hosting: about $45 a month with Aurora kept warm at 0.5 ACU (as for judging), $1 to $3 a month with auto-pause; Phoenix server about $22 a month.
+- About 40 seconds and about $0.11 of Bedrock per report (token counts on the trace). 15 coach questions per report.
+- Hosting: about $45 a month with Aurora kept warm at 0.5 ACU (as for judging), $1 to $3 a month with auto-pause; CloudWatch observability a few dollars a month, no server.
 - Evals: 16 report cases, 21 coach questions, 15 staff questions, 20 judge calibration cases; all gates pass. Judges: personalization 0.88, actionability 0.84, faithfulness 0.75, plain language 0.72, coach helpfulness 0.69.
 - Bugs the evals caught: the guardrail blocked a normal Spanish report (it judged our own facts as a prompt attack); "change my score" returned an error; tracing was silently off after a deploy (a missing library).
-- Protection on this temporary deployment: mocked login; CloudFront with IAM-signed origin access to the Lambda; 5 concurrent requests; an hourly cap on new reports; Phoenix reachable only through CloudFront, with login.
+- Protection on this temporary deployment: mocked login; CloudFront with IAM-signed origin access to the Lambda; 5 concurrent requests; an hourly cap on new reports; traces and model logs only in CloudWatch, behind AWS sign-in.
 - axe-core: no WCAG 2.2 A or AA violations on any page.
