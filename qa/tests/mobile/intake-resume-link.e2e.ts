@@ -7,6 +7,8 @@ test('the whole resume link is readable on a phone', { session: 'demo' }, async 
   await app.open('/');
   if (await browser.evaluate(() => innerWidth >= 600)) return; // wider screens keep the one-line field
   await screen.getByLabel('Executive director').check();
+  await screen.getByLabel('Your job title').fill('QA Lead');
+  await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Phone Resume Link Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();

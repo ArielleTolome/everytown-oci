@@ -9,6 +9,8 @@ test('Planning time estimate matches between intake and questionnaire', { sessio
   const minutes = Number(/about (\d+) minute/.exec(meta)?.[1]);
   expect(minutes).toBeGreaterThan(0);
   await screen.getByLabel('Executive director').check();
+  await screen.getByLabel('Your job title').fill('QA Lead');
+  await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Time Estimate Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();

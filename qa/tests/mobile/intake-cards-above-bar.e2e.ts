@@ -8,6 +8,8 @@ test('phone: every Planning card shows its first answer above the sticky bar', {
   await app.open('/');
   test.skip((await browser.evaluate(() => innerWidth)) > 599, 'phone layout only');
   await screen.getByLabel('Executive director').check();
+  await screen.getByLabel('Your job title').fill('QA Lead');
+  await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Phone Cards Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();

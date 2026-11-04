@@ -2,6 +2,13 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.8.2 — Job title and name are required on the start page
+
+- The organization leader must now enter "Your job title" and "Your name" (with the role and organization name) before starting the questionnaire. Both are regular required fields: no longer folded under "(optional)" on phones, each with its own error ("Enter your job title", "Enter your name") in the field and in the error summary, cleared as soon as it has text. The name is still shown only on the organization's own report and never sent to the AI.
+- The server enforces it: `POST /api/assessments` returns 400 with `respondent_title` / `respondent_name` errors when either is blank. One-click samples, seed data and evals are unchanged (they have no person filling out the form).
+- A half-finished assessment saved before this change is not lost: at submit the questionnaire sends the person back to the start page (`/?check=1`), which shows what is missing; the answers stay saved.
+- Tests: the intake unit test covers missing and blank title and name; every e2e test that fills the form fills both; new e2e checks that both are required, never folded on a phone, and shown on `?check=1` (they fail on the v1.8.1 build). Full suite on a dev server: 81 passed on desktop and phone (5 phone-only checks skipped on desktop); axe 0 at 320, 390 and 1280 in the normal and error states.
+
 ## v1.8.1 — Known bugs fixed, then a full e2e bug bash: 13 GitHub issues filed and closed
 
 First the bugs we already knew about (#10 to #15) were filed on GitHub and fixed. Then e2e agents went through the whole process again on the live site, on desktop and on a phone: 16 exploratory charters (sign-in, start page, questionnaire, save and resume, report, coach, roadmap, staff dashboard, Ask the data), plus hand checks of the parts only a report's owner sees. Every finding was reproduced before it counted: 38 findings, 7 confirmed and filed as #16 to #22, 32 rejected with the reason (intended design, explorer artifacts, already decided, not reproducible). Every fix has a regression test that failed on the live build first.

@@ -38,20 +38,17 @@ import Icon from "../components/Icon.astro";
         <p class="field-error" id="respondent_role-error" hidden></p>
         <div class="choice-row" id="role-options"><p class="loading"><Icon name="loader" class="spin" />Loading</p></div>
       </fieldset>
-      <details class="m-more" id="more-you" open>
-        <summary>Add your job title and name (optional)<Icon name="chevron-down" class="m-more__chevron" /></summary>
-        <div class="stack">
-          <div class="field">
-            <label for="resp_title">Your job title <span class="optional">(optional)</span></label>
-            <input class="input" type="text" id="resp_title" name="resp_title" autocomplete="organization-title" autocapitalize="words" enterkeyhint="go" maxlength="100">
-          </div>
-          <div class="field">
-            <label for="resp_name">Your name <span class="optional">(optional)</span></label>
-            <p class="hint" id="resp_name-hint">Shown only on your own report. We never send your name to the AI.</p>
-            <input class="input" type="text" id="resp_name" name="resp_name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="go" maxlength="100" aria-describedby="resp_name-hint">
-          </div>
-        </div>
-      </details>
+      <div class="field" data-field="respondent_title">
+        <label for="resp_title">Your job title</label>
+        <p class="field-error" id="respondent_title-error" hidden></p>
+        <input class="input" type="text" id="resp_title" name="resp_title" autocomplete="organization-title" autocapitalize="words" enterkeyhint="go" maxlength="100" required>
+      </div>
+      <div class="field" data-field="respondent_name">
+        <label for="resp_name">Your name</label>
+        <p class="hint" id="resp_name-hint">Shown only on your own report. We never send your name to the AI.</p>
+        <p class="field-error" id="respondent_name-error" hidden></p>
+        <input class="input" type="text" id="resp_name" name="resp_name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="go" maxlength="100" required aria-describedby="resp_name-hint">
+      </div>
     </section>
 
     <section class="card stack" aria-labelledby="org-title">
@@ -159,21 +156,22 @@ import Icon from "../components/Icon.astro";
   const phone = matchMedia("(max-width: 599px)");
   phone.addEventListener("change", () => { if (!phone.matches) $$<HTMLDetailsElement>("details.m-more").forEach((d) => { d.open = true; }); });
 
-  type Field = "respondent_role" | "org_name" | "org_url" | "social" | "domains";
-  const FIELDS: Field[] = ["respondent_role", "org_name", "org_url", "social", "domains"];
+  type Field = "respondent_role" | "respondent_title" | "respondent_name" | "org_name" | "org_url" | "social" | "domains";
+  const FIELDS: Field[] = ["respondent_role", "respondent_title", "respondent_name", "org_name", "org_url", "social", "domains"];
   // Groups of controls: the error is described on the fieldset, and the summary links to the first control.
   const GROUPS = new Set<Field>(["respondent_role", "social", "domains"]);
-  const describedBase: Record<Field, string> = { respondent_role: "", org_name: "", org_url: "org_url-hint", social: "social-hint", domains: "domains-hint" };
+  const describedBase: Record<Field, string> = { respondent_role: "", respondent_title: "", respondent_name: "resp_name-hint", org_name: "", org_url: "org_url-hint", social: "social-hint", domains: "domains-hint" };
   const socialInputs = () => $$<HTMLInputElement>("input", socialList);
   const badSocial = () => socialInputs().filter((i) => normalizeUrl(i.value) === null);
   const targets: Record<Field, () => HTMLElement | null> = {
     respondent_role: () => $<HTMLInputElement>("input[name=respondent_role]"),
+    respondent_title: () => titleEl,
+    respondent_name: () => personEl,
     org_name: () => nameEl,
     org_url: () => urlEl,
     social: () => badSocial()[0] ?? socialAdd,
     domains: () => $<HTMLInputElement>("input[name=domains]"),
   };
-
   function setError(field: Field, msg: string | null) {
     const err = $(`#${field}-error`)!;
     const wrap = $(`[data-field=${field}]:not(li)`)!; // not the error summary's item, which shares the attribute
@@ -218,6 +216,8 @@ import Icon from "../components/Icon.astro";
   function validate(): Partial<Record<Field, string>> {
     const errors: Partial<Record<Field, string>> = {};
     if (!role()) errors.respondent_role = "Choose your role";
+    if (!titleEl.value.trim()) errors.respondent_title = "Enter your job title";
+    if (!personEl.value.trim()) errors.respondent_name = "Enter your name";
     if (!nameEl.value.trim()) errors.org_name = "Enter your organization's name";
     if (normalizeUrl(urlEl.value) === null) errors.org_url = URL_ERROR;
     if (badSocial().length) errors.social = SOCIAL_ERROR;
@@ -247,6 +247,8 @@ import Icon from "../components/Icon.astro";
 
   // Clear a field's error as soon as it is fixed; new errors still wait for blur or submit, never a keystroke.
   nameEl.addEventListener("input", () => { if (nameEl.value.trim()) setError("org_name", null); });
+  titleEl.addEventListener("input", () => { if (titleEl.value.trim()) setError("respondent_title", null); });
+  personEl.addEventListener("input", () => { if (personEl.value.trim()) setError("respondent_name", null); });
   urlEl.addEventListener("input", () => { if (normalizeUrl(urlEl.value) !== null) setError("org_url", null); });
   urlEl.addEventListener("blur", () => setError("org_url", normalizeUrl(urlEl.value) === null ? URL_ERROR : null));
   socialList.addEventListener("focusout", () => {
@@ -387,13 +389,16 @@ import Icon from "../components/Icon.astro";
     renderDomains(meta.domains, selected);
     renderOrgMeta(options, draft?.org_meta);
     // Saved values never sit in a folded group, and the language summary names the language picked.
-    const unfold: [string, unknown][] = [["more-you", titleEl.value || personEl.value], ["more-links", urlEl.value || draft?.org_links?.social.length],
+    const unfold: [string, unknown][] = [["more-links", urlEl.value || draft?.org_links?.social.length],
       ["more-lang", language() === "es"], ["more-org", draft?.org_meta]];
     for (const [id, has] of unfold) if (has) $<HTMLDetailsElement>(`#${id}`)!.open = true;
     const langNow = $("#lang-now")!;
     const showLang = () => { const es = language() === "es"; langNow.textContent = es ? "Español" : "English"; langNow.lang = es ? "es" : "en"; };
     showLang();
     $$("input[name=language]").forEach((r) => r.addEventListener("change", showLang));
+    // Sent back from the questionnaire because the server rejected these details (for example a draft saved before the
+    // job title and name were required): show what to fix right away. Answers stay saved.
+    if (new URLSearchParams(location.search).has("check")) showErrors(validate());
 
     // A half-finished assessment on this device: say so, so nobody starts over by mistake.
     const mine = meta.domains.filter((d) => draft?.domain_ids.includes(d.id)).flatMap((d) => d.questions);

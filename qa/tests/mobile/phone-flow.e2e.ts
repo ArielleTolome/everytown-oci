@@ -21,6 +21,8 @@ const layout = (): Layout => ({
 async function startQuestionnaire({ app, screen }: { app: App; screen: Screen }) {
   await app.open('/');
   await screen.getByLabel('Executive director').check();
+  await screen.getByLabel('Your job title').fill('QA Lead');
+  await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill(ORG);
   await screen.getByRole('button', 'Start questionnaire').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();
@@ -63,8 +65,10 @@ test('phone: the start page shows Start questionnaire on the first screen and fo
   });
   test.skip(page.width > PHONE_MAX, 'phone layout only');
   expect(page).toMatchObject({ startOnFirstScreen: true, openOptional: [], foldedRequired: [] });
-  // The default path: role and organization name only.
+  // The default path: the required fields only (role, job title, name, organization name).
   await screen.getByLabel('Executive director').check();
+  await screen.getByLabel('Your job title').fill('QA Lead');
+  await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill(ORG);
   await screen.getByRole('button', 'Start questionnaire').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();

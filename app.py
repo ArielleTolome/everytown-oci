@@ -172,6 +172,11 @@ def create_assessment():
         errors["domain_ids"] = "Choose at least one area to assess."
     from features.orgmeta import clean_org_meta, clean_respondent, clean_social  # lazy: features import app
     respondent, errors["respondent_role"] = clean_respondent(b.get("respondent"))
+    # The person filling it out names themselves (shown on their own report only, never sent to the AI model).
+    if not (respondent or {}).get("title"):
+        errors["respondent_title"] = "Enter your job title."
+    if not (respondent or {}).get("name"):
+        errors["respondent_name"] = "Enter your name."
     social, errors["social"] = clean_social((b.get("org_links") or {}).get("social")
                                             if isinstance(b.get("org_links"), dict) else None)
     errors = {k: v for k, v in errors.items() if v}

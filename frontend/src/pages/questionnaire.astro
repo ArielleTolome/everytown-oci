@@ -556,8 +556,8 @@ import Icon from "../components/Icon.astro";
         return;
       }
       if (ex instanceof ApiError && ex.status === 400 && ex.body.errors) {
-        // Organization details were rejected: send the person back to fix them.
-        location.assign("/");
+        // Organization details were rejected: send the person back to fix them (the start page shows what is missing).
+        location.assign("/?check=1");
         return;
       }
       if (ex instanceof ApiError && ex.status === 401) {

@@ -6,6 +6,8 @@ import { expect } from 'e2e';
 test('Yes / No answers follow the question language', { session: 'demo' }, async ({ app, screen }) => {
   await app.open('/');
   await screen.getByLabel('Executive director').check();
+  await screen.getByLabel('Your job title').fill('QA Lead');
+  await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Spanish Answers Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();

@@ -9,6 +9,8 @@ test('phone: the resume link box re-fits the whole link when the screen width ch
   const { width, height } = await browser.evaluate(() => ({ width: innerWidth, height: innerHeight }));
   test.skip(width > 599, 'phone layout only');
   await screen.getByLabel('Executive director').check();
+  await screen.getByLabel('Your job title').fill('QA Lead');
+  await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Phone Link Resize Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();

@@ -5,6 +5,8 @@ import { expect } from 'e2e';
 test('a finished area is not labelled In progress in the area nav', { session: 'demo' }, async ({ app, screen, browser }) => {
   await app.open('/');
   await screen.getByLabel('Executive director').check();
+  await screen.getByLabel('Your job title').fill('QA Lead');
+  await screen.getByLabel('Your name').fill('QA Tester');
   await screen.getByLabel('Organization name').fill('QA Area Nav Org');
   await screen.getByRole('button', 'Start questionnaire').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();

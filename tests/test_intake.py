@@ -58,15 +58,21 @@ class Validation(unittest.TestCase):
             bad = c.post("/api/assessments", json=dict(base, respondent={"role": "Boss"},
                                                        org_links={"social": ["not a url"]}))
             self.assertEqual(bad.status_code, 400)
-            self.assertEqual(set(bad.get_json()["errors"]), {"respondent_role", "social"})
+            self.assertEqual(set(bad.get_json()["errors"]),
+                             {"respondent_role", "respondent_title", "respondent_name", "social"})
+            # Job title and name are required; blanks and whitespace do not count.
+            blank = c.post("/api/assessments", json=dict(base, respondent={"role": "Executive director",
+                                                                             "title": "  ", "name": "Jordan Lee"}))
+            self.assertEqual((blank.status_code, set(blank.get_json()["errors"])), (400, {"respondent_title"}))
             sub.assert_not_called()
             ok = c.post("/api/assessments", json=dict(
-                base, org_url="peace.example.org", respondent={"role": "Executive director", "name": "Jordan Lee"},
+                base, org_url="peace.example.org",
+                respondent={"role": "Executive director", "title": "Founder", "name": "Jordan Lee"},
                 org_links={"social": ["facebook.com/peace"]},
                 org_meta={"budget": "Under $250K", "program_models": ["Street outreach"]}))
         self.assertEqual(ok.status_code, 201)
         org = sub.call_args.args[0]
-        self.assertEqual(org["respondent"], {"name": "Jordan Lee", "title": None, "role": "Executive director"})
+        self.assertEqual(org["respondent"], {"name": "Jordan Lee", "title": "Founder", "role": "Executive director"})
         self.assertEqual(org["org_links"], {"website": "https://peace.example.org",
                                             "social": ["https://facebook.com/peace"]})
         self.assertEqual(org["org_meta"]["budget"], "Under $250K")

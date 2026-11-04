@@ -19,7 +19,7 @@ Optional feature modules for the Flask API. Each `<name>.py` defines a Flask Blu
 | `milestones.sql` | Table `roadmap_tasks` (progress only; the roadmap itself is rebuilt each time). |
 | `orgmeta.py` | Fixed lists for organization details (program model, staff size, budget, state), respondent role and public links, plus the `clean_*` validators `app.py` uses. `GET /api/org-meta`. |
 | `orgmeta.sql` | Adds `program_models`, `staff_size`, `state` columns to `organizations`. |
-| `optin.py` | "Sign me up": optional opt-in to CSF trainings and updates with a name and email; ticking neither withdraws it. `GET, POST /api/assessments/<sid>/optin` (owner or staff), `GET /api/staff/optins`. |
+| `optin.py` | "Sign me up": optional opt-in to CSF trainings and updates with a name and email; ticking neither withdraws it. `GET /api/assessments/<sid>/optin` (owner or staff), `POST` (owner only), `GET /api/staff/optins`. |
 | `optin.sql` | Table `optins` (one row per assessment). |
 | `peers.py` | Staff-only peer matching: similarity = 0.4 program model overlap + 0.3 size match + 0.3 shared priorities; percentile within the primary program model. `GET /api/staff/peers/<org_id>`. |
 | `peers_request.py` | "Connect me with similar groups": stores the request for staff. `POST /api/assessments/<sid>/peer-request`. |
