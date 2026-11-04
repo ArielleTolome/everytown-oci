@@ -12,10 +12,15 @@ Optional feature modules for the Flask API. Each `<name>.py` defines a Flask Blu
 | `coach.sql` | Table `coach_messages` (questions and answers per assessment). |
 | `drafts.py` | Save and resume, and "send this area to a teammate" via random capability tokens. Answers only merge. `POST /api/drafts`, `GET /api/drafts/<token>`, `POST /api/drafts/<token>`, `POST /api/drafts/<token>/share`. |
 | `drafts.sql` | Tables `drafts` and `draft_shares`. |
+| `feedback.py` | "Does this feel right?" and the staff review queue: one helpful / not quite answer (with an optional comment) per report section, staff mark a report reviewed or flag it with an issue from a fixed list, and a network quality summary. `GET, POST /api/assessments/<sid>/feedback` (owner or staff), `POST /api/staff/reviews/<sid>`, `GET /api/staff/quality`. |
+| `feedback.sql` | Tables `report_feedback` (one row per assessment and section) and `report_reviews` (one per assessment). |
+| `funnel.py` | Staff-only drop-off: started, submitted and abandoned (3+ days unsaved, never submitted) server-side drafts, started vs finished per area, and the area where abandoned drafts stopped. `GET /api/staff/funnel`. |
 | `milestones.py` | 12-week roadmap built in code from the report (no model call), with progress, points and badges. `GET /api/assessments/<sid>/roadmap`, `POST /api/assessments/<sid>/roadmap/tasks/<task_id>`, `GET /api/assessments/<sid>/roadmap/week/<n>.pdf`, `GET /api/staff/roadmaps`. |
 | `milestones.sql` | Table `roadmap_tasks` (progress only; the roadmap itself is rebuilt each time). |
 | `orgmeta.py` | Fixed lists for organization details (program model, staff size, budget, state), respondent role and public links, plus the `clean_*` validators `app.py` uses. `GET /api/org-meta`. |
 | `orgmeta.sql` | Adds `program_models`, `staff_size`, `state` columns to `organizations`. |
+| `optin.py` | "Sign me up": optional opt-in to CSF trainings and updates with a name and email; ticking neither withdraws it. `GET, POST /api/assessments/<sid>/optin` (owner or staff), `GET /api/staff/optins`. |
+| `optin.sql` | Table `optins` (one row per assessment). |
 | `peers.py` | Staff-only peer matching: similarity = 0.4 program model overlap + 0.3 size match + 0.3 shared priorities; percentile within the primary program model. `GET /api/staff/peers/<org_id>`. |
 | `peers_request.py` | "Connect me with similar groups": stores the request for staff. `POST /api/assessments/<sid>/peer-request`. |
 | `peers_request.sql` | Table `peer_requests` (one row per assessment). |

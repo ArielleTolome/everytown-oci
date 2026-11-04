@@ -15,6 +15,7 @@ import Icon from "../components/Icon.astro";
   import { icon } from "../lib/icons";
   import { askPanel, wireAsk } from "../lib/staff-ask";
   import { wireBriefs } from "../lib/staff-brief";
+  import { mountQuality, qualityPanel } from "../lib/staff-quality";
   import {
     changePanel, commonPanel, drawerHtml, expired, failHtml, gapsPanel, markScroll, needsCsv, needsPanel, peersHtml, peersPanel, roadmapHtml,
     type Bi, type GroupBy, type Peer, type Roadmap,
@@ -29,6 +30,7 @@ import Icon from "../components/Icon.astro";
     { id: "change", label: "Change over time", icon: "trending" },
     { id: "ask", label: "Ask the data", icon: "message" },
     { id: "peers", label: "Peers", icon: "users" },
+    { id: "quality", label: "Quality and follow-through", icon: "circle-check" },
   ] as const;
 
   type TabId = (typeof TABS)[number]["id"];
@@ -45,6 +47,7 @@ import Icon from "../components/Icon.astro";
   let stateNames = new Map<string, string>();
   let roadmaps: Promise<Roadmap[]> | null = null;
   const filters: Record<string, string> = {};
+  let quality: ReturnType<typeof mountQuality> | null = null;
   let seq = 0; // newest filter request wins when staff change filters quickly
 
   function shell() {
@@ -72,7 +75,7 @@ import Icon from "../components/Icon.astro";
       </details>
       <div class="toolbar" id="filters">
         ${FILTERS.map((f) => `<div class="field"><label for="f-${f.key}">${f.label}</label><select class="input" id="f-${f.key}" data-filter="${f.key}"><option value="">${f.all}</option>${opts(f.key)}</select></div>`).join("")}
-        <p class="hint toolbar__note">Filters apply to every tab except Ask the data. They use the optional details grantees share, so an organization that did not share a detail drops out when you filter by it.</p>
+        <p class="hint toolbar__note">Filters apply to every tab except Ask the data, and in Quality and follow-through only to Follow-through. They use the optional details grantees share, so an organization that did not share a detail drops out when you filter by it.</p>
         <div class="toolbar__status" id="filter-status"></div>
       </div>
       <div class="tabs">
@@ -83,6 +86,9 @@ import Icon from "../components/Icon.astro";
       </div>`;
     $("#panel-ask")!.innerHTML = askPanel();
     wireAsk($("#panel-ask")!);
+    $("#panel-quality")!.innerHTML = qualityPanel();
+    quality = mountQuality($("#panel-quality")!, { bi: () => data, stateName: (c) => stateNames.get(c) || c });
+    if (initial === "quality") quality.show();
     wireTabs();
     $$<HTMLSelectElement>("[data-filter]").forEach((sel) => sel.addEventListener("change", () => {
       filters[sel.dataset.filter!] = sel.value;
@@ -111,6 +117,7 @@ import Icon from "../components/Icon.astro";
       ["message", "Asked for help", t.asked_for_help, "organizations with a support request"],
     ].map(([ic, label, n, ctx]) => `<li class="card kpi"><span class="kpi__label">${icon(ic as "building")}${label}</span><span class="kpi__num">${n}</span><span class="kpi__context">${ctx}</span></li>`).join("");
     filterStatus();
+    quality?.biChanged();
     if (!t.organizations) {
       // One empty state for every data tab (Ask the data keeps working: it ignores the filters).
       const msg = activeFilters().length
@@ -165,6 +172,7 @@ import Icon from "../components/Icon.astro";
       const panel = $(`#panel-${t.id}`)!;
       panel.hidden = !on;
       if (on) markScroll(panel);
+      if (on && id === "quality") quality?.show();
       if (on && focus) tab.focus();
     }
     history.replaceState(null, "", `#${id}`);

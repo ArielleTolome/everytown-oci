@@ -446,7 +446,11 @@ SYSTEM = (
     "5. Owners are roles (for example executive director, board chair, bookkeeper, program manager).\n"
     "6. Strengths come from statements the organization answered favorably.\n"
     "7. If progress since the last assessment is given, celebrate closed growth priorities and stage moves "
-    "early in the summary.")
+    "early in the summary.\n"
+    "8. The plan must fit the organization's staff size and budget from organization_details. For a very small "
+    "team (1 to 10 staff) or a budget under $250K: smaller, simpler first steps, free tools, and one owner per "
+    "step. Never assume a finance department, HR staff or other staff the organization did not mention. When "
+    "the staff size is not given, assume a small team.")
 
 
 def _facts(sub):

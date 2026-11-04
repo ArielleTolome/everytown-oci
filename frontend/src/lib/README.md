@@ -20,10 +20,13 @@ Client-side TypeScript modules that the pages in `../pages/` import. They build 
 | `staff-bi.ts` | Staff dashboard types for `/api/staff/bi` and HTML per tab (`needsPanel`, `gapsPanel`, `changePanel`, `commonPanel`, `peersPanel`, `drawerHtml`, `roadmapHtml`), `downloadCsv` / `needsCsv`, `markScroll` (scroll hints on tables), `failHtml` / `expired` (401 messages). |
 | `staff-ask.ts` | "Ask the data": `askPanel`, `wireAsk` posting to `/api/staff/ask`; the table from code is the source of truth, AI only words the answer. |
 | `staff-brief.ts` | AI training brief: `briefButton`, `wireBriefs` posting to `/api/staff/briefs` (aggregated counts only). |
+| `staff-quality.ts` | "Quality and follow-through" tab: `qualityPanel`, `mountQuality`. Report quality and the review queue (`/api/staff/quality`, `POST /api/staff/reviews/<id>`), follow-through and a check-in list from `/api/staff/roadmaps`, opt-ins (`/api/staff/optins`), where people stop (`/api/staff/funnel`); CSV downloads. |
+| `feedback.ts` | "Does this feel right?" card at the end of a report: `feedbackSection`, `wireFeedback` (`GET/POST /api/assessments/<id>/feedback`); staff see it read-only with a link to `/staff/#quality`. |
+| `optin.ts` | "Stay connected with the Community Safety Fund" card: `optinSection`, `wireOptin` (`GET/POST /api/assessments/<id>/optin`); optional trainings and updates, unticking both withdraws. |
 
 ## How it connects
 
-- `index`, `questionnaire`, `resume` use `draft` (and `quick`); `results` uses `results`, `coach`, `listen`, `toc`, `roadmap`, `report-ui`; `plan` uses `roadmap`; `staff` uses the three `staff-*` modules.
+- `index`, `questionnaire`, `resume` use `draft` (and `quick`); `results` uses `results`, `coach`, `listen`, `toc`, `roadmap`, `report-ui`, `feedback`, `optin`; `plan` uses `roadmap`; `staff` uses the four `staff-*` modules.
 - `results.ts` also imports `staff-bi.ts` for staff-only views on a report.
 
 ## Changing it safely

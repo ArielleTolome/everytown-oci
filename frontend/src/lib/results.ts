@@ -2,6 +2,8 @@
 import { api, ApiError, type Assessment, type Focus, type Gap, type Meta, type PlanItem, type Step, type Support } from "./api";
 import { $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
 import { coachBody } from "./coach";
+import { feedbackSection } from "./feedback";
+import { optinSection } from "./optin";
 import { icon, type IconName } from "./icons";
 import { fillRoadmapTeaser, roadmapTeaser, setRoadmapTask, shortDate, type Roadmap } from "./roadmap";
 import { errorText } from "./report-ui";
@@ -634,6 +636,7 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
     </section>`);
     if (opts.support) plan.push(supportSection(sub));
     if (!opts.staff || v10(sub).peer_request) plan.push(peersSection(sub, opts.staff));
+    plan.push(optinSection(sub, opts.staff));
   } else if (sub.status === "done") {
     plan.push(`<p class="notice section-gap">${icon("info")}<span>AI recommendations were not generated for this synthetic seed record. Open "Explore any area" or "Your results in detail" for the stages and growth priorities.</span></p>`);
   } else {
@@ -669,7 +672,9 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
   const hash = location.hash.slice(1);
   const current: Layer = LAYERS.some(([k]) => k === hash) ? (hash as Layer) : r ? "plan" : "details";
   const out = top.join("") + layered({ plan: plan.join(""), explore: exploreSection(sub, meta), details: details.join("") }, current);
-  return sub.status === "done" ? `${out}<div class="actions section-gap">${pdfButton(sub)}</div>` : out;
+  // One "Does this feel right?" card for the whole report, under every layer (v1.7).
+  const feedback = r ? feedbackSection(sub, opts.staff) : "";
+  return sub.status === "done" ? `${out}${feedback}<div class="actions section-gap">${pdfButton(sub)}</div>` : out;
 }
 
 /* ---------- Behaviors ---------- */

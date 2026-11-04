@@ -38,6 +38,9 @@ an instance role, so on EC2 run `eval "$(aws configure export-credentials --form
 | `tests/regressions/common-gaps-model-overlap.e2e.ts` | #6: staff "Most common gaps" explains that an org with two program models counts in both. |
 | `tests/regressions/unknown-path-404-page.e2e.ts` | #8: the container serves the app's not-found page for an unknown path. |
 | `tests/regressions/cloudfront-404-status.e2e.ts` | #9 (tag `live`): the deployed site answers an unknown path with HTTP 404. |
+| `tests/regressions/bugbash-v15.e2e.ts` | v1.5 bug bash: One at a time controls in Spanish, a roadmap for an unknown report links to the start page, the 404 page shows who is signed in. |
+| `tests/regressions/answer-click-no-scroll-jump.e2e.ts` | Focus landing on `<main>` (what clicking an answer label does) never scrolls the questionnaire; it jumped to the page bottom before v1.7. |
+| `tests/quality.e2e.ts` | v1.7: staff see the four Quality and follow-through sections and a report's feedback card (read-only); organizations get 403 from the staff quality, opt-in and funnel APIs. |
 | `tests/demo/demo-path.e2e.ts` | Tag `demo`: the demo script's on-stage path. Leader: one-click Southside sample to "Your report is ready", Start here, PDF. Staff: Training needs, Ask the data preset, Peers, the Southside drawer's CloudWatch trace link. |
 
 ## Changing it safely

@@ -2,6 +2,30 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.7.0 — After the CSF director walkthrough: quality checks, follow-through, opt-ins, clearer answering
+
+We recorded a 21-minute walkthrough with the Community Safety Fund director and transcribed it with Amazon Transcribe. Her read: "for what this is, it's absolutely on the right track." This release answers what she raised; [`docs/next-steps.md`](docs/next-steps.md) maps each point to what was built and what is left. Four omp agents built it in parallel Herdr terminals (API, report page, staff dashboard, questionnaire).
+
+**Fixed:** clicking an answer's text in the Yes / No and Checklist views jumped the page to the bottom on every other click (the sticky-bar focus nudge also ran when focus landed on the page itself). Regression test `qa/tests/regressions/answer-click-no-scroll-jump.e2e.ts`, which failed on the old build (3,311 px jump).
+
+**For organizations**
+- Reports end with "Does this feel right?": Yes or Not quite, which part felt off, and an optional comment. CSF staff read every answer; a new answer replaces an older one.
+- "Stay connected with the Community Safety Fund": optional sign-up for CSF trainings and occasional updates, open to any CVI organization, email asked only after a box is ticked, unticking both withdraws and deletes the record.
+- Both cards follow the report language (Spanish reports get them in Spanish) and pass axe at 1280 and 375 px.
+- Questionnaire: "How would you like to answer?" with "Pick any. Your answers stay the same if you switch." (One at a time is still the default), and a one-line instruction right above the statements in Checklist ("Tick each statement that is true for your organization today. Anything you leave unticked counts as No.") and Yes / No views, in Spanish too.
+- Plans fit the organization's size: the report prompt asks very small teams (1 to 10 staff, or under $250K) for smaller first steps, free tools and one owner per step, never assumes a finance or HR department, and assumes a small team when size is unknown.
+
+**For CSF staff: new "Quality and follow-through" tab (`/staff/#quality`)**
+- Report quality: what organizations said, a review queue (not-reviewed first), Mark reviewed or Flag with a reason ("Too big for their size", "Wrong facts", "Unclear", "Tone", "Other") and counts by reason, so repeated AI mistakes show up.
+- Follow-through: who is on track, stalled (no roadmap step in 14+ days) or not started, with a check-in list and a ready-to-send "Copy check-in note" (no email is sent automatically), plus CSV.
+- Opted in: organizations that chose to hear about trainings or updates, with CSV.
+- Where people stop: saved drafts started, submitted and abandoned, finish rate by area, and the most common last area.
+- New API: `/api/assessments/<id>/feedback`, `/api/assessments/<id>/optin`, `/api/staff/reviews/<id>`, `/api/staff/quality`, `/api/staff/optins`, `/api/staff/funnel` (`features/feedback.py`, `features/optin.py`, `features/funnel.py`), with synthetic seed data and unit tests; staff routes refuse organizations (e2e `qa/tests/quality.e2e.ts`).
+
+**BI:** QuickSight assessed and not adopted for now ([`docs/quicksight-assessment.md`](docs/quicksight-assessment.md)): not subscribed in this account, about $24 per author and $3 per reader a month, no RDS Data API support (it would need a VPC connection into the database), and a second sign-in; the in-app dashboard already covers the director's questions.
+
+**Evals:** full reports eval after the prompt change: quality judges on par with v1.5 (actionability 0.88 vs 0.88, personalization 0.87 vs 0.83, plain language 0.73 vs 0.72, faithfulness 0.72 vs 0.73) and `plan_size_ok` 100%. One run of the "almost no growth priorities" edge case returned no grounded action (gate fail); rerun 3 of 3 passes with the new rule (and 3 of 3 without it), so it is a one-off model miss, not the rule; the app's "Try again" covers it.
+
 ## v1.6.1 — Pitch in plain English, with a demo-first 8-minute run of show
 
 - `docs/pitch/demo-script.md` leads with a demo-first run of show (7:20 plus 40 seconds of slack): two opening slides, a 3:30 live demo of the leader and staff views, then one slide each for how it works, feasibility, scale and the ask. Every step has the exact clicks, plain-English lines to say, and the judging criterion it serves. A "Say it plainly" table swaps tech words for everyday ones. The slides-first version is kept below it.

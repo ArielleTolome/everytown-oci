@@ -1,0 +1,522 @@
+{
+ "experiment": "reports us.anthropic.claude-sonnet-5-5 9804d96",
+ "gate_failures": [],
+ "meta": {
+  "examples": 2,
+  "git_sha": "9804d96",
+  "judges": false,
+  "limit": 2,
+  "model": "us.anthropic.claude-sonnet-5-5",
+  "suite": "reports"
+ },
+ "phoenix_url": "https://d31juizcem790j.cloudfront.net/datasets/RGF0YXNldDox/compare?experimentId=RXhwZXJpbWVudDo4",
+ "results": [
+  {
+   "evals": [
+    {
+     "explanation": "All 11 items cite real growth priorities.",
+     "label": "pass",
+     "name": "grounded",
+     "score": 1.0
+    },
+    {
+     "explanation": "Focus ['PL2', 'FM4'], code chose ['PL2', 'FM4'].",
+     "label": "pass",
+     "name": "focus_matches_code",
+     "score": 1.0
+    },
+    {
+     "explanation": "14 links, all from the catalog.",
+     "label": "pass",
+     "name": "catalog_links_only",
+     "score": 1.0
+    },
+    {
+     "explanation": "Plan covers [30, 60, 90] days.",
+     "label": "pass",
+     "name": "horizons_covered",
+     "score": 1.0
+    },
+    {
+     "explanation": "9 plan items (want 6 to 9).",
+     "label": "pass",
+     "name": "plan_size_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "Grade 4.9 (max 8.5).",
+     "label": "pass",
+     "name": "reading_grade_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "No em dashes.",
+     "label": "pass",
+     "name": "no_em_dash",
+     "score": 1.0
+    },
+    {
+     "explanation": "100% of common words are English.",
+     "label": "pass",
+     "name": "language_ok",
+     "score": 1.0
+    },
+    {
+     "explanation": "3 numbers, all from the facts or small counts.",
+     "label": "pass",
+     "name": "no_invented_numbers",
+     "score": 1.0
+    },
+    {
+     "explanation": "0 stage mentions match the engine.",
+     "label": "pass",
+     "name": "stages_consistent",
+     "score": 1.0
+    },
+    {
+     "explanation": "0 of 11 model items dropped by validation.",
+     "label": "pass",
+     "name": "raw_drop_rate",
+     "score": 1.0
+    },
+    {
+     "explanation": "All expected terms present, no forbidden ones.",
+     "label": "pass",
+     "name": "expectations",
+     "score": 1.0
+    }
+   ],
+   "id": "report-sample-A-en",
+   "metadata": {
+    "case": "sample-A-en",
+    "tags": [
+     "sample",
+     "en",
+     "4-areas"
+    ]
+   },
+   "output": {
+    "raw_counts": {
+     "focus": 2,
+     "plan": 9
+    },
+    "report": {
+     "conversation": [
+      "Could each of us describe our top three goals in our own words? What would we hear if we asked?",
+      "If the city contract paid late or ended, how many months could we keep paying staff?",
+      "Which tasks run only through the founder and me, and which one could we hand to someone else first?",
+      "What changes in young people and on the block would tell us the work is making a difference?",
+      "Which funder, donor or neighbor could we ask this year for steadier, multi-year support?"
+     ],
+     "focus": [
+      {
+       "gap_ids": [
+        "PL2",
+        "PL3"
+       ],
+       "resource": {
+        "title": "Community Based Violence Intervention and Prevention Initiative Implementation Checklist (April 2022)",
+        "url": "https://www.ojp.gov/sites/ojp/files/media/document/cvi-implementation-checklist_0.pdf"
+       },
+       "steps": [
+        "Write three to five goals in plain words for street outreach and for mentoring. Keep it to one or two pages.",
+        "List the main tasks under each goal. Add one owner and a due date for each task.",
+        "Draw a simple logic model: what you do, what you expect to change, and why you believe it will work. The BJA checklist (Step 3.1) explains how.",
+        "Read the goals aloud at a staff meeting and ask each person to say them back in their own words."
+       ],
+       "title": "Write one simple work plan for the next six months",
+       "why": "Your answers show you do not yet have a written work plan, a logic model, or a strategy. With four staff and most tasks running through you, the plan lives in your head. A short plan lets your team share the load and gives funders a clear picture. Planning also lifts fundraising and money management, according to the 2025 cohort findings."
+      },
+      {
+       "gap_ids": [
+        "FM4"
+       ],
+       "resource": {
+        "title": "ARCvi: Finding and Sustaining Funding",
+        "url": "https://arcvi.org/finding-and-sustaining-funding/"
+       },
+       "steps": [
+        "List each month's expected money coming in, with the date it usually arrives, and each month's bills and payroll going out.",
+        "Mark the months where money goes out before it comes in. Talk about what you could do about those months.",
+        "Check the plan once a month with the founder, using your accounting system numbers. Adjust it as things change.",
+        "Talk with your city contract contact about when payments arrive, so your dates are accurate."
+       ],
+       "title": "Make a simple cash plan to protect payroll",
+       "why": "Meeting payroll steadily is the base of staff trust. Your budget is about $310K, and most of your money comes from one city contract plus small gifts. Late payments on one contract could squeeze you. A one-page cash plan shows trouble early, and you already have an accounting system to build it from."
+      }
+     ],
+     "plan": [
+      {
+       "gap_ids": [
+        "PL3",
+        "PL2"
+       ],
+       "horizon": 30,
+       "owner": "Executive director",
+       "resource": {
+        "title": "Community Based Violence Intervention and Prevention Initiative Implementation Checklist (April 2022)",
+        "url": "https://www.ojp.gov/sites/ojp/files/media/document/cvi-implementation-checklist_0.pdf"
+       },
+       "steps": [
+        "Set aside one hour with the founder to draft three to five goals in plain words.",
+        "Share them at a staff meeting and ask each person to say them back.",
+        "Post them where the team sees them, and fix any wording that confuses people."
+       ],
+       "title": "Write your team's three to five goals",
+       "why": "Your answers show goals are not yet written down, and staff may describe them differently. Short shared goals are the cheapest first step."
+      },
+      {
+       "gap_ids": [
+        "FM4"
+       ],
+       "horizon": 30,
+       "owner": "Executive director",
+       "resource": {
+        "title": "ARCvi: Finding and Sustaining Funding",
+        "url": "https://arcvi.org/finding-and-sustaining-funding/"
+       },
+       "steps": [
+        "List money in and money out by month for the next six months.",
+        "Mark months where cash could run tight.",
+        "Write down one action for each tight month, such as asking about payment timing."
+       ],
+       "title": "Build a one-page cash plan",
+       "why": "Payroll safety comes first, and one city contract carries a lot of weight in your budget."
+      },
+      {
+       "gap_ids": [
+        "FR5",
+        "FR7",
+        "PL9"
+       ],
+       "horizon": 30,
+       "owner": "Founder",
+       "resource": {
+        "title": "ARCvi: Finding and Sustaining Funding",
+        "url": "https://arcvi.org/finding-and-sustaining-funding/"
+       },
+       "steps": [
+        "Make a simple sheet with funder or donor name, amount, what it can be used for, and end or renewal date.",
+        "Mark which money is confirmed and which is only hoped for.",
+        "Note your city contract's end date and who to talk to about renewal."
+       ],
+       "title": "List every funder and supporter with renewal dates",
+       "why": "You know your next 6 to 12 months. This list shows what comes after and sets up multi-year asks."
+      },
+      {
+       "gap_ids": [
+        "PL2",
+        "PL5",
+        "PL6"
+       ],
+       "horizon": 60,
+       "owner": "Executive director",
+       "resource": {
+        "title": "Community Based Violence Intervention and Prevention Initiative Implementation Checklist (April 2022)",
+        "url": "https://www.ojp.gov/sites/ojp/files/media/document/cvi-implementation-checklist_0.pdf"
+       },
+       "steps": [
+        "For each program, list tasks with one owner and one due date each.",
+        "Draw a one-page logic model: activities, short-term changes, longer-term changes.",
+        "Review the plan for 20 minutes at each monthly team meeting and note what moved."
+       ],
+       "title": "Turn goals into a six-month work plan and a simple logic model",
+       "why": "Goals need tasks, owners and dates to guide the work. A logic model also shows funders how your outreach and mentoring lead to change."
+      },
+      {
+       "gap_ids": [
+        "ML3",
+        "ML4"
+       ],
+       "horizon": 60,
+       "owner": "Staff member who handles data",
+       "resource": {
+        "title": "ARCvi: Using Data That Matters",
+        "url": "https://arcvi.org/using-data-that-matters/"
+       },
+       "steps": [
+        "Choose two or three changes you hope to see for youth in mentoring and for people reached by outreach.",
+        "Decide one simple sign for each, such as school attendance or a conflict mediated without violence.",
+        "Add those to the spreadsheet or tool you already use, and check them monthly. Collect only what you need and keep it private."
+       ],
+       "title": "Pick two or three outcomes for each program and how you will track them",
+       "why": "Defined outcomes are a growth priority. You already track services and people served, so you can build on that."
+      },
+      {
+       "gap_ids": [
+        "FM6",
+        "FM8"
+       ],
+       "horizon": 60,
+       "owner": "Executive director",
+       "resource": {
+        "title": "Governance and Related Topics: 501(c)(3) Organizations",
+        "url": "https://www.irs.gov/pub/irs-tege/governance_practices.pdf"
+       },
+       "steps": [
+        "Print a basic income and spending report from your accounting system each month.",
+        "Compare it to your budget and write two sentences on the biggest differences.",
+        "Share it with the founder, and with a trusted board or advisor if you have one."
+       ],
+       "title": "Start a monthly look at budget versus actual spending",
+       "why": "Comparing plans to real spending catches problems early and builds the habit funders look for."
+      },
+      {
+       "gap_ids": [
+        "FM7"
+       ],
+       "horizon": 90,
+       "owner": "Executive director",
+       "resource": {
+        "title": "Governance and Related Topics: 501(c)(3) Organizations",
+        "url": "https://www.irs.gov/pub/irs-tege/governance_practices.pdf"
+       },
+       "steps": [
+        "Write one page: who approves spending, who pays bills, and who records and checks.",
+        "Add a rule for checking the bank statement by someone who does not make payments.",
+        "Keep it in a shared folder with your mission and budget."
+       ],
+       "title": "Write down your money rules and who approves what",
+       "why": "Money duties are already shared. Writing the rules protects your people and builds trust with the city and other funders."
+      },
+      {
+       "gap_ids": [
+        "FR5",
+        "FR6",
+        "FR9"
+       ],
+       "horizon": 90,
+       "owner": "Founder",
+       "resource": {
+        "title": "ARCvi: Finding and Sustaining Funding",
+        "url": "https://arcvi.org/finding-and-sustaining-funding/"
+       },
+       "steps": [
+        "Pick three funders from your list, plus local faith communities and businesses, to approach.",
+        "Write a one-page ask using your goals and outcomes. Explain how steady money protects staff and young people.",
+        "Ask for at least some multi-year or general operating support. Share only stories people have agreed to share."
+       ],
+       "title": "Prepare asks for multi-year and flexible funding",
+       "why": "Depending on one city contract is risky. With a plan, goals and numbers in hand, you can ask for steadier support."
+      },
+      {
+       "gap_ids": [
+        "PL7"
+       ],
+       "horizon": 90,
+       "owner": "Executive director",
+       "resource": null,
+       "steps": [
+        "Put your mission, budget, work plan, logic model and money rules in one folder.",
+        "Make a short list of what is missing, like policies, and choose one to write next.",
+        "Name a second person who knows where the folder is, so you are not the only one."
+       ],
+       "title": "Gather your key documents in one shared folder",
+       "why": "Funders and partners ask for the same papers often. One folder saves time for a team that is already stretched."
+      }
+     ],
+     "reading_grade": 4.9,
+     "simplified": false,
+     "sources": [
+      {
+       "title": "Community Based Violence Intervention and Prevention Initiative Implementation Checklist (April 2022)",
+       "url": "https://www.ojp.gov/sites/ojp/files/media/document/cvi-implementation-checklist_0.pdf"
+      },
+      {
+       "title": "ARCvi: Finding and Sustaining Funding",
+       "url": "https://arcvi.org/finding-and-sustaining-funding/"
+      },
+      {
+       "title": "ARCvi: Using Data That Matters",
+       "url": "https://arcvi.org/using-data-that-matters/"
+      },
+      {
+       "title": "Governance and Related Topics: 501(c)(3) Organizations",
+       "url": "https://www.irs.gov/pub/irs-tege/governance_practices.pdf"
+      }
+     ],
+     "strengths": [
+      "Young people and families trust you. That credibility is the foundation of street outreach and mentoring.",
+      "You already use an accounting system, build a yearly budget, and share money duties so no one person holds it all.",
+      "You track who you serve and what services they get, and you have someone responsible for data.",
+      "You know where funding will come from for the next 6 to 12 months, and you have individual supporters beyond your city contract.",
+      "You are three years in with a small team that has kept the work going."
+     ],
+     "summary": "Here's what I've learned about you. You started Southside Youth Peace Collective in 2023. You run street outreach and youth mentoring with a team of four, and two of you work full time. Young people and families trust you. That trust is hard to build, and it is your greatest asset. Most of the back-office work runs through you and the founder, so you carry a lot.\n\nYou are strong in the basics that many young groups skip. You use an accounting system. Money duties are shared. You build a yearly budget. You track who you serve and what services they get, and someone on the team is responsible for data. You also know where your money will come from for the next 6 to 12 months, and you have supporters beyond one funder. Your answers show all four areas we looked at are at the Seeding stage. That is a normal place to be in year three.\n\nYou have room to grow in writing things down. That means a work plan, a simple map of how your work leads to change, and clear program goals. You also have room to grow in cash planning, reviewing your money each month, and having more than one funder. Right now one city contract carries a lot of weight. None of this says your work is not good. It says the work lives in your heads, and it should also live on paper.\n\nIf I were you, I would start with two things. First, write one short work plan so your whole team knows the goals, the tasks, who owns each one, and when. Second, make a simple cash plan so you always know payroll is safe. These two steps protect your staff. They also make it easier to ask for multi-year money later."
+    },
+    "seconds": 26.9
+   }
+  }
+ ],
+ "summary": [
+  {
+   "errors": 0,
+   "evaluator": "catalog_links_only",
+   "gate": true,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "14 links, all from the catalog.",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "focus_matches_code",
+   "gate": true,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Focus ['PL2', 'FM4'], code chose ['PL2', 'FM4'].",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "grounded",
+   "gate": true,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "All 11 items cite real growth priorities.",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "no_em_dash",
+   "gate": true,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "No em dashes.",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "expectations",
+   "gate": false,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "All expected terms present, no forbidden ones.",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "horizons_covered",
+   "gate": false,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Plan covers [30, 60, 90] days.",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "language_ok",
+   "gate": false,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "100% of common words are English.",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "no_invented_numbers",
+   "gate": false,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "3 numbers, all from the facts or small counts.",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "plan_size_ok",
+   "gate": false,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "9 plan items (want 6 to 9).",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "raw_drop_rate",
+   "gate": false,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "0 of 11 model items dropped by validation.",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "reading_grade_ok",
+   "gate": false,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "Grade 4.9 (max 8.5).",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  },
+  {
+   "errors": 0,
+   "evaluator": "stages_consistent",
+   "gate": false,
+   "mean": 1.0,
+   "n": 1,
+   "pass_rate": 1.0,
+   "worst": {
+    "explanation": "0 stage mentions match the engine.",
+    "id": "report-sample-A-en",
+    "score": 1.0
+   }
+  }
+ ],
+ "usage": {
+  "by_model": {
+   "us.anthropic.claude-sonnet-5-5": {
+    "cacheReadInputTokens": 15754,
+    "cacheWriteInputTokens": 15754,
+    "calls": 2,
+    "inputTokens": 28118,
+    "outputTokens": 7520,
+    "totalTokens": 67146
+   }
+  },
+  "estimated_usd": 0.261
+ }
+}

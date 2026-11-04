@@ -1222,3 +1222,54 @@ main h2[id] { scroll-margin-top: var(--space-lg); }
   #plan-root .rm-week--done > details, #plan-root .rm-week--locked > details { margin-left: 0; }
 }
 /* == end v1.5 results == */
+/* == v1.7 intake == */
+.seg__hint { margin: var(--space-xs) 0 0; }
+.q-instruct { display: flex; gap: var(--space-sm); align-items: flex-start; margin: var(--space-lg) 0 var(--space-md); padding: var(--space-sm) var(--space-md); border-left: 4px solid var(--color-secondary); background: var(--color-selected-bg); border-radius: 0 var(--radius) var(--radius) 0; font-weight: 600; }
+.q-instruct svg { flex: none; margin-top: 0.2em; }
+/* == end v1.7 intake == */
+/* == v1.7 results == */
+/* "Does this feel right?" (one card per report) and "Stay connected with the Community Safety Fund". */
+.feedback__group, .feedback__more > .field, .optin__contact > .field { margin-bottom: var(--space-md); }
+.feedback__more { padding-top: var(--space-xs); }
+/* .legend-heading floats; "legend + *" only clears the error line, which is often hidden. */
+.feedback__group > .choice-row { clear: both; }
+.feedback__comment { min-height: 7rem; resize: vertical; }
+.feedback__count { margin: var(--space-xs) 0 0; }
+.feedback .support__sent, .optin .support__sent { margin: 0 0 var(--space-md); }
+.feedback__list { list-style: none; margin: 0 0 var(--space-md); padding: 0; display: grid; gap: var(--space-md); }
+.feedback__list li { display: grid; gap: var(--space-xs); padding-bottom: var(--space-md); border-bottom: 1px solid var(--color-border); }
+.feedback__verdict { display: flex; gap: var(--space-sm); align-items: flex-start; }
+.feedback__verdict .icon { flex: none; margin-top: 0.15em; color: var(--color-secondary); }
+.feedback__quote { margin: 0; padding-left: var(--space-md); border-left: 3px solid var(--color-border-strong); white-space: pre-line; overflow-wrap: anywhere; }
+.optin #optin-form fieldset { margin-bottom: var(--space-md); }
+/* Stacked, so an email error never pushes its field out of line with the name field. */
+.optin__contact { max-width: 32rem; }
+/* == end v1.7 results == */
+/* == v1.7 staff == */
+/* Seven tabs: one row on wide screens, 4 + 3 on tablets, 2 columns on phones with the last tab spanning the row. */
+@media (min-width: 1100px) { #staff-root .staff-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(0, 1.5fr); } }
+@media (min-width: 640px) and (max-width: 1099px) { #staff-root .staff-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 639px) { #staff-root .staff-tabs .layer-tab:last-child { grid-column: 1 / -1; } }
+/* Quality and follow-through: quiet like the other tabs; plain text cells, no badges. */
+.sq-section + .sq-section { margin-top: var(--space-2xl); }
+#panel-quality tbody th, #panel-quality td { vertical-align: middle; }
+.sq-kpis .kpi { border-top-width: 3px; box-shadow: none; }
+.sq-kpis .kpi__num { font-size: 2.25rem; }
+.sq-row-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.sq-row-actions .btn { white-space: nowrap; }
+.sq-status p { margin: 0; }
+.sq-flag { max-width: 40rem; margin: var(--space-md) 0; box-shadow: none; }
+.sq-flag h4 { margin: 0 0 var(--space-md); font-size: 1.0625rem; }
+.sq-comments li, .sq-checkins li { padding: var(--space-sm) 0; border-bottom: 1px solid var(--color-border); min-width: 0; overflow-wrap: anywhere; }
+.sq-comments p, .sq-checkins p { margin: 0 0 var(--space-xs); }
+.sq-comment { max-width: 70ch; }
+.sq-note-slot:empty { display: none; }
+.sq-note-slot { margin-top: var(--space-sm); }
+.sq-note-slot p { margin: 0; }
+.sq-note-slot textarea { display: block; width: 100%; max-width: 40rem; margin-top: var(--space-xs); }
+.sq-csv { margin: var(--space-md) 0 0; }
+.sq-nowrap { white-space: nowrap; }
+.sq-share .share { min-width: 12rem; }
+.sq-last { padding-left: 1.25rem; }
+@media (max-width: 639px) { .sq-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); } .sq-kpis .kpi { padding: var(--space-sm) var(--space-md); } .sq-kpis .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } .sq-kpis .kpi__num { font-size: 1.75rem; } }
+/* == end v1.7 staff == */

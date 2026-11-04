@@ -8,6 +8,8 @@ Project documents: the hackathon vision and technical write-ups, the pitch deck 
 |---|---|
 | `vision.md` | Vision document from the OCI scoping session: problem, users, goals and the AI recommendation layer on top of the deterministic scoring. |
 | `tech.md` | Technical document: stack, which AWS service runs what, and the planned multi-step Bedrock pipeline. |
+| `next-steps.md` | What the CSF director raised in the 2026-11-04 walkthrough, what v1.7 built for each point, and the remaining tasks (L1 to L10), each sized for one person or agent. |
+| `quicksight-assessment.md` | Whether staff BI should move to Amazon QuickSight: not now, with costs, data-access limits, revisit triggers and the low-risk path if it is ever needed. |
 | `pitch/index.html` | The pitch deck as one HTML page. Open it in a browser: arrows or space to move, `N` for timed speaker notes. |
 | `pitch/OCI-Capacity-Coach-pitch.pdf` | PDF export of the deck, built by `python3 scripts/build_pitch_pdf.py`. Rebuild it after editing `index.html`. |
 | `pitch/demo-script.md` | The 8-minute run of show: timing per slide, judging criteria, demo steps, sign-ins and offline backup. |

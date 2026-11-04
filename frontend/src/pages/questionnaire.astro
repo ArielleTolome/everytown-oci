@@ -56,6 +56,8 @@ import Icon from "../components/Icon.astro";
 
   const spanish = () => qlang === "es";
   const textOf = (q: Question) => (spanish() && es[q.id]?.text) || q.text;
+  // New v1.7 interface text follows the question language (same pattern as lib/quick.ts); `sp` is trusted HTML.
+  const tr = (en: string, sp: string) => (spanish() ? `<span lang="es">${sp}</span>` : en);
   const stmt = (q: Question) => `<span${spanish() ? ' lang="es"' : ""}>${esc(textOf(q))}</span>`;
   const noState = (id: string) => (draft.answers[id] === "no" ? "Counted as No" : "");
 
@@ -178,9 +180,9 @@ import Icon from "../components/Icon.astro";
       <p class="hint">Answer all ${d.questions.length} statements to finish this area. We save your answers on this device as you go.</p>`;
     const tools = `
       <div class="q-tools">
-        <fieldset class="seg"><legend>How to answer</legend><div class="seg__opts">
+        <fieldset class="seg" aria-describedby="view-hint"><legend id="view-legend"></legend><div class="seg__opts">
           ${seg("q-view", "quick", "One at a time", view === "quick")}${seg("q-view", "yn", "Yes / No for each", view === "yn")}${seg("q-view", "check", "Checklist: tick what's true", view === "check")}
-        </div></fieldset>
+        </div><p class="hint seg__hint" id="view-hint"></p></fieldset>
         ${es[d.questions[0].id] ? `<fieldset class="seg"><legend>Questions in</legend><div class="seg__opts">
           ${seg("q-lang", "en", "English", !spanish())}${seg("q-lang", "es", '<span lang="es">Español</span>', spanish())}
         </div></fieldset>` : ""}
@@ -335,7 +337,11 @@ import Icon from "../components/Icon.astro";
     const check = view === "check";
     $("#questions")!.innerHTML = `
       ${spanish() ? `<p class="q-es-note" lang="es">${icon("info")}<span>Traducción automática revisada por el equipo; la versión oficial en inglés está disponible.</span></p>` : ""}
-      ${view === "quick" ? '<div id="quick-host"></div>' : groupedStatements(d)}
+      ${view === "quick" ? '<div id="quick-host"></div>' : `<p class="q-instruct">${icon(check ? "list-checks" : "circle-check")}<span>${check
+        ? tr("Tick each statement that is true for your organization today. Anything you leave unticked counts as No.",
+          "Marque cada afirmación que sea cierta para su organización hoy. Lo que deje sin marcar cuenta como No.")
+        : tr("Choose Yes or No for each statement. Yes means it is true for your organization today.",
+          "Elija Yes o No para cada afirmación. Yes quiere decir que es cierta para su organización hoy.")}</span></p>${groupedStatements(d)}`}
       ${check ? `<div class="check-done">
         <p>Anything you did not tick will be saved as No. That is fine: every No is simply a place to grow.</p>
         <p class="field-error" id="done-error" hidden>${icon("alert")}<span>Before you go on, press the button below. It saves every statement you did not tick as No.</span></p>
@@ -360,9 +366,11 @@ import Icon from "../components/Icon.astro";
     const about = $("#about-body")!;
     about.innerHTML = `<p>${esc(t?.about ?? d.about)}</p>${d.connects ? `<p>${esc(t?.connects ?? d.connects)}</p>` : ""}`;
     if (t) about.setAttribute("lang", "es"); else about.removeAttribute("lang");
-    $("#callout-text")!.textContent = check
-      ? "Tick each statement that describes how your organization works today. Leave the rest unticked. Every No is simply a place to grow."
-      : `Choose Yes if the statement describes how your organization works today, and No if it does not yet.${view === "quick" ? " The next one comes up by itself." : ""} Every No is simply a place to grow.`;
+    $("#view-legend")!.innerHTML = tr("How would you like to answer?", "¿Cómo prefiere responder?");
+    $("#view-hint")!.innerHTML = tr("Pick any. Your answers stay the same if you switch.", "Elija cualquiera. Sus respuestas no cambian si cambia de forma.");
+    $("#callout-text")!.textContent = view === "quick"
+      ? "Choose Yes if the statement is true for your organization today, and No if it is not yet. The next one comes up by itself. Every No is simply a place to grow."
+      : "Answer for how your organization works today, not how you hope it will be. Every No is simply a place to grow.";
   }
 
   /** Update progress and the bar's polite status (the only live region for answer changes). */
