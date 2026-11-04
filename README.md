@@ -7,7 +7,7 @@ The Organizational Capacity Index (OCI) for community violence intervention (CVI
 
 AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/vision.md), [`docs/tech.md`](docs/tech.md).
 
-**Current release:** v1.0.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
+**Current release:** v1.1.0. See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. Pitch deck: [`docs/pitch/index.html`](docs/pitch/index.html); demo script: [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md).
 
 The tool is designed to sit inside the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) Grantee Portal: CSF says new grantees "complete a self-assessment that shapes their participation in cohort-based and customized training through our Community Training Institute", and the portal is where grantees "sign up for future training opportunities and complete surveys". The look follows that site (navy and royal blue, serif headlines, pill buttons, pale-blue title bands).
 
@@ -206,6 +206,120 @@ priority_score    = stage_weight * domain_weight * gap_density_bonus
 - Tokens and rules: `design-system/everytown-oci/MASTER.md` plus per-page overrides (kept outside this repo in the workshop folder), built with the `ui-ux-pro-max` skill.
 - Reference research: Mobbin MCP searches for assessment results, multi-step questionnaires, onboarding pickers and admin analytics; the screens we adapted are linked in the v0.6.0 changelog.
 - Visual exploration: Google Stitch project "Everytown OCI Capacity Coach" with an Everytown design system (navy, royal blue, red, Atkinson Hyperlegible). Stitch's layouts were re-implemented in Astro; its placeholder copy was discarded.
+
+## Observability and evals
+
+Every AI step (research, Knowledge Base search, report writing, coach, staff questions, read-aloud) is traced to
+[Arize Phoenix](https://github.com/Arize-ai/phoenix), an open source tracing and eval tool. Phoenix runs on its own
+server in its own CloudFormation stack, `everytown-oci-obs`, so the app and its audit trail have separate lifecycles.
+Staff use it to see what the AI was given, what it returned, what the code kept or dropped, and how long each step took.
+Eval runs (see `evals/README.md`) store their datasets and experiment results there too.
+
+```mermaid
+flowchart LR
+  L[App Lambda] -- OTLP/HTTP + system API key --> CF[CloudFront HTTPS]
+  E[evals/run.py] -- REST + API key --> CF
+  S[Staff browser] -- login, secure cookies --> CF
+  CF -- HTTP :6006, CloudFront addresses only --> P[EC2 t3.small: Phoenix container]
+  P --> V[(Encrypted EBS /data: SQLite)]
+```
+
+### Deploy
+
+```bash
+scripts/deploy_observability.sh   # about 6 minutes the first time, seconds afterwards
+scripts/deploy.sh                 # passes PHOENIX_URL and PHOENIX_API_KEY to the Lambda
+```
+
+`deploy_observability.sh` is idempotent. On the first run it generates the Phoenix secrets and the admin's initial
+password into `infra/.phoenix.env` (mode 600, git-ignored, never printed), picks a default-VPC subnet and the current
+Amazon Linux 2023 AMI, and deploys `infra/observability.yaml`. It then waits until `<PhoenixUrl>/healthz` answers through
+CloudFront, creates a system API key named `everytown-oci-app`, creates the projects `everytown-oci` (live app) and
+`everytown-oci-evals`, and saves `PHOENIX_URL` and `PHOENIX_API_KEY` in the same file. Later runs keep the subnet, AMI
+and a still-working key.
+
+The app reads `OCI_PHOENIX_ENDPOINT`, `OCI_PHOENIX_API_KEY`, `OCI_PHOENIX_PROJECT` (default `everytown-oci`) and
+`OCI_PHOENIX_UI`. Without an endpoint, tracing is off. For local development, point them at a local Phoenix
+(`http://127.0.0.1:6006`) or at the deployed URL and key from `infra/.phoenix.env`.
+
+### Log in
+
+Open the `PhoenixUrl` printed by the script (also the stack output). Sign in as `admin@localhost` with
+`PHOENIX_ADMIN_INITIAL_PASSWORD` from `infra/.phoenix.env`. Phoenix asks for a new password on the first login; keep
+the new one in your team's password manager (the deployed sandbox's current one is `PHOENIX_ADMIN_PASSWORD` in the same
+file). Add staff accounts under Settings, Users. Staff see a "View AI trace" link on each report that opens its trace.
+
+### Rotate the app's API key
+
+1. Delete the `PHOENIX_API_KEY=` line from `infra/.phoenix.env`.
+2. Run `scripts/deploy_observability.sh` (it creates a new system key), then `scripts/deploy.sh`.
+3. In Phoenix, Settings, API Keys, delete the old `everytown-oci-app` key.
+
+The Phoenix secrets and the admin initial password are fixed at the instance's first boot. To change them, edit
+`/etc/phoenix.env` on the instance and recreate the container (see Upgrade below), then update `infra/.phoenix.env`.
+
+### Operate
+
+- Shell access is through SSM Session Manager only (no SSH key, port 22 closed):
+  `aws ssm start-session --target <InstanceId>`.
+- Upgrade Phoenix: on the instance, `docker pull arizephoenix/phoenix:<tag>`, `docker rm -f phoenix`, then the same
+  `docker run` line as in `infra/observability.yaml` with the new tag. Also update the `PhoenixImage` default there.
+  The data on `/data` is kept.
+- A new AMI or subnet replaces the instance, and the data volume cannot attach to two instances. Do that with a
+  teardown and redeploy, or move the volume by hand.
+
+### Tear down
+
+`scripts/teardown.sh` deletes `everytown-oci-obs` along with the app and database stacks. The data volume keeps a final
+snapshot (`DeletionPolicy: Snapshot`); the script prints its id and the delete command. `infra/.phoenix.env` stays; a
+later deploy reuses its secrets and creates a fresh API key.
+
+### Cost (us-west-2, on-demand, always on)
+
+| Item | Monthly USD |
+|---|---|
+| EC2 t3.small (730 h at $0.0208) | 15.18 |
+| EBS gp3, 20 GB root + 20 GB data ($0.08/GB) | 3.20 |
+| Public IPv4 address (Elastic IP, $0.005/h) | 3.65 |
+| CloudFront (demo traffic fits the always-free 1 TB and 10M requests) | 0 |
+| **Total** | **about 22** |
+
+Stopping the instance when nobody uses it removes the EC2 line; the address and volumes are still billed. After
+teardown only the final snapshot remains (cents per month at demo size).
+
+### Security model
+
+- Phoenix authentication is on. Session cookies are `Secure` and `HttpOnly` because every browser request is HTTPS
+  through CloudFront (HTTP redirects to HTTPS).
+- The app and eval runs use a system API key, never the admin secret. The admin secret is only used by the deploy script
+  to create that key.
+- The security group admits TCP 6006 only from the AWS-managed CloudFront origin-facing prefix list; nothing else is
+  open. Direct requests to the instance time out.
+- Instance metadata needs IMDSv2 with a hop limit of 1, so the Phoenix container cannot reach the instance role, which
+  only has `AmazonSSMManagedInstanceCore`. Both EBS volumes are encrypted.
+- Known limits, acceptable for synthetic data in a sandbox: the CloudFront to instance hop is plain HTTP inside the AWS
+  network; any CloudFront distribution (not only ours) can reach the origin port, so Phoenix's own login is the access
+  control; and the secrets reach the instance as NoEcho parameters in user data, readable by anyone allowed
+  `ec2:DescribeInstanceAttribute`. Before real data: put Secrets Manager and TLS to the origin (or a private origin
+  through CloudFront VPC origins) in front of it.
+
+### What a trace shows
+
+One trace per report (Phoenix session = assessment id): `oci.report` → `score` (fixed engine, no model) → `research.website` / `research.social` / `research.news` and `research.summarize` → `library.kb_retrieve` (documents with scores) → `report.write` (Claude: prompts, raw tool output before validation, token and cache counts, stop reason, guardrail action) → `report.validate` (how many items the code dropped and why) → `report.plain_language` (grade before and after) → `online_checks` (the code checks from `evals/checks.py`, also attached as annotations). Coach questions, staff "Ask the data", training briefs and read-aloud are traced too. Spans carry the user's role and a hashed session id, never the respondent's name. Staff open a report's trace from "View AI trace (staff)"; organizations never see it.
+
+![Phoenix trace of one live report: the span tree on the left, the Claude report call with its prompt, tokens and cost on the right](docs/screenshots/9-phoenix-trace.jpg)
+
+### Evals
+
+`evals/` runs the real AI steps on synthetic datasets (16 reports, 21 coach questions, 15 staff questions) and scores them with deterministic code checks (grounding, code-chosen focus, catalog-only links, crisis and score-change handling, staff-question rejection, reading level, language) and calibrated Claude Haiku judges (personalization, actionability, plain language and tone, faithfulness, coach helpfulness). Each run is a Phoenix experiment; `--compare` runs an A/B between models. The command exits nonzero when a gate check fails, so it can gate a release. See [`evals/README.md`](evals/README.md).
+
+```
+python3 -m evals.run --suite all --limit 4      # quick check, about $0.60
+python3 -m evals.run --suite reports            # full reports suite, about $2.40
+python3 -m evals.run --suite coach --model us.anthropic.claude-haiku-5-5 --compare us.anthropic.claude-sonnet-5-5
+```
+
+![Phoenix experiment for the reports suite: mean score per evaluator, and each synthetic organization's input, expected output, report and scores side by side](docs/screenshots/10-phoenix-experiment.jpg)
 
 ## Security notes
 

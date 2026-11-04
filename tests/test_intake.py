@@ -142,7 +142,9 @@ class Research(unittest.TestCase):
         self.assertEqual(research["strength"], "rich")
         kinds = [(s["kind"], s["used"]) for s in research["sources"]]
         self.assertEqual(kinds, [("website", True)] * 3 + [("social", True), ("news", True)])
-        prompt = conv.call_args.kwargs["messages"][0]["content"][0]["text"]
+        # The prompt is split into our own text and the untrusted public text (guardContent when a guardrail is on).
+        prompt = "\n".join(b.get("text") or b["guardContent"]["text"]["text"]
+                           for b in conv.call_args.kwargs["messages"][0]["content"])
         self.assertIn("Peace Org, Chicago", prompt)
         self.assertNotIn("ignored", prompt)
         self.assertIn("Peace Org opens new center", prompt)

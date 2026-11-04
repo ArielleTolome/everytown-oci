@@ -4,6 +4,7 @@ import { $$, announce, esc, focusEl, hostOf, plural, safeUrl } from "./dom";
 import { coachBody } from "./coach";
 import { icon, type IconName } from "./icons";
 import { roadmapTeaser } from "./roadmap";
+import { traceLink } from "./staff-bi";
 
 /** v1.0 document fields (all optional; older documents lack them). Kept local so api.ts stays conflict-free. */
 export interface ResearchSource { kind: "website" | "social" | "news"; url: string; title: string; used: boolean }
@@ -12,6 +13,8 @@ export interface V10 {
   research?: { strength: "rich" | "some" | "limited" | "none"; sources: ResearchSource[] } | null;
   answered_by?: Record<string, string> | null;
   peer_request?: { requested_at: string } | null;
+  /** v1.1: the AI trace of the latest run (staff only; the API strips it for organizations). */
+  trace?: { trace_id: string; project: string; url: string | null } | null;
 }
 export const v10 = (sub: Assessment) => sub as Assessment & V10;
 
@@ -598,6 +601,7 @@ export function reportBody(sub: Assessment, meta: Meta, opts: { reminder: boolea
     top.push(`<p class="notice section-gap" lang="es">${icon("info")}<span>Las preguntas están en inglés; este informe se escribió en español.</span></p>`);
   }
   if (r) top.push(`<p class="notice section-gap">${icon("info")}<span>Recommendations generated with AI from your answers and the CVI resource library. Scores are calculated by a fixed scoring method. Please review them with your team before acting.</span></p>`);
+  if (opts.staff) top.push(traceLink(v10(sub).trace?.url));
 
   // Layer 1: the short, conversational version.
   const plan: string[] = [];

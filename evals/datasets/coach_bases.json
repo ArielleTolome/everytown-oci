@@ -1,0 +1,2154 @@
+{
+ "A-en": {
+  "answers": {
+   "FM1": "yes",
+   "FM10": "no",
+   "FM11": "no",
+   "FM12": "no",
+   "FM13": "no",
+   "FM14": "no",
+   "FM15": "no",
+   "FM16": "no",
+   "FM17": "no",
+   "FM18": "no",
+   "FM19": "no",
+   "FM2": "yes",
+   "FM20": "no",
+   "FM3": "yes",
+   "FM4": "no",
+   "FM5": "no",
+   "FM6": "no",
+   "FM7": "no",
+   "FM8": "no",
+   "FM9": "no",
+   "FR1": "yes",
+   "FR10": "no",
+   "FR11": "no",
+   "FR12": "no",
+   "FR13": "no",
+   "FR14": "no",
+   "FR15": "no",
+   "FR16": "no",
+   "FR17": "no",
+   "FR18": "no",
+   "FR19": "no",
+   "FR2": "yes",
+   "FR20": "no",
+   "FR3": "yes",
+   "FR4": "yes",
+   "FR5": "no",
+   "FR6": "no",
+   "FR7": "no",
+   "FR8": "no",
+   "FR9": "no",
+   "ML1": "yes",
+   "ML10": "no",
+   "ML11": "yes",
+   "ML12": "no",
+   "ML13": "no",
+   "ML14": "no",
+   "ML15": "no",
+   "ML16": "no",
+   "ML17": "no",
+   "ML2": "yes",
+   "ML3": "no",
+   "ML4": "no",
+   "ML5": "no",
+   "ML6": "no",
+   "ML7": "no",
+   "ML8": "no",
+   "ML9": "no",
+   "PL1": "no",
+   "PL10": "no",
+   "PL11": "no",
+   "PL12": "no",
+   "PL13": "no",
+   "PL14": "no",
+   "PL15": "no",
+   "PL2": "no",
+   "PL3": "no",
+   "PL4": "yes",
+   "PL5": "no",
+   "PL6": "no",
+   "PL7": "no",
+   "PL8": "no",
+   "PL9": "no"
+  },
+  "domain_ids": [
+   "PL",
+   "FR",
+   "FM",
+   "ML"
+  ],
+  "domains": [
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "estimated_stage": "Seeding",
+    "favorable_count": 2,
+    "gap_count": 13,
+    "high_count": 7,
+    "score_pct": 13.3,
+    "total_questions": 15
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "estimated_stage": "Seeding",
+    "favorable_count": 4,
+    "gap_count": 16,
+    "high_count": 5,
+    "score_pct": 20.0,
+    "total_questions": 20
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "estimated_stage": "Seeding",
+    "favorable_count": 3,
+    "gap_count": 17,
+    "high_count": 5,
+    "score_pct": 15.0,
+    "total_questions": 20
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "estimated_stage": "Seeding",
+    "favorable_count": 3,
+    "gap_count": 14,
+    "high_count": 3,
+    "score_pct": 17.6,
+    "total_questions": 17
+   }
+  ],
+  "gaps": [
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Start with one basic written work plan (goals, activities, timeline, owner)",
+     "Create a simple logic model to connect activities to outcomes",
+     "Build toward a shared set of core planning documents over time"
+    ],
+    "priority": "High",
+    "question_id": "PL2",
+    "question_text": "We have written work plans, a logic model, or a strategy plan to guide our work.",
+    "score": 7.47,
+    "stage": 2,
+    "stage_name": "Emerging"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Write 3–5 clear organizational goals in plain language",
+     "Share goals regularly in meetings and internal materials",
+     "Ask staff to reflect goals back to confirm shared understanding"
+    ],
+    "priority": "High",
+    "question_id": "PL3",
+    "question_text": "Staff across the organization can clearly articulate our goals.",
+    "score": 7.47,
+    "stage": 2,
+    "stage_name": "Emerging"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Review cash flow to identify timing gaps",
+     "Align expenses with confirmed funding",
+     "Build a short-term cash management plan"
+    ],
+    "priority": "High",
+    "question_id": "FM4",
+    "question_text": "We are able to meet payroll and financial obligations consistently.",
+    "score": 7.4,
+    "stage": 2,
+    "stage_name": "Emerging"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Prioritize funders that offer multi-year or renewable support",
+     "Frame funding requests around sustained impact",
+     "Track renewal opportunities and build long-term relationships"
+    ],
+    "priority": "High",
+    "question_id": "FR5",
+    "question_text": "We receive funding commitments that extend beyond one-time or single-year support.",
+    "score": 7.2,
+    "stage": 2,
+    "stage_name": "Emerging"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Identify 2–3 desired outcomes for each program",
+     "Align outcomes with your mission and activities",
+     "Document outcomes in a simple framework"
+    ],
+    "priority": "High",
+    "question_id": "ML3",
+    "question_text": "We have defined outcomes or goals for our programs.",
+    "score": 5.84,
+    "stage": 2,
+    "stage_name": "Emerging"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Identify indicators tied to each outcome",
+     "Track progress at regular intervals",
+     "Use simple tools to monitor outcomes over time"
+    ],
+    "priority": "High",
+    "question_id": "ML4",
+    "question_text": "We track progress toward our program outcomes.",
+    "score": 5.84,
+    "stage": 2,
+    "stage_name": "Emerging"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Develop a 6–12 month work plan for each major program area",
+     "Assign ownership and timelines for key activities",
+     "Use work plans to guide regular team check-ins"
+    ],
+    "priority": "High",
+    "question_id": "PL5",
+    "question_text": "We maintain written work plans that guide activities over the next 6–12 months.",
+    "score": 5.6,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Establish a consistent cadence (monthly or quarterly) to review progress",
+     "Identify key milestones or metrics tied to your plan",
+     "Document updates and adjust activities based on what you learn"
+    ],
+    "priority": "High",
+    "question_id": "PL6",
+    "question_text": "We consistently monitor progress against our written work plans.",
+    "score": 5.6,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Compile existing documents into one accessible location",
+     "Identify gaps and prioritize missing materials",
+     "Develop 1–2 key documents at a time"
+    ],
+    "priority": "High",
+    "question_id": "PL7",
+    "question_text": "We maintain written documents that describe our mission, context, strategies, budget, and policies.",
+    "score": 5.6,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Set a regular schedule (quarterly or biannually) to update plans",
+     "Incorporate lessons learned and changing priorities",
+     "Share updates across the team"
+    ],
+    "priority": "High",
+    "question_id": "PL8",
+    "question_text": "We regularly develop and update our work plans.",
+    "score": 5.6,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Map expected funding across the next 12 months",
+     "Identify confirmed vs. pending sources",
+     "Align program commitments with funding reality"
+    ],
+    "priority": "High",
+    "question_id": "PL9",
+    "question_text": "We have a clear understanding of where funding will come from for the next year.",
+    "score": 5.6,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Explore requirements for audits based on funding levels",
+     "Engage an external accountant or firm",
+     "Prepare financial records for review"
+    ],
+    "priority": "High",
+    "question_id": "FM5",
+    "question_text": "We have completed at least one independent financial review or audit.",
+    "score": 5.55,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Review income and expenses monthly",
+     "Compare actuals against budget projections",
+     "Adjust spending or projections as needed"
+    ],
+    "priority": "High",
+    "question_id": "FM6",
+    "question_text": "We track financial performance and compare actuals to our budget.",
+    "score": 5.55,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Establish clear processes for approvals and payments",
+     "Document financial procedures",
+     "Assign oversight responsibility to leadership or board"
+    ],
+    "priority": "High",
+    "question_id": "FM7",
+    "question_text": "We have financial controls in place to manage risk and ensure accountability.",
+    "score": 5.55,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Generate basic financial reports monthly or quarterly",
+     "Review reports with leadership or board",
+     "Use reports to inform decision-making"
+    ],
+    "priority": "High",
+    "question_id": "FM8",
+    "question_text": "We produce financial reports (e.g., income statement, balance sheet) and review them regularly.",
+    "score": 5.55,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Identify opportunities to request general operating support",
+     "Clearly communicate organizational needs beyond specific programs",
+     "Track the proportion of restricted vs. unrestricted funding"
+    ],
+    "priority": "High",
+    "question_id": "FR6",
+    "question_text": "We maintain a balance of restricted and flexible (unrestricted) funding.",
+    "score": 5.4,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Map expected funding across a 12-month period",
+     "Identify confirmed vs. pending sources",
+     "Align program commitments with funding expectations"
+    ],
+    "priority": "High",
+    "question_id": "FR7",
+    "question_text": "We have visibility into funding sources covering at least the next year.",
+    "score": 5.4,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Identify funders that operate at this funding range",
+     "Strengthen proposals with clearer outcomes and impact data",
+     "Leverage partnerships or introductions to access larger opportunities"
+    ],
+    "priority": "High",
+    "question_id": "FR8",
+    "question_text": "We secure grants at moderate funding levels (e.g., $25,000–$75,000).",
+    "score": 5.4,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Diversify funding across individuals, foundations, and public sources",
+     "Prioritize both program-specific and general operating funding",
+     "Develop a basic fundraising plan to guide outreach"
+    ],
+    "priority": "High",
+    "question_id": "FR9",
+    "question_text": "We have a mix of multi-year donors and funding sources that support both programs and operations.",
+    "score": 5.4,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Review data regularly (monthly or quarterly)",
+     "Identify trends and areas for improvement",
+     "Adjust programming based on insights"
+    ],
+    "priority": "High",
+    "question_id": "ML5",
+    "question_text": "We use data to inform program decisions and improvements.",
+    "score": 4.38,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Provide basic training on data collection tools and processes",
+     "Create simple guidelines for data entry and use",
+     "Reinforce expectations through supervision"
+    ],
+    "priority": "Medium",
+    "question_id": "ML6",
+    "question_text": "Staff are trained to collect and use data consistently.",
+    "score": 4.38,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Select a consistent platform (spreadsheet, CRM, database)",
+     "Standardize forms and templates",
+     "Train staff on consistent usage"
+    ],
+    "priority": "Medium",
+    "question_id": "ML7",
+    "question_text": "We use standardized tools or systems to collect and manage data.",
+    "score": 4.38,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Schedule recurring data review sessions",
+     "Share key metrics with staff",
+     "Use discussions to inform program adjustments"
+    ],
+    "priority": "Medium",
+    "question_id": "ML8",
+    "question_text": "We regularly review program data as a team.",
+    "score": 4.38,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Define 2–3 year priorities and outcomes",
+     "Engage staff and stakeholders in shaping direction",
+     "Use a structured planning template or facilitator"
+    ],
+    "priority": "Medium",
+    "question_id": "PL10",
+    "question_text": "We are actively developing a strategic plan.",
+    "score": 3.73,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Develop a multi-year plan with clear goals and strategies",
+     "Align budget projections with strategic priorities",
+     "Identify capacity and sustainability needs"
+    ],
+    "priority": "Medium",
+    "question_id": "PL11",
+    "question_text": "We have a 2–3 year strategic plan that includes a multi-year budget, capacity building, and sustainability strategies.",
+    "score": 3.73,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Link strategic priorities to annual or program work plans",
+     "Revisit and update the plan annually",
+     "Use it to guide decision-making"
+    ],
+    "priority": "Medium",
+    "question_id": "PL12",
+    "question_text": "Our strategic plan is updated regularly and connected to operational or work plans.",
+    "score": 3.73,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Project funding across a 2+ year period",
+     "Identify and pursue multi-year funding opportunities",
+     "Align growth decisions with long-term funding expectations"
+    ],
+    "priority": "Medium",
+    "question_id": "PL13",
+    "question_text": "We have a clear understanding of where funding will come from for the next 2 or more years.",
+    "score": 3.73,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Address any prior audit findings",
+     "Strengthen financial systems and documentation",
+     "Plan for ongoing audits as funding grows"
+    ],
+    "priority": "Medium",
+    "question_id": "FM9",
+    "question_text": "We have been audited more than once and have improved based on findings.",
+    "score": 3.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Identify filing requirements and deadlines",
+     "Assign responsibility for compliance",
+     "Engage external support if needed"
+    ],
+    "priority": "Medium",
+    "question_id": "FM10",
+    "question_text": "We file required taxes and financial documents accurately and on time.",
+    "score": 3.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Extend your budget planning beyond one year",
+     "Align projections with funding pipeline",
+     "Use projections to guide hiring and growth"
+    ],
+    "priority": "Medium",
+    "question_id": "FM11",
+    "question_text": "We develop multi-year budgets and financial projections.",
+    "score": 3.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Identify opportunities to build reserves",
+     "Set aside funds when possible",
+     "Develop a basic reserve policy"
+    ],
+    "priority": "Medium",
+    "question_id": "FM12",
+    "question_text": "We manage financial reserves, assets, or investments to support sustainability.",
+    "score": 3.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Share reports with leadership or board quarterly",
+     "Use a standard format for review",
+     "Document key takeaways and decisions"
+    ],
+    "priority": "Medium",
+    "question_id": "FM13",
+    "question_text": "Financial reports are reviewed regularly by leadership and/or the governing body.",
+    "score": 3.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Analyze variances between budget and actuals",
+     "Adjust projections based on trends",
+     "Strengthen forecasting practices"
+    ],
+    "priority": "Medium",
+    "question_id": "FM14",
+    "question_text": "Our financial performance generally aligns with our budget projections.",
+    "score": 3.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Categorize expenses by program or grant",
+     "Track spending against each funding source",
+     "Use reports to inform program decisions"
+    ],
+    "priority": "Medium",
+    "question_id": "FM15",
+    "question_text": "We produce financial reports that track spending across programs or funding streams.",
+    "score": 3.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Determine audit requirements based on funding",
+     "Engage an external auditor",
+     "Establish a timeline for annual audits"
+    ],
+    "priority": "Medium",
+    "question_id": "FM16",
+    "question_text": "We complete independent audits annually as required.",
+    "score": 3.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Identify funders aligned with larger-scale investments",
+     "Strengthen organizational narrative, outcomes, and financials",
+     "Build relationships before applying for higher-value opportunities"
+    ],
+    "priority": "Medium",
+    "question_id": "FR10",
+    "question_text": "We secure grants at higher funding levels (e.g., $75,000+).",
+    "score": 3.6,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Map current funders and identify gaps by sector",
+     "Target new funders across foundations, government, and private sector",
+     "Strengthen relationship management with existing supporters"
+    ],
+    "priority": "Medium",
+    "question_id": "FR11",
+    "question_text": "We have a diverse base of multi-year funders across sectors.",
+    "score": 3.6,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Request general operating support in proposals",
+     "Communicate organizational priorities beyond individual programs",
+     "Track and increase flexible funding over time"
+    ],
+    "priority": "Medium",
+    "question_id": "FR12",
+    "question_text": "A meaningful portion of our funding is flexible and can be used strategically.",
+    "score": 3.6,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Create a simple plan outlining targets, sources, and timelines",
+     "Assign responsibility for fundraising activities",
+     "Review and update the plan annually"
+    ],
+    "priority": "Medium",
+    "question_id": "FR13",
+    "question_text": "We have a written fundraising or resource development plan.",
+    "score": 3.6,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Project funding across a 2–3 year period",
+     "Identify multi-year opportunities and renewals",
+     "Align growth plans with long-term funding expectations"
+    ],
+    "priority": "Medium",
+    "question_id": "FR14",
+    "question_text": "We have visibility into funding sources over a 3-year horizon.",
+    "score": 3.6,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Assign fundraising responsibility to a specific team member",
+     "Use external support (consultants, partners) as needed",
+     "Build internal fundraising skills through training and tools"
+    ],
+    "priority": "Low",
+    "question_id": "FR15",
+    "question_text": "We have dedicated capacity (staff or consultant) focused on fundraising.",
+    "score": 3.6,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Target funders known for larger investments",
+     "Strengthen organizational infrastructure and financial reporting",
+     "Build relationships over time before applying"
+    ],
+    "priority": "Low",
+    "question_id": "FR16",
+    "question_text": "We secure at least some large grants (e.g., $75,000+ or higher).",
+    "score": 3.6,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Identify opportunities to build reserves or flexible funding",
+     "Prioritize multi-year funding relationships",
+     "Develop a sustainability strategy aligned with growth"
+    ],
+    "priority": "Low",
+    "question_id": "FR17",
+    "question_text": "We have taken steps to build long-term financial sustainability (e.g., reserves, multi-year funding).",
+    "score": 3.6,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Develop simple reports or summaries",
+     "Identify key audiences and reporting needs",
+     "Share data regularly to build transparency and trust"
+    ],
+    "priority": "Low",
+    "question_id": "ML9",
+    "question_text": "We share program data with external stakeholders (e.g., funders, partners).",
+    "score": 2.92,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Incorporate data into proposals and reports",
+     "Highlight outcomes and impact in communications",
+     "Align data with funder priorities"
+    ],
+    "priority": "Low",
+    "question_id": "ML10",
+    "question_text": "We use data to support fundraising and external communications.",
+    "score": 2.92,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Define indicators that reflect deeper impact",
+     "Collect qualitative and/or outcome-based data",
+     "Use findings to refine program design"
+    ],
+    "priority": "Low",
+    "question_id": "ML12",
+    "question_text": "We assess program effectiveness beyond outputs (e.g., changes in behavior, safety, or outcomes).",
+    "score": 2.92,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Identify potential academic or research partners",
+     "Explore opportunities for evaluation support",
+     "Start with small, focused evaluation efforts"
+    ],
+    "priority": "Low",
+    "question_id": "ML13",
+    "question_text": "We partner with external evaluators, researchers, or learning partners when appropriate.",
+    "score": 2.92,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Document lessons learned from data reviews",
+     "Make adjustments to program design",
+     "Track changes and their impact"
+    ],
+    "priority": "Low",
+    "question_id": "ML14",
+    "question_text": "We use data and learning to adapt programs over time.",
+    "score": 2.92,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Create basic data entry standards",
+     "Review data for accuracy regularly",
+     "Provide feedback to staff"
+    ],
+    "priority": "Low",
+    "question_id": "ML15",
+    "question_text": "We have systems in place to ensure data quality and consistency.",
+    "score": 2.92,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Document lessons learned from your current or first plan",
+     "Use those insights to strengthen your next planning cycle",
+     "Establish a repeatable planning → implementation → reflection process"
+    ],
+    "priority": "Low",
+    "question_id": "PL14",
+    "question_text": "We are implementing our second or subsequent strategic plan.",
+    "score": 1.87,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Identify and document one strong planning practice",
+     "Share tools or lessons learned with peers",
+     "Participate in peer learning opportunities"
+    ],
+    "priority": "Low",
+    "question_id": "PL15",
+    "question_text": "We serve as a model for other organizations in planning and strategy.",
+    "score": 1.87,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Address recurring audit issues",
+     "Strengthen internal controls and documentation",
+     "Build consistency in financial practices"
+    ],
+    "priority": "Low",
+    "question_id": "FM17",
+    "question_text": "Our audits demonstrate consistent financial strength over time.",
+    "score": 1.85,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Share financial summaries with staff and board",
+     "Communicate key financial priorities",
+     "Build financial literacy across the organization"
+    ],
+    "priority": "Low",
+    "question_id": "FM18",
+    "question_text": "Our financial planning and performance are transparent and understood by stakeholders.",
+    "score": 1.85,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Establish a clear audit timeline",
+     "Prepare documents in advance",
+     "Coordinate closely with auditors"
+    ],
+    "priority": "Low",
+    "question_id": "FM19",
+    "question_text": "We complete audits in a timely manner following the close of the fiscal year.",
+    "score": 1.85,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Strengthen consistency in financial systems",
+     "Document and share best practices",
+     "Build credibility with funders and partners"
+    ],
+    "priority": "Low",
+    "question_id": "FM20",
+    "question_text": "Our organization is recognized for strong financial management practices.",
+    "score": 1.85,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Implement your existing plan and track progress",
+     "Review results annually and refine strategies",
+     "Document lessons learned to strengthen future efforts"
+    ],
+    "priority": "Low",
+    "question_id": "FR18",
+    "question_text": "Our fundraising plan has been implemented and refined over time.",
+    "score": 1.8,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Engage leadership, board, or staff in fundraising roles",
+     "Define clear responsibilities for fundraising activities",
+     "Build a team-based approach over time"
+    ],
+    "priority": "Low",
+    "question_id": "FR19",
+    "question_text": "We have more than one person supporting fundraising efforts.",
+    "score": 1.8,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Identify funders that provide large-scale investments",
+     "Strengthen proposals with strong outcomes and financials",
+     "Build long-term relationships before pursuing large grants"
+    ],
+    "priority": "Low",
+    "question_id": "FR20",
+    "question_text": "We have secured at least one very large grant (e.g., $150,000+).",
+    "score": 1.8,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Identify 2–3 key questions you want to answer",
+     "Align data collection to those questions",
+     "Use findings to guide strategy"
+    ],
+    "priority": "Low",
+    "question_id": "ML16",
+    "question_text": "We have a learning agenda or set of questions guiding our evaluation efforts.",
+    "score": 1.46,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Share findings with partners or networks",
+     "Participate in learning communities",
+     "Document and share promising practices"
+    ],
+    "priority": "Low",
+    "question_id": "ML17",
+    "question_text": "We contribute data, insights, or practices to broader field learning.",
+    "score": 1.46,
+    "stage": 5,
+    "stage_name": "Transformational"
+   }
+  ],
+  "language": "en",
+  "org_meta": {
+   "program_models": [
+    "Street outreach",
+    "Mentoring/youth development"
+   ],
+   "staff_size": "1-5",
+   "state": "IL"
+  },
+  "org_name": "Southside Youth Peace Collective (synthetic sample)",
+  "overall": {
+   "favorable": 12,
+   "favorable_pct": 16.7,
+   "high": 20,
+   "low": 20,
+   "medium": 20,
+   "total_gaps": 60,
+   "total_questions": 72
+  },
+  "profile": "Grassroots, founded 2023, 4 staff (2 full time), about $310K budget. A neighborhood-rooted violence interruption and youth mentoring group in its third year. Credibility with young people and families is its greatest asset; nearly all back-office function runs through the founder and executive director. Funding is one city contract plus small individual gifts.",
+  "report": {
+   "conversation": [
+    "If our founder or executive director were out for a month, which tasks would stop, and who could pick them up?",
+    "Can every staff member describe our top goals in their own words? What would we want them to say?",
+    "How many months could we pay everyone if the city contract paid late or ended?",
+    "What does success look like for a young person in our program, and how would we know?",
+    "Who outside our team, such as a parent, a young person or a partner, should help shape our first written plan?"
+   ],
+   "focus": [
+    {
+     "gap_ids": [
+      "PL2"
+     ],
+     "resource": {
+      "title": "Community Based Violence Intervention and Prevention Initiative Implementation Checklist (April 2022)",
+      "url": "https://www.ojp.gov/sites/ojp/files/media/document/cvi-implementation-checklist_0.pdf"
+     },
+     "steps": [
+      "Hold one team meeting to write 3 to 5 goals in plain words for the next 12 months.",
+      "Make a simple table with goals, activities, a timeline and an owner for each. Do this for outreach and for mentoring.",
+      "Draw a simple logic model: what you do, then what you hope changes for young people and the neighborhood. The BJA checklist (Step 3.1) explains how.",
+      "Keep it to two pages. Post it where staff can see it."
+     ],
+     "title": "Write a one-page work plan the whole team shares",
+     "why": "You told us you do not yet have written work plans, a logic model, or a strategy. Much of your direction lives in your founder's and executive director's heads. A short written plan lets your team and funders see what you do and why. Planning also tends to lift Fundraising and Financial Management, so it unlocks the most."
+    },
+    {
+     "gap_ids": [
+      "FM4"
+     ],
+     "resource": {
+      "title": "ARCvi: Finding and Sustaining Funding",
+      "url": "https://arcvi.org/finding-and-sustaining-funding/"
+     },
+     "steps": [
+      "List what money you expect each month for the next 12 months and the date it should arrive, starting with the city contract payment schedule.",
+      "List what you must pay each month, with payroll first.",
+      "Mark any months where money out comes before money in, and decide what you would do in those months.",
+      "Ask the city contractor how quickly invoices are paid, and set a monthly 30-minute cash check."
+     ],
+     "title": "Make a short cash plan so payroll is safe",
+     "why": "Meeting payroll steadily is the base of staff trust. Your money comes mostly from one city contract plus small gifts, so a late payment could hit pay fast. A simple look ahead at cash lets you spot timing gaps early and calmly."
+    }
+   ],
+   "plan": [
+    {
+     "gap_ids": [
+      "PL2",
+      "PL3"
+     ],
+     "horizon": 30,
+     "owner": "Executive director",
+     "resource": {
+      "title": "Community Based Violence Intervention and Prevention Initiative Implementation Checklist (April 2022)",
+      "url": "https://www.ojp.gov/sites/ojp/files/media/document/cvi-implementation-checklist_0.pdf"
+     },
+     "steps": [
+      "Run one team meeting to agree on 3 to 5 plain-language goals.",
+      "Fill in a one-page table of goals, activities, timeline and owner for each program.",
+      "Ask each staff member to say the goals back in their own words, and fix anything unclear."
+     ],
+     "title": "Write goals and a one-page work plan",
+     "why": "You do not yet have written plans, and staff may not all describe your goals the same way. A short plan is a small first step."
+    },
+    {
+     "gap_ids": [
+      "FM4",
+      "PL9",
+      "FR7"
+     ],
+     "horizon": 30,
+     "owner": "Executive director with bookkeeper",
+     "resource": {
+      "title": "ARCvi: Finding and Sustaining Funding",
+      "url": "https://arcvi.org/finding-and-sustaining-funding/"
+     },
+     "steps": [
+      "List every funder and donor with amount, expected payment dates and renewal dates.",
+      "Mark each source as confirmed or pending.",
+      "Find months where cash may run short and write a short plan for them."
+     ],
+     "title": "Build a 12-month cash view and protect payroll",
+     "why": "Payroll consistency is a High priority for you, and one city contract carries most of your funding."
+    },
+    {
+     "gap_ids": [
+      "ML3",
+      "ML4"
+     ],
+     "horizon": 60,
+     "owner": "Program manager",
+     "resource": {
+      "title": "ARCvi: Using Data That Matters",
+      "url": "https://arcvi.org/using-data-that-matters/"
+     },
+     "steps": [
+      "Pick 2 to 3 changes you hope to see for outreach and for mentoring. Ask a few young people and parents what success looks like to them.",
+      "Choose one easy measure for each outcome.",
+      "Add these to the tracking you already do and look at them once a month."
+     ],
+     "title": "Set 2 to 3 outcomes per program and simple ways to track them",
+     "why": "You count activity but have not defined outcomes. Outcomes are the base for reporting and for funder conversations."
+    },
+    {
+     "gap_ids": [
+      "PL5",
+      "PL6",
+      "PL8"
+     ],
+     "horizon": 60,
+     "owner": "Executive director",
+     "resource": {
+      "title": "Community Based Violence Intervention and Prevention Initiative Implementation Checklist (April 2022)",
+      "url": "https://www.ojp.gov/sites/ojp/files/media/document/cvi-implementation-checklist_0.pdf"
+     },
+     "steps": [
+      "Add dates and owners for each task in the plan, so it covers the next 6 to 12 months.",
+      "Put a 30-minute plan review on the calendar each month.",
+      "Write down what changed and update the plan every quarter."
+     ],
+     "title": "Turn goals into a 6 to 12 month plan with monthly check-ins",
+     "why": "Once a first plan exists, a regular check-in keeps it alive and shares the work beyond two leaders."
+    },
+    {
+     "gap_ids": [
+      "FM6",
+      "FM8",
+      "FM7"
+     ],
+     "horizon": 60,
+     "owner": "Bookkeeper",
+     "resource": {
+      "title": "Governance and Related Topics: 501(c)(3) Organizations",
+      "url": "https://www.irs.gov/pub/irs-tege/governance_practices.pdf"
+     },
+     "steps": [
+      "Pull a simple income and spending report each month.",
+      "Compare it to the budget and note big differences.",
+      "Write down who approves and who records each payment, so the steps are clear.",
+      "Share the report with the executive director and one other leader."
+     ],
+     "title": "Review budget against actual spending every month",
+     "why": "Comparing real spending to your budget helps you see problems early and builds trust with the city and future funders."
+    },
+    {
+     "gap_ids": [
+      "FR5",
+      "FR6",
+      "FR9"
+     ],
+     "horizon": 90,
+     "owner": "Executive director",
+     "resource": {
+      "title": "ARCvi: Finding and Sustaining Funding",
+      "url": "https://arcvi.org/finding-and-sustaining-funding/"
+     },
+     "steps": [
+      "Name 5 to 10 possible new supporters: local businesses, faith communities, foundations and individuals who know your work.",
+      "Ask your city contact whether the contract can renew or run for more than one year.",
+      "In new requests, ask for general operating support and explain how steady funding protects staff and young people."
+     ],
+     "title": "Build a simple funding list and ask for multi-year or flexible support",
+     "why": "One city contract and small gifts leave you exposed. Longer, more flexible money protects staff and participants."
+    },
+    {
+     "gap_ids": [
+      "PL7"
+     ],
+     "horizon": 90,
+     "owner": "Executive director",
+     "resource": {
+      "title": "Governance and Related Topics: 501(c)(3) Organizations",
+      "url": "https://www.irs.gov/pub/irs-tege/governance_practices.pdf"
+     },
+     "steps": [
+      "Collect your mission statement, budget, work plan and any policies into one shared folder.",
+      "List what is missing, such as a conflict of interest policy.",
+      "Write one or two missing documents, starting with the most important."
+     ],
+     "title": "Gather your key documents in one place",
+     "why": "Your mission, budget and policies may exist in pieces. Funders look for them, and new staff need them."
+    },
+    {
+     "gap_ids": [
+      "ML8",
+      "ML5",
+      "FM5"
+     ],
+     "horizon": 90,
+     "owner": "Program manager",
+     "resource": {
+      "title": "ARCvi: Using Data That Matters",
+      "url": "https://arcvi.org/using-data-that-matters/"
+     },
+     "steps": [
+      "Meet for one hour to look at your outcome numbers and share what staff see on the street.",
+      "Write down one change you will make because of what you learned.",
+      "Ask the city contract office or an accountant what review your funding level requires, and get a price for a basic outside review."
+     ],
+     "title": "Hold a first team data review and talk about an outside financial review",
+     "why": "Looking at data together makes it useful. An outside review builds credibility with funders."
+    }
+   ],
+   "reading_grade": 5.6,
+   "simplified": false,
+   "sources": [
+    {
+     "title": "Community Based Violence Intervention and Prevention Initiative Implementation Checklist (April 2022)",
+     "url": "https://www.ojp.gov/sites/ojp/files/media/document/cvi-implementation-checklist_0.pdf"
+    },
+    {
+     "title": "ARCvi: Finding and Sustaining Funding",
+     "url": "https://arcvi.org/finding-and-sustaining-funding/"
+    },
+    {
+     "title": "ARCvi: Using Data That Matters",
+     "url": "https://arcvi.org/using-data-that-matters/"
+    },
+    {
+     "title": "Governance and Related Topics: 501(c)(3) Organizations",
+     "url": "https://www.irs.gov/pub/irs-tege/governance_practices.pdf"
+    }
+   ],
+   "strengths": [
+    "Young people and families trust you. That credibility is your greatest asset, and it is the base of all street outreach and mentoring.",
+    "You already use an accounting system and keep an annual budget. Many young groups do not have these in place by year three.",
+    "Financial duties are shared, which gives you a start on oversight and accountability.",
+    "You have a base of supporters and have won grants of $10,000 or more, and you know where your funding will come from for the next 6 to 12 months.",
+    "You track basic program activity and the people you serve, and you have a person or team in charge of data."
+   ],
+   "summary": "Southside Youth Peace Collective is a young group with deep roots. You started in 2023. You now run street outreach and youth mentoring with a team of 4 and a budget near $310K. Young people and families trust you. That trust is hard to build, and it is your biggest asset.\n\nAll four areas we looked at (Planning, Fundraising, Financial Management, and Monitoring, Learning and Evaluation) are at the Seeding stage. Seeding means the basic building blocks are just being laid. That fits an organization in its third year. Much of the back-office work runs through your founder and executive director. That works for now, but it puts a lot on two shoulders.\n\nYou already have good pieces in place. You use an accounting system. You share financial duties. You have an annual budget. You track who you serve. You know where funding will come from for the next 6 to 12 months. The next step is to write things down and share the load. We suggest two places to start. They are a simple written work plan and a steady payroll cushion. Together they protect your people and make later funding and data work easier."
+  },
+  "respondent": {
+   "role": null
+  }
+ },
+ "B-en": {
+  "answers": {
+   "FM1": "yes",
+   "FM10": "no",
+   "FM11": "no",
+   "FM12": "yes",
+   "FM13": "yes",
+   "FM14": "yes",
+   "FM15": "yes",
+   "FM16": "yes",
+   "FM17": "no",
+   "FM18": "no",
+   "FM19": "no",
+   "FM2": "yes",
+   "FM20": "no",
+   "FM3": "yes",
+   "FM4": "yes",
+   "FM5": "yes",
+   "FM6": "yes",
+   "FM7": "yes",
+   "FM8": "yes",
+   "FM9": "no",
+   "FR1": "yes",
+   "FR10": "no",
+   "FR11": "no",
+   "FR12": "no",
+   "FR13": "yes",
+   "FR14": "yes",
+   "FR15": "no",
+   "FR16": "no",
+   "FR17": "no",
+   "FR18": "no",
+   "FR19": "no",
+   "FR2": "yes",
+   "FR20": "no",
+   "FR3": "yes",
+   "FR4": "yes",
+   "FR5": "yes",
+   "FR6": "yes",
+   "FR7": "no",
+   "FR8": "no",
+   "FR9": "yes",
+   "ML1": "yes",
+   "ML10": "no",
+   "ML11": "no",
+   "ML12": "no",
+   "ML13": "no",
+   "ML14": "no",
+   "ML15": "no",
+   "ML16": "no",
+   "ML17": "no",
+   "ML2": "yes",
+   "ML3": "yes",
+   "ML4": "yes",
+   "ML5": "yes",
+   "ML6": "no",
+   "ML7": "yes",
+   "ML8": "yes",
+   "ML9": "yes",
+   "PL1": "no",
+   "PL10": "no",
+   "PL11": "no",
+   "PL12": "yes",
+   "PL13": "no",
+   "PL14": "no",
+   "PL15": "no",
+   "PL2": "yes",
+   "PL3": "yes",
+   "PL4": "yes",
+   "PL5": "yes",
+   "PL6": "yes",
+   "PL7": "yes",
+   "PL8": "yes",
+   "PL9": "yes"
+  },
+  "domain_ids": [
+   "PL",
+   "FR",
+   "FM",
+   "ML"
+  ],
+  "domains": [
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "estimated_stage": "Developing",
+    "favorable_count": 10,
+    "gap_count": 5,
+    "high_count": 0,
+    "score_pct": 66.7,
+    "total_questions": 15
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "estimated_stage": "Emerging",
+    "favorable_count": 9,
+    "gap_count": 11,
+    "high_count": 8,
+    "score_pct": 45.0,
+    "total_questions": 20
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "estimated_stage": "Developing",
+    "favorable_count": 13,
+    "gap_count": 7,
+    "high_count": 2,
+    "score_pct": 65.0,
+    "total_questions": 20
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "estimated_stage": "Emerging",
+    "favorable_count": 8,
+    "gap_count": 9,
+    "high_count": 1,
+    "score_pct": 47.1,
+    "total_questions": 17
+   }
+  ],
+  "gaps": [
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Map expected funding across a 12-month period",
+     "Identify confirmed vs. pending sources",
+     "Align program commitments with funding expectations"
+    ],
+    "priority": "High",
+    "question_id": "FR7",
+    "question_text": "We have visibility into funding sources covering at least the next year.",
+    "score": 4.65,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Identify funders that operate at this funding range",
+     "Strengthen proposals with clearer outcomes and impact data",
+     "Leverage partnerships or introductions to access larger opportunities"
+    ],
+    "priority": "High",
+    "question_id": "FR8",
+    "question_text": "We secure grants at moderate funding levels (e.g., $25,000–$75,000).",
+    "score": 4.65,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Provide basic training on data collection tools and processes",
+     "Create simple guidelines for data entry and use",
+     "Reinforce expectations through supervision"
+    ],
+    "priority": "High",
+    "question_id": "ML6",
+    "question_text": "Staff are trained to collect and use data consistently.",
+    "score": 3.67,
+    "stage": 3,
+    "stage_name": "Developing"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Identify funders aligned with larger-scale investments",
+     "Strengthen organizational narrative, outcomes, and financials",
+     "Build relationships before applying for higher-value opportunities"
+    ],
+    "priority": "High",
+    "question_id": "FR10",
+    "question_text": "We secure grants at higher funding levels (e.g., $75,000+).",
+    "score": 3.1,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Map current funders and identify gaps by sector",
+     "Target new funders across foundations, government, and private sector",
+     "Strengthen relationship management with existing supporters"
+    ],
+    "priority": "High",
+    "question_id": "FR11",
+    "question_text": "We have a diverse base of multi-year funders across sectors.",
+    "score": 3.1,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Request general operating support in proposals",
+     "Communicate organizational priorities beyond individual programs",
+     "Track and increase flexible funding over time"
+    ],
+    "priority": "High",
+    "question_id": "FR12",
+    "question_text": "A meaningful portion of our funding is flexible and can be used strategically.",
+    "score": 3.1,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Assign fundraising responsibility to a specific team member",
+     "Use external support (consultants, partners) as needed",
+     "Build internal fundraising skills through training and tools"
+    ],
+    "priority": "High",
+    "question_id": "FR15",
+    "question_text": "We have dedicated capacity (staff or consultant) focused on fundraising.",
+    "score": 3.1,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Target funders known for larger investments",
+     "Strengthen organizational infrastructure and financial reporting",
+     "Build relationships over time before applying"
+    ],
+    "priority": "High",
+    "question_id": "FR16",
+    "question_text": "We secure at least some large grants (e.g., $75,000+ or higher).",
+    "score": 3.1,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Identify opportunities to build reserves or flexible funding",
+     "Prioritize multi-year funding relationships",
+     "Develop a sustainability strategy aligned with growth"
+    ],
+    "priority": "High",
+    "question_id": "FR17",
+    "question_text": "We have taken steps to build long-term financial sustainability (e.g., reserves, multi-year funding).",
+    "score": 3.1,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Address any prior audit findings",
+     "Strengthen financial systems and documentation",
+     "Plan for ongoing audits as funding grows"
+    ],
+    "priority": "High",
+    "question_id": "FM9",
+    "question_text": "We have been audited more than once and have improved based on findings.",
+    "score": 2.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Identify filing requirements and deadlines",
+     "Assign responsibility for compliance",
+     "Engage external support if needed"
+    ],
+    "priority": "High",
+    "question_id": "FM10",
+    "question_text": "We file required taxes and financial documents accurately and on time.",
+    "score": 2.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Extend your budget planning beyond one year",
+     "Align projections with funding pipeline",
+     "Use projections to guide hiring and growth"
+    ],
+    "priority": "Medium",
+    "question_id": "FM11",
+    "question_text": "We develop multi-year budgets and financial projections.",
+    "score": 2.7,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Define 2–3 year priorities and outcomes",
+     "Engage staff and stakeholders in shaping direction",
+     "Use a structured planning template or facilitator"
+    ],
+    "priority": "Medium",
+    "question_id": "PL10",
+    "question_text": "We are actively developing a strategic plan.",
+    "score": 2.67,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Develop a multi-year plan with clear goals and strategies",
+     "Align budget projections with strategic priorities",
+     "Identify capacity and sustainability needs"
+    ],
+    "priority": "Medium",
+    "question_id": "PL11",
+    "question_text": "We have a 2–3 year strategic plan that includes a multi-year budget, capacity building, and sustainability strategies.",
+    "score": 2.67,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Project funding across a 2+ year period",
+     "Identify and pursue multi-year funding opportunities",
+     "Align growth decisions with long-term funding expectations"
+    ],
+    "priority": "Medium",
+    "question_id": "PL13",
+    "question_text": "We have a clear understanding of where funding will come from for the next 2 or more years.",
+    "score": 2.67,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Incorporate data into proposals and reports",
+     "Highlight outcomes and impact in communications",
+     "Align data with funder priorities"
+    ],
+    "priority": "Medium",
+    "question_id": "ML10",
+    "question_text": "We use data to support fundraising and external communications.",
+    "score": 2.45,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Assign data responsibilities to a staff member",
+     "Build internal capacity over time",
+     "Use external support where needed"
+    ],
+    "priority": "Medium",
+    "question_id": "ML11",
+    "question_text": "We have staff or dedicated capacity responsible for data and evaluation.",
+    "score": 2.45,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Define indicators that reflect deeper impact",
+     "Collect qualitative and/or outcome-based data",
+     "Use findings to refine program design"
+    ],
+    "priority": "Medium",
+    "question_id": "ML12",
+    "question_text": "We assess program effectiveness beyond outputs (e.g., changes in behavior, safety, or outcomes).",
+    "score": 2.45,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Identify potential academic or research partners",
+     "Explore opportunities for evaluation support",
+     "Start with small, focused evaluation efforts"
+    ],
+    "priority": "Medium",
+    "question_id": "ML13",
+    "question_text": "We partner with external evaluators, researchers, or learning partners when appropriate.",
+    "score": 2.45,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Document lessons learned from data reviews",
+     "Make adjustments to program design",
+     "Track changes and their impact"
+    ],
+    "priority": "Medium",
+    "question_id": "ML14",
+    "question_text": "We use data and learning to adapt programs over time.",
+    "score": 2.45,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Create basic data entry standards",
+     "Review data for accuracy regularly",
+     "Provide feedback to staff"
+    ],
+    "priority": "Medium",
+    "question_id": "ML15",
+    "question_text": "We have systems in place to ensure data quality and consistency.",
+    "score": 2.45,
+    "stage": 4,
+    "stage_name": "Strengthening"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Implement your existing plan and track progress",
+     "Review results annually and refine strategies",
+     "Document lessons learned to strengthen future efforts"
+    ],
+    "priority": "Medium",
+    "question_id": "FR18",
+    "question_text": "Our fundraising plan has been implemented and refined over time.",
+    "score": 1.55,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Engage leadership, board, or staff in fundraising roles",
+     "Define clear responsibilities for fundraising activities",
+     "Build a team-based approach over time"
+    ],
+    "priority": "Low",
+    "question_id": "FR19",
+    "question_text": "We have more than one person supporting fundraising efforts.",
+    "score": 1.55,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FR",
+    "domain_name": "Fundraising",
+    "next_steps": [
+     "Identify funders that provide large-scale investments",
+     "Strengthen proposals with strong outcomes and financials",
+     "Build long-term relationships before pursuing large grants"
+    ],
+    "priority": "Low",
+    "question_id": "FR20",
+    "question_text": "We have secured at least one very large grant (e.g., $150,000+).",
+    "score": 1.55,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Address recurring audit issues",
+     "Strengthen internal controls and documentation",
+     "Build consistency in financial practices"
+    ],
+    "priority": "Low",
+    "question_id": "FM17",
+    "question_text": "Our audits demonstrate consistent financial strength over time.",
+    "score": 1.35,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Share financial summaries with staff and board",
+     "Communicate key financial priorities",
+     "Build financial literacy across the organization"
+    ],
+    "priority": "Low",
+    "question_id": "FM18",
+    "question_text": "Our financial planning and performance are transparent and understood by stakeholders.",
+    "score": 1.35,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Establish a clear audit timeline",
+     "Prepare documents in advance",
+     "Coordinate closely with auditors"
+    ],
+    "priority": "Low",
+    "question_id": "FM19",
+    "question_text": "We complete audits in a timely manner following the close of the fiscal year.",
+    "score": 1.35,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "FM",
+    "domain_name": "Financial Management",
+    "next_steps": [
+     "Strengthen consistency in financial systems",
+     "Document and share best practices",
+     "Build credibility with funders and partners"
+    ],
+    "priority": "Low",
+    "question_id": "FM20",
+    "question_text": "Our organization is recognized for strong financial management practices.",
+    "score": 1.35,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Document lessons learned from your current or first plan",
+     "Use those insights to strengthen your next planning cycle",
+     "Establish a repeatable planning → implementation → reflection process"
+    ],
+    "priority": "Low",
+    "question_id": "PL14",
+    "question_text": "We are implementing our second or subsequent strategic plan.",
+    "score": 1.33,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "PL",
+    "domain_name": "Planning",
+    "next_steps": [
+     "Identify and document one strong planning practice",
+     "Share tools or lessons learned with peers",
+     "Participate in peer learning opportunities"
+    ],
+    "priority": "Low",
+    "question_id": "PL15",
+    "question_text": "We serve as a model for other organizations in planning and strategy.",
+    "score": 1.33,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Identify 2–3 key questions you want to answer",
+     "Align data collection to those questions",
+     "Use findings to guide strategy"
+    ],
+    "priority": "Low",
+    "question_id": "ML16",
+    "question_text": "We have a learning agenda or set of questions guiding our evaluation efforts.",
+    "score": 1.22,
+    "stage": 5,
+    "stage_name": "Transformational"
+   },
+   {
+    "domain_id": "ML",
+    "domain_name": "Monitoring, Learning & Evaluation",
+    "next_steps": [
+     "Share findings with partners or networks",
+     "Participate in learning communities",
+     "Document and share promising practices"
+    ],
+    "priority": "Low",
+    "question_id": "ML17",
+    "question_text": "We contribute data, insights, or practices to broader field learning.",
+    "score": 1.22,
+    "stage": 5,
+    "stage_name": "Transformational"
+   }
+  ],
+  "language": "en",
+  "org_meta": {
+   "budget": "$1M to $5M",
+   "program_models": [
+    "Street outreach",
+    "Hospital-based violence intervention"
+   ],
+   "staff_size": "11-20",
+   "state": "OH"
+  },
+  "org_name": "Riverbend Violence Interruption Network (synthetic sample)",
+  "overall": {
+   "favorable": 40,
+   "favorable_pct": 55.6,
+   "high": 11,
+   "low": 10,
+   "medium": 11,
+   "total_gaps": 32,
+   "total_questions": 72
+  },
+  "profile": "Mid-size, founded 2016, 19 staff, about $2.1M budget. An established CVI provider operating hospital-based intervention and street outreach across two precincts. Core systems exist and are used, but they are uneven: the board is functioning yet thin on finance expertise, and evaluation is still mostly output counting. Roughly 80% of revenue is restricted government funding.",
+  "report": {
+   "conversation": [
+    "If our largest government grant ended in six months, which hospital and outreach roles would be at risk, and what would we do first?",
+    "Which funders could we ask for multi-year or flexible support this year, and who will make the ask?",
+    "What do our staff find hardest about collecting data, and what one change would make it easier?",
+    "What do we want to be able to say about changes in safety or participant lives, beyond how many people we served?",
+    "What finance skills would help our board most, and where could we find that help?"
+   ],
+   "focus": [
+    {
+     "gap_ids": [
+      "FR7"
+     ],
+     "resource": {
+      "title": "ARCvi: Finding and Sustaining Funding",
+      "url": "https://arcvi.org/finding-and-sustaining-funding/"
+     },
+     "steps": [
+      "List every funder, the amount, what it can be spent on, and the end or renewal date.",
+      "Mark each line as confirmed or pending, and add up each month's expected income.",
+      "Compare the map to your program commitments in the hospital and on the street, and note any months with a gap.",
+      "Share the one-page map with your board and leadership team and update it monthly."
+     ],
+     "title": "Map your next 12 months of funding",
+     "why": "Most of your revenue is restricted government money, so it matters a lot to know what is confirmed, what is pending and when each grant ends. Your answers show you plan ahead in many ways. This one item shows you can still get a clearer, shared view of the next year. A clear map helps you decide what you can promise your hospital and street outreach teams. It also tells you when to start asking funders for more."
+    },
+    {
+     "gap_ids": [
+      "ML6"
+     ],
+     "resource": {
+      "title": "ARCvi: Using Data That Matters",
+      "url": "https://arcvi.org/using-data-that-matters/"
+     },
+     "steps": [
+      "Write a one-page guide that says what to record, when, and in which tool, for both the hospital team and the outreach team.",
+      "Hold a short hands-on training, such as a lunch-and-learn, for all staff who enter data.",
+      "Add a quick data check to regular one-on-one supervision so the habit sticks.",
+      "Ask staff what is hard about the tools and fix the biggest pain point first."
+     ],
+     "title": "Train every staff member to use data the same way",
+     "why": "Your team already uses standard tools and reviews data together. But not everyone has been trained to collect and use data in the same way. Your data is mostly counts right now. Steady, trusted data is the base for showing funders what changes because of your work. It also makes it easier to move past counting later."
+    }
+   ],
+   "plan": [
+    {
+     "gap_ids": [
+      "FR7"
+     ],
+     "horizon": 30,
+     "owner": "Executive director, with the bookkeeper or finance lead",
+     "resource": {
+      "title": "ARCvi: Finding and Sustaining Funding",
+      "url": "https://arcvi.org/finding-and-sustaining-funding/"
+     },
+     "steps": [
+      "Put every funder, amount, use limits and end date on one sheet.",
+      "Label each line confirmed or pending, and show income month by month.",
+      "Mark any months where hospital or outreach staff costs are not yet covered.",
+      "Review the sheet with leadership and set a monthly update day."
+     ],
+     "title": "Build the 12-month funding map",
+     "why": "With most revenue restricted and from government, a clear view of confirmed and pending money lets you make safe choices about staffing and programs."
+    },
+    {
+     "gap_ids": [
+      "ML6",
+      "ML15"
+     ],
+     "horizon": 30,
+     "owner": "Program manager",
+     "resource": {
+      "title": "ARCvi: Using Data That Matters",
+      "url": "https://arcvi.org/using-data-that-matters/"
+     },
+     "steps": [
+      "Write a one-page guide for data entry: what to record, when and where, with plain definitions.",
+      "Run a short training for hospital and outreach staff using real examples.",
+      "Pick one person to answer data questions in the first month."
+     ],
+     "title": "Write a simple data guide and run a first training",
+     "why": "Staff need the same rules for collecting data before you can trust it or build on it."
+    },
+    {
+     "gap_ids": [
+      "FR7",
+      "PL13"
+     ],
+     "horizon": 60,
+     "owner": "Executive director",
+     "resource": {
+      "title": "Community Based Violence Intervention and Prevention Initiative Implementation Checklist (April 2022)",
+      "url": "https://www.ojp.gov/sites/ojp/files/media/document/cvi-implementation-checklist_0.pdf"
+     },
+     "steps": [
+      "Check each program commitment against confirmed funding and flag any at risk.",
+      "Extend the map to cover year two, using renewal dates and likely opportunities.",
+      "Choose three funders to talk with before their renewal dates."
+     ],
+     "title": "Match program promises to the funding map and look two years out",
+     "why": "Knowing when money ends helps you avoid over-promising, and a longer view helps you plan before grants run out."
+    },
+    {
+     "gap_ids": [
+      "ML6",
+      "ML11",
+      "ML15"
+     ],
+     "horizon": 60,
+     "owner": "Program manager",
+     "resource": {
+      "title": "ARCvi: Using Data That Matters",
+      "url": "https://arcvi.org/using-data-that-matters/"
+     },
+     "steps": [
+      "Add a five-minute data check to each one-on-one supervision.",
+      "Name a staff member as data lead and give them protected time each month.",
+      "Review a sample of records each month for errors and share feedback kindly."
+     ],
+     "title": "Make data checks part of supervision",
+     "why": "Training only sticks when it is reinforced. A named data lead also gives you steady quality and a base to grow evaluation."
+    },
+    {
+     "gap_ids": [
+      "FR12",
+      "FR11",
+      "FR17"
+     ],
+     "horizon": 60,
+     "owner": "Executive director and board chair",
+     "resource": {
+      "title": "ARCvi: Finding and Sustaining Funding",
+      "url": "https://arcvi.org/finding-and-sustaining-funding/"
+     },
+     "steps": [
+      "Pick two or three current funders who might offer general operating or multi-year support.",
+      "Write a short case for why stable funding protects staff and participants.",
+      "Ask in your next renewal or report conversation, and track what you hear."
+     ],
+     "title": "Ask funders for flexible and multi-year support",
+     "why": "Restricted grants leave little room to cover supervision, data and training. Flexible, longer commitments protect staff and participants."
+    },
+    {
+     "gap_ids": [
+      "FM11",
+      "FM10",
+      "PL11"
+     ],
+     "horizon": 90,
+     "owner": "Executive director and board chair, with the bookkeeper",
+     "resource": {
+      "title": "Hospital-Based Violence Intervention Programs: A Guide to Implementation and Costing (2024)",
+      "url": "https://everytownresearch.org/report/hospital-based-violence-intervention-programs"
+     },
+     "steps": [
+      "Ask a finance-savvy volunteer, advisor or new board member to review your budget work.",
+      "Draft a two-year budget that includes the full cost of supervision, data, training and transportation.",
+      "Confirm who owns each tax and filing deadline and write the dates on a shared calendar."
+     ],
+     "title": "Build a multi-year budget with board finance help",
+     "why": "Your board works well but is thin on finance expertise. Planning beyond one year needs strong finance voices at the table."
+    },
+    {
+     "gap_ids": [
+      "ML12",
+      "ML10",
+      "FR8"
+     ],
+     "horizon": 90,
+     "owner": "Program manager and data lead",
+     "resource": {
+      "title": "ARCvi: The Evidence",
+      "url": "https://arcvi.org/the-evidence/"
+     },
+     "steps": [
+      "Choose two or three outcome measures for each of hospital and street outreach, such as how often participants stay engaged. Ask community members what success looks like.",
+      "Collect them for 90 days using your standard tools.",
+      "Use the results, along with consent-based participant stories, in your next proposal."
+     ],
+     "title": "Add a few outcome measures and use them in funding asks",
+     "why": "Your data mostly counts activity. A few measures of change give funders a stronger story at the $25,000 to $75,000 level and above."
+    },
+    {
+     "gap_ids": [
+      "FR15",
+      "FR10",
+      "FR16"
+     ],
+     "horizon": 90,
+     "owner": "Executive director",
+     "resource": {
+      "title": "Community Safety Fund grantees: viewpoints and articles",
+      "url": "https://everytownsupportfund.org/category/grantees/community-safety-fund-grantees/"
+     },
+     "steps": [
+      "Assign a named person, or a part-time consultant, to lead fundraising tasks.",
+      "List five funders that give $75,000 or more and match them to your priorities.",
+      "Plan a first relationship step for each, such as an intro call or a site visit.",
+      "Look at how peer grantees tell their stories and borrow what fits."
+     ],
+     "title": "Give fundraising a clear owner and a funder relationship plan",
+     "why": "Larger and multi-year grants come from relationships built before the application. Someone needs time set aside for that."
+    }
+   ],
+   "reading_grade": 6.5,
+   "simplified": false,
+   "sources": [
+    {
+     "title": "ARCvi: Finding and Sustaining Funding",
+     "url": "https://arcvi.org/finding-and-sustaining-funding/"
+    },
+    {
+     "title": "ARCvi: Using Data That Matters",
+     "url": "https://arcvi.org/using-data-that-matters/"
+    },
+    {
+     "title": "Community Based Violence Intervention and Prevention Initiative Implementation Checklist (April 2022)",
+     "url": "https://www.ojp.gov/sites/ojp/files/media/document/cvi-implementation-checklist_0.pdf"
+    },
+    {
+     "title": "Hospital-Based Violence Intervention Programs: A Guide to Implementation and Costing (2024)",
+     "url": "https://everytownresearch.org/report/hospital-based-violence-intervention-programs"
+    },
+    {
+     "title": "ARCvi: The Evidence",
+     "url": "https://arcvi.org/the-evidence/"
+    },
+    {
+     "title": "Community Safety Fund grantees: viewpoints and articles",
+     "url": "https://everytownsupportfund.org/category/grantees/community-safety-fund-grantees/"
+    }
+   ],
+   "strengths": [
+    "You keep written work plans for the next 6 to 12 months, update them, and check your progress against them.",
+    "You review financial reports regularly with leadership and the board, track spending by program and funding stream, and hold financial reserves.",
+    "You complete an independent audit every year, and your spending generally matches your budget.",
+    "You have a written fundraising plan, funding that lasts beyond one year, and a balance of restricted and flexible money.",
+    "Your programs have defined outcomes, your team uses standard data tools and reviews data together, and you share data with funders and partners."
+   ],
+   "summary": "Here's what I've learned about you. Riverbend has been doing this work since 2016. You run hospital-based intervention and street outreach across two precincts, with a team of 19. You are an established group with real systems that your team uses. Your Planning and Financial Management are at the Developing stage. Your Fundraising and your Monitoring, Learning and Evaluation are at the Emerging stage. This is a learning tool, not a grade. It shows where you are today and where to build next.\n\nYou are strong in planning and money basics. You keep written work plans for the next 6 to 12 months and check your progress against them. You review financial reports with leadership and the board, you track spending by program and funding stream, you hold reserves, and you do an independent audit every year. You also have a written fundraising plan, and you have funding that lasts beyond one year. On the data side, your programs have defined outcomes, your team uses standard tools, and you review data together and share it with funders and partners. Those are real foundations.\n\nYou are a little weaker in a few connected places. Most of your money is restricted government funding, so it is hard to see clearly what is confirmed and what is still pending. Your data work is mostly counting what you do, and not every staff member is trained to collect and use data the same way. Your board works well but could use more finance know-how. If I were you, I would start with two things. First, build a clear 12-month picture of your funding, with confirmed money in one column and pending money in another. Second, train your staff to collect and use data the same way every time. These two steps are small and doable. They also make every later funding conversation stronger."
+  },
+  "respondent": {
+   "role": "Executive director"
+  }
+ }
+}

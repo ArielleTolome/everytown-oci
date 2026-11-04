@@ -1,11 +1,14 @@
 """Read-aloud with Amazon Polly: one report section as MP3. The spoken text is built in code from the validated report."""
 import logging
 import re
+import time
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 
 from botocore.exceptions import ClientError
 from flask import Blueprint, Response, request, session
+
+import observability
 
 bp = Blueprint("tts", __name__)
 SECTIONS = ("summary", "focus", "plan", "strengths", "conversation")
@@ -132,6 +135,7 @@ def _without_id3(mp3):
 
 
 @bp.route("/api/assessments/<sid>/audio/<section>")
+@observability.traced("tts.audio")
 def audio(sid, section):
     """Same visibility as GET /api/assessments/<id>: any signed-in user with the link."""
     from app import error, load
@@ -146,9 +150,16 @@ def audio(sid, section):
     text = section_text(report, section, sub["language"])
     key = (sub["id"], section, sub["language"])
     data = _cache.get(key)
+    observability.set_attrs(None, {"oci.section": section, "oci.language": sub["language"], "oci.chars": len(text),
+                                   "oci.chunks": len(chunks(text)), "oci.cached": data is not None})
     if data is None:
         try:
-            data = synthesize(text, sub["language"])
+            started = time.monotonic()
+            with observability.span("tts.synthesize", "TOOL", **{"tool.name": "polly.synthesize_speech",
+                                                                 "input.value": text}) as span:
+                data = synthesize(text, sub["language"])
+                observability.set_attrs(span, {"oci.engine": _engines[0], "oci.mp3_bytes": len(data),
+                                               "oci.ms": round((time.monotonic() - started) * 1000)})
         except Exception:
             logging.exception("polly failed for %s/%s", sub["id"], section)
             return error("We could not prepare the audio. Please try again.", 502)

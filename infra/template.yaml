@@ -39,6 +39,18 @@ Parameters:
     Default: 100
     MinValue: 0
     Description: Monthly AWS cost budget in USD (tracking only, no alerts until a subscriber is added). 0 skips it, for accounts that deny budgets:ModifyBudget.
+  PhoenixEndpoint:
+    Type: String
+    Default: ""
+    Description: Arize Phoenix base URL (PhoenixUrl output of the everytown-oci-obs stack). Empty turns tracing off.
+  PhoenixApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Phoenix system API key for OTLP traces (created by scripts/deploy_observability.sh).
+  PhoenixProject:
+    Type: String
+    Default: everytown-oci
 
 Conditions:
   CreateBudget: !Not [!Equals [!Ref MonthlyBudgetUsd, 0]]
@@ -275,6 +287,10 @@ Resources:
           OCI_DOMAINS: !Ref Domains
           OCI_GUARDRAIL_ID: !GetAtt Guardrail.GuardrailId
           OCI_GUARDRAIL_VERSION: !GetAtt GuardrailVersion.Version
+          OCI_PHOENIX_ENDPOINT: !Ref PhoenixEndpoint
+          OCI_PHOENIX_API_KEY: !Ref PhoenixApiKey
+          OCI_PHOENIX_PROJECT: !Ref PhoenixProject
+          OCI_PHOENIX_UI: !Ref PhoenixEndpoint
 
   AsyncConfig:
     Type: AWS::Lambda::EventInvokeConfig

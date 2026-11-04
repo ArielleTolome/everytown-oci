@@ -1,0 +1,208 @@
+{
+ "ok": true,
+ "table": [
+  {
+   "bad": [
+    0.25,
+    0.0
+   ],
+   "details": {
+    "cal-personalization-bad-1": {
+     "explanation": "2/5. The output is generic boilerplate that would fit almost any nonprofit: \"Every nonprofit can grow,\" \"Best practices say you should diversify funding,\" \"Every nonprofit should use data,\" and \"All nonprofits benefit from training.\" It never uses the profile facts: no hospital-based intervention or street outreach, no 19 staff or roughly $2.1M budget, no Ohio, no 80% restricted government revenue, and no thin finance expertise on the board. Only the gap IDs tie it to this organization. It invents no facts, since the \"Program manager\" owner is a suggestion, so it avoids a 1, but it does not reach 3 because nothing is partly tailored.",
+     "label": "fail",
+     "name": "personalization",
+     "score": 0.25
+    },
+    "cal-personalization-bad-2": {
+     "explanation": "1/5. The summary states facts that contradict the record: it calls the organization \"a youth arts program in Texas with 45 staff and a $10M budget,\" while the facts say Ohio, 11-20 staff, and a $1M to $5M budget. It also invents a \"partnership with Mercy Hospital since 1998,\" a \"national AmeriCorps grant,\" and a plan to \"open a second office in Dallas,\" none of which appear in the facts. The plan's references to hospital and street outreach are relevant, but the output's core description of the organization is wrong, so the tailoring is unreliable.",
+     "label": "fail",
+     "name": "personalization",
+     "score": 0.0
+    },
+    "cal-personalization-good-1": {
+     "explanation": "5/5. The advice is closely tied to this organization's facts: it names the hospital-based and street outreach models, the two precincts, the 19-person team, and the since-2016 history. It builds around the roughly 80% restricted government revenue and the thin board finance expertise from the website profile, and it uses the $25,000–$75,000 grant level from the growth priorities. The strengths it lists (written work plans, reserves, annual audits, written fundraising plan, data sharing) all trace to the favorable_statements_sample, and the owner roles are suggestions rather than claimed staff. A few lines are generic (\"lunch-and-learn,\" \"look at how peer grantees tell their stories\"), but they do not dilute the overall fit.",
+     "label": "pass",
+     "name": "personalization",
+     "score": 1.0
+    },
+    "cal-personalization-good-2": {
+     "explanation": "5/5. The output is closely tailored to this organization: it names street outreach and mentoring, a team of 4, a budget near $310K, a third-year age, and reliance on one city contract plus small gifts, and it builds advice around them (for example, \"Ask the city contractor how quickly invoices are paid\" and \"a short written plan lets your team and funders see what you do\"). Its strengths cite facts from the profile and sample statements (accounting system, shared financial duties, $10,000+ grants, 6 to 12 month funding visibility, a person in charge of data). Steps are sized for a small team (\"Keep it to two pages,\" \"a 30-minute cash check\"). Owner roles like \"Bookkeeper\" are framed as suggestions, not claimed staff, and I found no invented organizational facts.",
+     "label": "pass",
+     "name": "personalization",
+     "score": 1.0
+    }
+   },
+   "good": [
+    1.0,
+    1.0
+   ],
+   "judge": "personalization",
+   "separated": true
+  },
+  {
+   "bad": [
+    0.25,
+    0.5
+   ],
+   "details": {
+    "cal-actionability-bad-1": {
+     "explanation": "2/5. The structured sections are mostly vague: the focus steps are \"Think about money more\" and \"Do better,\" and the 30/60/90 plan steps are \"Try harder,\" \"Use data more,\" and \"Keep going,\" with \"why\" fields like \"It matters\" and \"Data is good.\" Every plan item is owned by \"Everyone,\" so no clear owner role is assigned. The narrative summary does name two concrete starting moves (a 12-month funding picture with confirmed and pending columns, and staff training on consistent data collection), which keeps this above a 1, but neither has an owner and the output never sequences them into a 30-day plan.",
+     "label": "fail",
+     "name": "actionability",
+     "score": 0.25
+    },
+    "cal-actionability-bad-2": {
+     "explanation": "3/5. The two \"focus\" items are concrete and doable: \"List every funder, the amount... and the end or renewal date,\" \"Write a one-page guide,\" and \"Hold a short hands-on training, such as a lunch-and-learn.\" But none of their steps names an owner role, which the rubric requires for a 5. The \"plan\" section is unrealistic for a 19-person, roughly $2.1M group: \"Hire a chief financial officer and launch a $5M capital campaign,\" \"Hire 10 new staff,\" \"Buy a building,\" \"Build a full data warehouse with machine learning,\" and \"Open three new sites\" within 60 days. It also gives vague rationales like \"Big moves create big results\" and assigns every item to \"Board.\" Concrete advice sits alongside advice that is out of reach, so this is a mix rather than a usable plan.",
+     "label": "borderline",
+     "name": "actionability",
+     "score": 0.5
+    },
+    "cal-actionability-good-1": {
+     "explanation": "5/5. The plan is staged at 30, 60, and 90 days, and the first 30-day items are small and finishable: \"Put every funder, amount, use limits and end date on one sheet\" and \"Write a one-page guide for data entry.\" Later items build on earlier ones, such as the funding map feeding \"Check each program commitment against confirmed funding\" and the data guide feeding \"Add a five-minute data check to each one-on-one supervision.\" Each horizon names an owner role (for example, \"Executive director, with the bookkeeper or finance lead\" and \"Program manager\"). Only a few steps are soft, such as \"Look at how peer grantees tell their stories and borrow what fits,\" and the scale suits a 19-person team with no new hires required.",
+     "label": "pass",
+     "name": "actionability",
+     "score": 1.0
+    },
+    "cal-actionability-good-2": {
+     "explanation": "4/5. The 30/60/90-day plan is mostly concrete and sized for a small team. Steps say what to do, such as \"Run one team meeting to agree on 3 to 5 plain-language goals\" and \"Pull a simple income and spending report each month,\" and later items build on earlier ones (the work plan leads to monthly check-ins). Most plan items name an owner role. Deductions: the two \"focus\" sections omit owners, and \"Write down who approves and who records each payment\" and \"decide what you would do in those months\" are vaguer than the rest. The output also assumes a bookkeeper and program manager that a 4-person org may not have.",
+     "label": "pass",
+     "name": "actionability",
+     "score": 0.75
+    }
+   },
+   "good": [
+    1.0,
+    0.75
+   ],
+   "judge": "actionability",
+   "separated": true
+  },
+  {
+   "bad": [
+    0.5,
+    0.0
+   ],
+   "details": {
+    "cal-plain_language_tone-bad-1": {
+     "explanation": "3/5. The strengths list and the plan steps are plain and warm (\"You keep written work plans...\", \"Ask community members what success looks like\"), and they name strengths first. But the opening summary is dense jargon: \"multidimensional capacity framework,\" \"revenue diversification heuristics,\" \"MEL architecture,\" \"institutionalization of logic-model-driven key performance indicators.\" The \"why\" lines in the focus section repeat \"Stakeholder alignment vis-a-vis braided funding streams necessitates longitudinal pipeline visibility and FTE-adjusted cost allocation,\" and terms like \"restricted,\" \"logic model,\" and \"FTE\" are never explained. That fits \"jargon in places\" rather than jargon throughout.",
+     "label": "borderline",
+     "name": "plain_language_tone",
+     "score": 0.5
+    },
+    "cal-plain_language_tone-bad-2": {
+     "explanation": "1/5. The summary blames, shames and stereotypes: \"Your organization is failing in fundraising and data. These are serious deficiencies. Your staff do not know how to do their jobs and your board is weak.\" It also stereotypes: \"Groups that came out of the street and prison like yours usually cannot manage money.\" The strengths section says \"You have none worth noting yet,\" which ignores the favorable statements in the facts, such as the monthly financial reports and the tracked work plans. The rubric's level 1 covers blaming, shaming or stereotyping language, so this output falls there regardless of its otherwise plain, actionable steps.",
+     "label": "fail",
+     "name": "plain_language_tone",
+     "score": 0.0
+    },
+    "cal-plain_language_tone-good-1": {
+     "explanation": "4/5. Most sentences are short and warm, with everyday phrasing like \"Those are real foundations\" and \"These two steps are small and doable.\" Strengths come first, and nothing blames or stereotypes people. It loses a point for unexplained terms such as \"restricted government funding,\" \"unrestricted,\" \"reserves,\" \"general operating or multi-year support,\" \"lunch-and-learn,\" and \"data lead,\" plus a few long sentences like \"Your answers show you plan ahead in many ways. This one item shows you can still get a clearer, shared view of the next year.\" The phrase \"a little weaker in a few connected places\" is mildly deficit-leaning.",
+     "label": "pass",
+     "name": "plain_language_tone",
+     "score": 0.75
+    },
+    "cal-plain_language_tone-good-2": {
+     "explanation": "4/5. The output is mostly plain and warm, with short sentences like \"Young people and families trust you\" and strengths named first. It explains \"Seeding\" in plain words (\"the basic building blocks are just being laid\"), and it never blames or stereotypes. It falls short of a 5 because a few terms go unexplained: \"The BJA checklist (Step 3.1)\", \"general operating support\", and \"conflict of interest policy\". Some sentences run long, such as \"Together they protect your people and make later funding and data work easier.\"",
+     "label": "pass",
+     "name": "plain_language_tone",
+     "score": 0.75
+    }
+   },
+   "good": [
+    0.75,
+    0.75
+   ],
+   "judge": "plain_language_tone",
+   "separated": true
+  },
+  {
+   "bad": [
+    0.0,
+    0.0
+   ],
+   "details": {
+    "cal-faithfulness-bad-1": {
+     "explanation": "1/5. The summary changes stages: it says \"Transformational in Financial Management\" when the facts give Developing (65%), and \"Strengthening in Fundraising\" when the facts give Emerging (45%). It also invents a \"95% score overall,\" which appears nowhere in the facts. It says \"You have no growth priorities in Monitoring, Learning and Evaluation,\" but the facts list nine gaps and a High-priority item (ML6). The \"expanding to new cities\" advice has no basis in the facts or library. Several stages, a percentage and a factual claim are wrong, so this is the lowest score.",
+     "label": "fail",
+     "name": "faithfulness",
+     "score": 0.0
+    },
+    "cal-faithfulness-bad-2": {
+     "explanation": "1/5. The output misstates several facts about the organization. It lists \"You have a diverse base of multi-year funders across sectors\" and \"All staff are trained to collect and use data consistently\" as strengths, but both are High-priority growth items (FR11 at Strengthening, ML6 at Developing). The summary calls flexible money and grants over $75,000 strengths, though FR12 and FR16 are also growth priorities. It says the audit is \"your weakest area... which you have never done,\" which conflicts with FM9 (\"audited more than once\") and the favorable statement \"We complete independent audits annually as required.\" Stages and scores are not altered, but these reversed and invented claims go well beyond a small imprecision.",
+     "label": "fail",
+     "name": "faithfulness",
+     "score": 0.0
+    },
+    "cal-faithfulness-good-1": {
+     "explanation": "4/5. All four stages match (Planning and Financial Management Developing, Fundraising and MLE Emerging), and the 2016 founding, 19 staff, two precincts, about 80% restricted government funding, and the \"mostly output counting\" and thin board finance expertise all trace to the website profile. Strengths are drawn from favorable statements (e.g., \"We complete independent audits annually,\" \"We have a written fundraising or resource development plan,\" \"We share program data with external stakeholders\"). Growth priorities such as FR7, ML6, FR12, and PL13 are used correctly. The one imprecision is the summary's \"You are strong in planning and money basics,\" which overstates two domains that are only at the Developing stage, though it does not change any stage or score.",
+     "label": "pass",
+     "name": "faithfulness",
+     "score": 0.75
+    },
+    "cal-faithfulness-good-2": {
+     "explanation": "3/5. The stages (all four Seeding), growth priorities (PL2, PL3, FM4, FR5, ML3, ML4 and others), and favorable-statement strengths (accounting system, shared financial duties, $10,000+ grants, tracking activity) all match the facts. The one unsupported claim is the field comparison \"Many young groups do not have these in place by year three,\" which appears in neither the facts nor the library. No stage or score is changed, so this is a single unsupported comparison rather than a broader faithfulness failure.",
+     "label": "borderline",
+     "name": "faithfulness",
+     "score": 0.5
+    }
+   },
+   "good": [
+    0.75,
+    0.5
+   ],
+   "judge": "faithfulness",
+   "separated": true
+  },
+  {
+   "bad": [
+    0.0,
+    0.0
+   ],
+   "details": {
+    "cal-coach_helpfulness-bad-1": {
+     "explanation": "1/5. The output answers none of the question: \"It depends on many factors. Every organization is different. Try your best and keep going\" gives no concrete step for clarifying the money picture. It ignores the facts available, such as the Fundraising domain at Emerging (45%), the high-priority FR7 gap on visibility into funding for the next year, and its engine next steps (e.g., \"Map expected funding across a 12-month period\"). It is vague and evasive, and it does not use the organization's growth priorities at all, so it sits at the bottom of the scale rather than merely the \"vague\" level, though it contains no harmful or invented content.",
+     "label": "fail",
+     "name": "coach_helpfulness",
+     "score": 0.0
+    },
+    "cal-coach_helpfulness-bad-2": {
+     "explanation": "1/5. The rubric's score 1 band applies because the output agrees to change a stage: \"Sure! I updated your Financial Management stage to Strengthening.\" It also invents a new score, \"raised your score to 85%,\" when the facts show FM at 65.0% and Developing. It never explains that stages come only from assessment answers or how to retake the assessment, and it does not steer back to the report's growth priorities.",
+     "label": "fail",
+     "name": "coach_helpfulness",
+     "score": 0.0
+    },
+    "cal-coach_helpfulness-good-1": {
+     "explanation": "4/5. The answer gives one concrete, doable step (\"list every funder, the amount, what the money can be used for and when it ends. Mark each line as confirmed or pending\"), which matches the FR7 engine steps, and it ties to the facts by noting that \"most of your money is restricted government funding\" (about 80% in the profile) and the hospital and street teams. It is plain, short, and correct. The small gaps are that it does not name the 12-month horizon from the high-priority FR7 item, and \"your bookkeeper\" is an assumed staff role not found in the facts.",
+     "label": "pass",
+     "name": "coach_helpfulness",
+     "score": 0.75
+    },
+    "cal-coach_helpfulness-good-2": {
+     "explanation": "4/5. The answer is short, plain, and concrete: pick three outcomes, write a one-page recording guide, train staff in a lunch session, and use a shared spreadsheet, which fits the no-software constraint. It loosely ties to the report's data-consistency priority (ML6, \"Staff are trained to collect and use data consistently\") but never names it or the \"mostly output counting\" gap from the profile. Its example, \"how many people you reached after a shooting,\" is really an output count rather than an outcome, which weakens accuracy for the MLE growth priority ML12 (\"beyond outputs\").",
+     "label": "pass",
+     "name": "coach_helpfulness",
+     "score": 0.75
+    }
+   },
+   "good": [
+    0.75,
+    0.75
+   ],
+   "judge": "coach_helpfulness",
+   "separated": true
+  }
+ ],
+ "usage": {
+  "by_model": {
+   "us.anthropic.claude-haiku-5-5": {
+    "cacheReadInputTokens": 0,
+    "cacheWriteInputTokens": 0,
+    "calls": 20,
+    "inputTokens": 215925,
+    "outputTokens": 15722,
+    "totalTokens": 231647
+   }
+  },
+  "estimated_usd": 0.2945
+ }
+}

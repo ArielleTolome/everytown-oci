@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, session
 
+import observability
+
 bp = Blueprint("staff_ai", __name__)
 CACHE_SECONDS = 600
 # shortcut: per-process cache (one Lambda container), fine for a demo; move to the database if staff use grows.
@@ -101,6 +103,7 @@ def validate_brief(raw):
 
 
 @bp.route("/api/staff/briefs", methods=["POST"])
+@observability.traced("staff.brief")
 def brief():
     import pipeline
     from app import body, error, get_domains
@@ -116,6 +119,8 @@ def brief():
         return error("Unknown statement.", 400)
     question, domain = found[0]
     hit = _cache.get(qid)
+    observability.set_attrs(None, {"input.value": qid, "oci.domain_id": domain["id"],
+                                   "oci.cached": bool(hit and time.time() - hit[0] < CACHE_SECONDS)})
     if hit and time.time() - hit[0] < CACHE_SECONDS:
         return jsonify(hit[1])
     who = _who(qid, domain["id"])
@@ -129,5 +134,7 @@ def brief():
         return error("We could not write the training brief right now. Please try again.", 502)
     out.update(question_id=qid, statement=question["text"], domain_name=domain["name"], who=who,
                generated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"))
+    observability.set_attrs(None, {"oci.network_orgs": who["orgs"], "output.value": out["title"],
+                                   "oci.resources": [r["url"] for r in out["resources"]] or None})
     _cache[qid] = (time.time(), out)
     return jsonify(out)

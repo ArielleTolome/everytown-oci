@@ -3,13 +3,18 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-rm -rf build/pkg build/oci.zip
-mkdir -p build/pkg
+rm -rf build/pkg build/oci.zip build/wheels
+mkdir -p build/pkg build/wheels
 # Lambda python3.12 runs on Amazon Linux 2023 (glibc 2.34), so manylinux_2_28 wheels are fine too.
-python3 -m pip install -q -r requirements.txt -t build/pkg \
+# Download, then unzip every wheel into build/pkg: `pip install --target` skips a top-level folder that already
+# exists, which silently dropped protobuf when googleapis-common-protos also installed into the shared google/ folder.
+python3 -m pip download -q -r requirements.txt -d build/wheels \
   --platform manylinux2014_x86_64 --platform manylinux_2_28_x86_64 \
   --only-binary=:all: --python-version 3.12 --implementation cp
-cp -r app.py pipeline.py report.py lambda_handler.py db.py schema.sql features engine utils data benchmark resources build/pkg/
+for w in build/wheels/*.whl; do unzip -qo "$w" -d build/pkg; done
+cp -r app.py pipeline.py report.py lambda_handler.py db.py observability.py schema.sql features engine utils data benchmark resources build/pkg/
+# Online eval checks (pure code) run after each traced report; the offline datasets and runner stay out of the zip.
+mkdir -p build/pkg/evals && cp evals/__init__.py evals/checks.py build/pkg/evals/
 # report.py embeds the Atkinson Hyperlegible fonts from frontend/public/fonts.
 mkdir -p build/pkg/frontend/public
 cp -r frontend/public/fonts build/pkg/frontend/public/

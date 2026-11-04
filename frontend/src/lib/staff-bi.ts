@@ -17,7 +17,7 @@ export interface Change { reassessed: number; rows: ChangeRow[]; areas_up: numbe
 export interface Peer { org: Ref; score: number; reasons: string[] }
 export interface OrgDetail extends Ref {
   assessed: string; source: string; assessments: number; program_models: string[]; staff_size: string | null; budget: string | null;
-  state: string | null; role: string | null; asked: string[]; asked_at: string | null;
+  state: string | null; role: string | null; asked: string[]; asked_at: string | null; trace_url?: string | null;
   stages: { domain_id: string; domain_name: string; stage: string; score: number; percentile: number | null; high: number }[];
   top_gaps: { question_id: string; question_text: string; priority: string; domain_name: string }[];
 }
@@ -34,6 +34,10 @@ export interface Bi {
 
 export const pct = (n: number | null | undefined) => (n == null ? "" : `${Math.round(n)}%`);
 export const report = (r: Ref, label = r.name) => `<a href="/results/?id=${encodeURIComponent(r.assessment_id)}">${esc(label)}<span class="visually-hidden"> report</span></a>`;
+/** v1.1 staff-only audit link to the latest report's AI trace in Arize Phoenix (its own sign-in). */
+export const traceLink = (url: string | null | undefined) => (url && /^https?:\/\//.test(url)
+  ? `<p class="trace-link" data-no-print>${icon("search")}<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">View AI trace (staff)<span class="visually-hidden"> (opens Phoenix in a new tab)</span></a></p>`
+  : "");
 const head = (id: string, eyebrow: string, title: string, extra = "") =>
   `<div class="section-head"><div><span class="eyebrow">${esc(eyebrow)}</span><h2 id="${id}">${esc(title)}</h2></div>${extra}</div>`;
 const empty = (text: string) => `<p class="notice">${icon("info")}<span>${esc(text)}</span></p>`;
@@ -243,7 +247,7 @@ export function drawerHtml(o: OrgDetail, stateName: (c: string) => string) {
       <button type="button" class="btn btn-secondary btn-sm" data-close-drawer>${icon("circle-x")}<span>Close</span></button>
     </div>
     <dl class="facts">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v ? esc(v) : '<span class="meta">Not shared</span>'}</dd></div>`).join("")}</dl>
-    <p>${report(o, "Open the full report")}</p>
+    <p>${report(o, "Open the full report")}</p>${traceLink(o.trace_url)}
     <h3>Stage by area</h3>
     ${table("drawer-stages", `Stages and needs for ${esc(o.name)}`,
       `<tr><th scope="col">Area</th><th scope="col">Stage</th><th scope="col" class="num">Capacity</th><th scope="col" class="num">High priority</th><th scope="col">Asked for help</th><th scope="col" class="num preview-col">Peer percentile (0 to 100)</th></tr>`,

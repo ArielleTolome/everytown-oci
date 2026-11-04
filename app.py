@@ -15,10 +15,13 @@ import boto3
 from flask import Flask, Response, jsonify, request, session
 
 import db
+import observability
 import pipeline
 import report
 from engine.scoring import calculate_recommendations
 from utils.data_loader import get_domains, get_stage_names, get_stage_weights
+
+observability.setup()  # no-op unless OCI_PHOENIX_ENDPOINT is set
 
 USERS = {"demo": ("demo", "org"), "staff": ("staff", "staff")}  # mocked login, per the vision doc
 PRIORITY_DOMAINS = ["PL", "FR", "FM", "ML"]
@@ -271,8 +274,32 @@ def start_job(sid):
 
 
 def run_job(sid):
-    """The hardcoded AI pipeline. Scores are already final; the model only writes text around them."""
+    """The hardcoded AI pipeline, traced as one "oci.report" trace (session = assessment id). Scores are already
+    final; the model only writes text around them."""
     sub = db.get(sid)
+    attrs = {}
+    if observability.enabled():
+        try:
+            row = db.query("SELECT source, owner FROM assessments WHERE id = :id", id=sid)[0]
+            attrs = observability.report_attrs(sub, row["source"], row["owner"])
+        except Exception:
+            app.logger.exception("trace attributes failed for %s", sid)
+    with observability.span("oci.report", "CHAIN", **attrs) as root:
+        if observability.enabled():  # staff-only audit link to this run's trace in Phoenix
+            sub["trace"] = observability.trace_link(observability.current_trace_id())
+        with observability.span("score", "CHAIN", **observability.score_attrs(sub)):
+            pass  # the engine ran at submit time; this span records its result
+        raw = {}
+        _run_steps(sub, raw, root)
+        if sub["status"] == "done":
+            observability.online_checks(sub, raw, root)
+        observability.set_attrs(root, {"oci.status": sub["status"], "output.value": sub["error"] or sub["report"]["summary"]})
+        db.update(sub)
+    observability.flush()
+
+
+def _run_steps(sub, raw, root):
+    sid = sub["id"]
     steps = {s["key"]: s for s in sub["steps"]}
 
     def mark(key, state):
@@ -290,7 +317,7 @@ def run_job(sid):
         library = pipeline.gather_library(sub)
         mark("library", "done")
         mark("write", "running")
-        sub["report"] = pipeline.write_report(sub, library)
+        sub["report"] = pipeline.write_report(sub, library, raw)
         mark("write", "done")
         mark("plain", "running")
         sub["report"] = pipeline.plain_language(sub)  # never fails: keeps the first report if a rewrite does
@@ -299,6 +326,7 @@ def run_job(sid):
             s["state"] = "done"
         sub["status"] = "done"
     except Exception as exc:  # surface the failed step; scores stay valid
+        observability.record_error(root, exc)
         app.logger.exception("pipeline failed for %s", sid)
         sub["status"] = "error"
         sub["error"] = str(exc) if isinstance(exc, pipeline.ReportError) else (
@@ -307,13 +335,14 @@ def run_job(sid):
         for s in sub["steps"]:
             if s["state"] == "running":
                 s["state"] = "error"
-    db.update(sub)
 
 
 @app.route("/api/assessments/<sid>")
 @login_required()
 def get_assessment(sid):
     sub = load(sid)
+    if sub and session["user"]["role"] != "staff":
+        sub.pop("trace", None)  # the AI trace audit link is for Everytown staff only
     return jsonify(sub) if sub else error("Report not found.", 404)
 
 
