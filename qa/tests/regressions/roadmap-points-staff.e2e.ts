@@ -26,6 +26,8 @@ test('staff follow-through shows each organization\'s week, points and level', {
   await app.open('/staff/');
   await screen.getByRole('tab', 'Quality and follow-through').tap();
   await expect(screen.getByRole('heading', 'Follow-through')).toBeVisible({ timeout: 15_000 });
+  // The table follows its own request (GET /api/staff/roadmaps), after the heading.
+  await expect(screen.getByText('Roadmap follow-through by organization, stalled first')).toBeVisible({ timeout: 15_000 });
   const t = await browser.evaluate(() => {
     const table = document.querySelector('table:has(#sq-follow-table)')!;
     const head = [...table.querySelectorAll('thead th')].map((h) => h.textContent!.trim());
