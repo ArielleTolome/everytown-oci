@@ -48,6 +48,7 @@ import Icon from "../components/Icon.astro";
   import { api, ApiError, type User } from "../lib/api";
   import { $ } from "../lib/dom";
   import { icon } from "../lib/icons";
+  import { clearDraft } from "../lib/draft";
 
   const form = $<HTMLFormElement>("#login-form")!;
   const user = $<HTMLInputElement>("#username")!;
@@ -112,6 +113,9 @@ import Icon from "../components/Icon.astro";
     btn.setAttribute("aria-disabled", "true");
     try {
       const { user: u } = await api.post<{ user: User }>("/login", { username: user.value.trim(), password: pass.value });
+      // The showcase sign-in (presentations) starts fresh every time: no draft left on this device, so the start page
+      // is the filled-in preset and "How would you like to answer?" shows again. Signing in again is the reset.
+      if (u.name === "showcase") clearDraft();
       location.assign(nextUrl(u.role));
     } catch (ex) {
       showError(ex instanceof ApiError && ex.status === 401

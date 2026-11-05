@@ -2,6 +2,11 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.14 — Signing in as showcase starts fresh
+
+- Every sign-in as `showcase` now clears the answers saved on that browser, so the start page is the filled-in made-up group again and **Start questionnaire** shows "How would you like to answer?" with all three ways (One at a time, Yes / No for each, Checklist). To reset during a rehearsal: Sign out, then sign in as `showcase` again. Within one sign-in, going back to the start page still keeps the presenter's place and their pick. `demo` / `demo` keeps its saved answers as before.
+- Checked in a browser (dev and live): pick a style, sign out, sign in as showcase, and the three-way choice is back; demo keeps its draft. Sign-in, smoke and chooser e2e tests pass.
+
 ## v1.10.13 — A showcase sign-in with the start page filled in
 
 - New practice sign-in **`showcase` / `showcase`** for presentations: an organization leader whose start page ("Tell us about your organization") arrives filled in with a made-up group, so a presenter can show it and press **Start questionnaire** straight away. It uses the Southside sample's details (Southside Youth Peace Collective (synthetic sample); Executive director, "Founder and executive director", Jordan Rivera; street outreach and youth mentoring; 1 to 5 staff; $250K to $1M; Illinois; the four main areas). Nothing is submitted until the presenter presses Start.

@@ -194,7 +194,7 @@ Migrations are idempotent (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXIS
 
 ## 6. The API
 
-Flask JSON API under `/api`. Sign-in is mocked: `demo` / `demo` (organization), `showcase` / `showcase` (organization; `GET /api/meta` adds a `preset`, sample A's details with a made-up name, so the start page arrives filled in for presentations; a draft on the device is used only if it is the same organization) and `staff` / `staff` (CSF staff). Every POST must be JSON (blocks cross-site form posts). "Owner" means the sign-in session that submitted the assessment.
+Flask JSON API under `/api`. Sign-in is mocked: `demo` / `demo` (organization), `showcase` / `showcase` (organization; `GET /api/meta` adds a `preset`, sample A's details with a made-up name, so the start page arrives filled in for presentations; a draft on the device is used only if it is the same organization, and each showcase sign-in clears the device draft, so the answer-style choice shows again) and `staff` / `staff` (CSF staff). Every POST must be JSON (blocks cross-site form posts). "Owner" means the sign-in session that submitted the assessment.
 
 | Route | Who | Purpose |
 |---|---|---|
@@ -485,6 +485,7 @@ axe-core 4.10.2 (WCAG 2.0, 2.1, 2.2 A and AA) on every page and staff tab at 320
 | v1.10.10 | Points at the top right of the roadmap; staff see each organization's week, points and level. |
 | v1.10.11 | "New chat" in the report chat: a clean session for the AI; earlier questions kept and still counted. |
 | v1.10.13 | `showcase` / `showcase`: a sign-in whose start page arrives filled in, for presentations. |
+| v1.10.14 | Each `showcase` sign-in starts fresh (the answer-style choice shows again). |
 
 The full notes for each are in [`CHANGELOG.md`](../CHANGELOG.md) and on the GitHub Releases page.
 
