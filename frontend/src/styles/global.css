@@ -1729,3 +1729,8 @@ html:has(.chat-fab) { scroll-padding-bottom: 5.5rem; }
   html:has(#results-root .report-main :is(textarea, input:not([type="checkbox"], [type="radio"])):not(.chat__input):focus) .chat-fab { display: none; }
 }
 /* == end v1.10 report == */
+/* == v1.10.7 chooser time == */
+/* #28 follow-up: each answer-style card shows its estimated time and the saving, in navy (13.4:1 on the card). */
+.view-card__time { display: inline-flex; align-items: flex-start; gap: var(--space-xs); font-weight: 700; font-size: var(--text-sm); color: var(--color-foreground); }
+.view-card__time .icon { margin-top: 0.15em; }
+/* == end v1.10.7 chooser time == */

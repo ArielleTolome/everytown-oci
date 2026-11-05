@@ -10,6 +10,18 @@ import { icon } from "./icons";
 /** Time estimates on the start page and the questionnaire both use this, so they agree. */
 export const SECONDS_PER_STATEMENT = 8;
 
+// shortcut: a model, not measured per style: the 8 s is about 5 s to read a statement and 3 s to answer it. A checklist
+// taps only true statements (about 6 in 10: Everytown's sample answers say Yes to 26%, 59% and 89%) plus Done; One at a
+// time answers each multiple-choice question with 2 taps (a pick and "Looks right"). Replace with real timings if collected.
+const READ_SECONDS = 5, TAP_SECONDS = 3, YES_SHARE = 0.6;
+/** #28 follow-up: estimated seconds to answer `statements` statements in one style; `laddered` of them sit in `ladders`
+ * multiple-choice questions. Yes / No for each is SECONDS_PER_STATEMENT per statement, like the start page. */
+export function answerSeconds(view: View, statements: number, laddered = 0, ladders = 0): number {
+  const taps = view === "check" ? Math.round(statements * YES_SHARE) + 1
+    : view === "quick" ? statements - laddered + 2 * ladders : statements;
+  return statements * READ_SECONDS + taps * TAP_SECONDS;
+}
+
 export interface OrgMeta { program_models: string[]; staff_size: string | null; budget?: string | null; states: string[] }
 export interface Respondent { role: string | null; title: string | null; name: string | null }
 export interface OrgLinks { social: string[] }

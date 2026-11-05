@@ -18,6 +18,10 @@ test('the answer style is picked once from three sample cards and sticks', { ses
   const previews = await browser.evaluate(() => [...document.querySelectorAll('.view-card .vp__stmt')].map((s) => s.textContent));
   expect(previews).toHaveLength(3);
   expect(new Set(previews).size).toBe(1);
+  // Each card shows its estimated time; for the four default areas (72 statements) the totals agree with the start
+  // page's 11 minutes, and the styles with fewer taps say what they save against Yes / No for each.
+  expect(await browser.evaluate(() => [...document.querySelectorAll('.view-card__time')].map((e) => (e as HTMLElement).innerText.trim())))
+    .toEqual(['About 11 minutes · saves under a minute', 'About 11 minutes', 'About 10 minutes · saves about 1 minute']);
 
   await screen.getByRole('button', 'Yes / No for each').tap();
   await expect(screen.getByRole('heading', 'Planning', { level: 1 })).toBeVisible();

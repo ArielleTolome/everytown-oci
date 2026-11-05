@@ -25,7 +25,7 @@ We kept Everytown's 143 statements, its stage names and its scoring exactly as t
 | A short start page | Who is filling it out (role, job title, name), the organization's name, what it does, its size, states (as removable bubbles, up to 10), website and up to 5 social links. The four priority areas are picked for them. | A start that takes a few minutes, and a plan that fits their size and work. |
 | English or Español | One switch at the top right sets the questions, the report and the read-aloud voice. | Leaders and staff can work in their own language. |
 | Made-up sample groups | One click fills a sample group's answers (Southside, Riverbend, Metro). | A way to see what the tool gives before answering. |
-| Pick how to answer | Before the first question: one real statement shown three ways (one at a time, Yes / No for each, a checklist). The choice sticks; "Change how I answer" switches later. | The style that feels easiest, without being asked again. |
+| Pick how to answer | Before the first question: one real statement shown three ways (one at a time, Yes / No for each, a checklist), each with its estimated time and the time it saves (for the four main areas: about 11 minutes; one at a time saves under a minute, the checklist about 1 minute; with all 8 areas the checklist saves about 2). The choice sticks; "Change how I answer" switches later. | The style that feels easiest, knowing what each one costs in time, without being asked again. |
 
 ### Answering
 

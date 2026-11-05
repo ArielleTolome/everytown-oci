@@ -13,7 +13,7 @@ import Icon from "../components/Icon.astro";
   import { api, ApiError, getMeta, requireUser, type Domain, type Question, type Stage } from "../lib/api";
   import { $, $$, esc, focusEl, plural } from "../lib/dom";
   import { icon } from "../lib/icons";
-  import { clearDraft, DraftLinkError, draftToken, loadDraft, saveDraft, savedLocally, SECONDS_PER_STATEMENT, type Draft, type View } from "../lib/draft";
+  import { answerSeconds, clearDraft, DraftLinkError, draftToken, loadDraft, saveDraft, savedLocally, type Draft, type View } from "../lib/draft";
   import { mountQuick, scopeLadders, type Ladder } from "../lib/quick";
 
   const root = $("#q-root")!;
@@ -331,12 +331,37 @@ import Icon from "../components/Icon.astro";
 
   /** #28: "How would you like to answer?" before the first question of a draft (also for a teammate), and again from
    * "Change how I answer". One real statement shown the three ways as choice cards; the pick is kept in the draft. */
+  /** #28 follow-up: estimated seconds for the statements still to answer in `qs`, answering in style `v`. */
+  function secondsLeft(v: View, qs: { id: string }[]): number {
+    const open = new Set(qs.filter((q) => !draft.answers[q.id]).map((q) => q.id));
+    const sizes = ladders.map((l) => l.statements.filter((id) => open.has(id)).length).filter((k) => k >= 2);
+    return answerSeconds(v, open.size, sizes.reduce((a, b) => a + b, 0), sizes.length);
+  }
+
+  /** Minutes for a style, summed per area and rounded up per area, like the start page's estimate (so they agree). */
+  const minutesLeft = (v: View, areas: { id: string }[][]) =>
+    areas.reduce((m, qs) => { const sec = secondsLeft(v, qs); return m + (sec ? Math.max(1, Math.ceil(sec / 60)) : 0); }, 0);
+
+  /** "About 10 minutes · saves about 1 minute" for a style: the time saved is against answering Yes / No for each statement. */
+  function timeLine(v: View, areas: { id: string }[][]): string {
+    const min = Math.max(1, minutesLeft(v, areas)), less = minutesLeft("yn", areas) - min;
+    const secs = areas.reduce((t, qs) => t + secondsLeft("yn", qs) - secondsLeft(v, qs), 0);
+    const total = L(`About ${plural(min, "minute", "minutes")}`, `Unos ${plural(min, "minuto", "minutos")}`);
+    if (less >= 1) return `${total} · ${L(`saves about ${plural(less, "minute", "minutes")}`, `ahorra unos ${plural(less, "minuto", "minutos")}`)}`;
+    // Rounding per area can hide a real saving; still say it when it is at least half a minute.
+    return secs >= 30 ? `${total} · ${L("saves under a minute", "ahorra menos de un minuto")}` : total;
+  }
+
   function renderChooser(n: number, again: boolean) {
     current = null;
     quick = null;
     const q = [...domains[0].questions].sort((x, y) => textOf(x).length - textOf(y).length)[0]; // shortest reads best small
     const yn = (big: boolean) => `<span class="vp__pair${big ? " vp__pair--big" : ""}"><span class="vp__opt">${L("Yes", "Sí")}</span><span class="vp__opt">No</span></span>`;
     const s = `<span class="vp__stmt">${esc(textOf(q))}</span>`;
+    // Times cover what this person still has to answer: a teammate only their area.
+    const area = new URLSearchParams(location.search).get("area");
+    const scope = domains.filter((d) => !teammate || d.id === area).map((d) => d.questions);
+    const left = scope.flat().filter((x) => !draft.answers[x.id]).length;
     const cards: [View, string, string, string][] = [
       ["quick", L("One at a time", "Una a la vez"), L("One statement on the screen. Choose Yes or No and the next one comes up.",
         "Una afirmación en la pantalla. Elija Sí o No y aparece la siguiente."), `${s}${yn(true)}`],
@@ -357,14 +382,17 @@ import Icon from "../components/Icon.astro";
           "Esta es una afirmación de su cuestionario, mostrada de tres formas. Elija la que le resulte más fácil. Sus respuestas cuentan igual en las tres.")}</p>
         <p class="visually-hidden">${L("The statement is:", "La afirmación es:")} ${stmt(q)}</p>
         <ul class="view-pick__list" role="list">${cards.map(([v, name, desc, preview]) => `
-          <li><button type="button" class="view-card${again && v === view ? " is-current" : ""}" data-pick="${v}" aria-labelledby="vp-${v}-name" aria-describedby="vp-${v}-desc${again && v === view ? ` vp-${v}-cur` : ""}">
+          <li><button type="button" class="view-card${again && v === view ? " is-current" : ""}" data-pick="${v}" aria-labelledby="vp-${v}-name" aria-describedby="vp-${v}-desc vp-${v}-time${again && v === view ? ` vp-${v}-cur` : ""}">
             <span class="view-card__preview" aria-hidden="true">${preview}</span>
             <span class="view-card__name" id="vp-${v}-name">${name}</span>
             <span class="view-card__desc" id="vp-${v}-desc">${desc}</span>
+            <span class="view-card__time" id="vp-${v}-time">${icon("clock")}<span>${timeLine(v, scope)}</span></span>
             ${again && v === view ? `<span class="view-card__cur" id="vp-${v}-cur">${icon("check")}${L("How you answer now", "Cómo responde ahora")}</span>` : ""}
             <span class="view-card__go" aria-hidden="true">${L("Answer this way", "Responder así")}${icon("arrow-right")}</span>
           </button></li>`).join("")}
         </ul>
+        <p class="hint">${L(`Times are estimates for the ${plural(left, "statement", "statements")} you have left: about 5 seconds to read a statement and 3 to answer it. With the checklist you only tick what is true, about 6 in 10 statements for most groups. One at a time asks some topics as one multiple-choice question.`,
+          `Los tiempos son estimados para ${left === 1 ? "la afirmación que le queda" : `las ${left} afirmaciones que le quedan`}: unos 5 segundos para leer una afirmación y 3 para responderla. Con la lista solo marca lo que es cierto, unas 6 de cada 10 afirmaciones en la mayoría de los grupos. Una a la vez pregunta algunos temas como una sola pregunta de opción múltiple.`)}</p>
         <p class="hint">${L("You can change this later with Change how I answer, under the questions.", "Puede cambiarlo después con Cambiar cómo respondo, debajo de las preguntas.")}</p>
       </div>`;
     root.removeAttribute("aria-busy");
@@ -497,7 +525,7 @@ import Icon from "../components/Icon.astro";
     const time = $("#time-left");
     if (time && current) {
       const left = current.questions.filter((q) => !draft.answers[q.id]).length;
-      const min = Math.ceil((left * SECONDS_PER_STATEMENT) / 60);
+      const min = Math.ceil(secondsLeft(view, current.questions) / 60);
       const name = esc(nameOf(current));
       time.innerHTML = `${icon("clock")}<span>${left ? L(`About ${plural(min, "minute", "minutes")} left in ${name}`, `Faltan unos ${plural(min, "minuto", "minutos")} en ${name}`)
         : L(`${name} is done`, `Área de ${name} terminada`)}</span>`;
