@@ -2,6 +2,19 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.2 — Presentation rebuilt to the judges' requirements, in plain English
+
+The judges' presentation requirements: no more than 10 minutes including 2 to 3 minutes of questions, covering Team Introduction, Solution Overview + Architecture, Live Demo and Proposed Industry Impact. The audience is nonprofit people, so the deck and script now speak plainly and lead with people, not technology.
+
+**Pitch deck** ([`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf): 8 slides plus 7 backup slides, attached)
+- In the required order, each slide tagged with its part: title; **Team introduction** ("Who we are": Ariel, Johanna, Bo, Atman and the part each presents); **Solution overview** (the need: 45 groups, 2 staff writing every report by hand, 140+ groups; what we built in three steps: answer, get a plan, follow through, plus the staff view); **Architecture** in plain words ("Rules score. AI writes. Rules check.": answers, scoring, writing, checking, the plan; the filing cabinet, the flight recorder, ready to hand over; AWS names in small print); **Live demo** (what you will see, in five steps); **Proposed industry impact** (for local groups, for Everytown, for the nonprofit field); our ask, then questions.
+- Backup slides B1 to B7 for questions or a network failure: what a leader sees, what staff see, keeping the AI honest, built for every reader, cost, privacy, growth. No jargon (no "grounded", "evals", "JSON", "WCAG" outside the accessibility card).
+- Website colours, completely: orange is decoration only, as on the site (the three-bar mark, card bars, progress line); navy slides use light blue labels and white numbers instead of orange text. Speaker notes (press N) match the script word for word. Accessibility check: 0 problems on all 15 slides.
+
+**Script** ([`docs/pitch/demo-script.md`](docs/pitch/demo-script.md))
+- A 7-minute talk plus 3 minutes of questions, split by speaker: Johanna (team introduction), Bo (overview and architecture), Ariel (live demo), Atman (impact and ask), with hand-offs; every line written to be said out loud to a nonprofit audience, plus a "say this, not that" list.
+- A judges' questions table with two-sentence answers and the backup slide for each; the live demo click by click in 2:30; what to do if something goes wrong; the preparation checklist and numbers to have ready, in plain words.
+
 ## v1.10.1 — Final pitch deck and demo script, and a chat fix found by the on-stage test
 
 **Pitch deck** ([`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf), 16 pages, attached)

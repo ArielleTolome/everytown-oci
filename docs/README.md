@@ -12,11 +12,11 @@ Project documents: the hackathon vision and technical write-ups, the pitch deck 
 | `OCI-Capacity-Coach-technical-guide.pdf` | The same guide as a PDF, built by `python3 scripts/build_guide_pdf.py`. Rebuild it after editing `technical-guide.md`. |
 | `next-steps.md` | What the CSF director raised in the 2026-11-04 walkthrough, what v1.7 built for each point, and the remaining tasks (L1 to L10), each sized for one person or agent. |
 | `quicksight-assessment.md` | Whether staff BI should move to Amazon QuickSight: not now, with costs, data-access limits, revisit triggers and the low-risk path if it is ever needed. |
-| `pitch/index.html` | The pitch deck as one HTML page. Open it in a browser: arrows or space to move, `N` for timed speaker notes. |
+| `pitch/index.html` | The pitch deck as one HTML page. Open it in a browser: arrows or space to move, `N` for speaker notes (the script's words, per speaker). |
 | `pitch/OCI-Capacity-Coach-pitch.pdf` | PDF export of the deck, built by `python3 scripts/build_pitch_pdf.py`. Rebuild it after editing `index.html`. |
-| `pitch/demo-script.md` | The 8-minute run of show: timing per slide, judging criteria, demo steps, sign-ins and offline backup. |
+| `pitch/demo-script.md` | The 10-minute presentation in the judges' required order (team, overview and architecture, live demo, industry impact, questions): who says what, word for word in plain English, the demo click by click, likely questions, preparation and offline backup. |
 | `pitch/sample-report.pdf` | A sample generated report, the offline backup if the live demo fails. |
-| `pitch/img/*.jpg` | Screenshots used by the deck (questionnaire, report, roadmap, staff views, CloudWatch dashboard and trace). |
+| `pitch/img/*.jpg` | Screenshots used by the deck (questionnaire, report, roadmap, staff views). |
 | `screenshots/*.jpg` | Numbered app screenshots (1 to 10) in demo order, from the start page to the CloudWatch trace and dashboard. |
 
 ## Changing it safely
