@@ -52,6 +52,18 @@ class Ask(unittest.TestCase):
         converse.assert_not_called()  # rejected questions never reach the model
         self.save.assert_not_called()
 
+    def test_new_chat_is_for_the_owner_or_staff_and_never_lifts_the_limit(self):
+        query = self._patch(app.db, "query", return_value=[])
+        self.count.return_value = 12  # questions from before the new chat still count
+        url = "/api/assessments/%s/ask/new" % SID
+        self.owner_of.return_value = "someone-else"
+        self.assertEqual(self.client.post(url, json={}).status_code, 403)
+        query.assert_not_called()
+        self.owner_of.return_value = "me"
+        res = self.client.post(url, json={})
+        self.assertEqual(res.get_json(), {"messages": [], "remaining": coach.MAX_QUESTIONS - 12})
+        self.assertEqual(query.call_args.kwargs, {"assessment_id": SID})  # only this report's chat is cleared
+
     def test_answer_keeps_only_real_gap_ids_and_catalog_resources(self):
         rid = next(iter(pipeline.CATALOG))
         self._patch(pipeline, "_converse", return_value=[{"toolUse": {"input": {

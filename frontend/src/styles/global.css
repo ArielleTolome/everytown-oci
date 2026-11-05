@@ -1760,3 +1760,13 @@ html:has(.chat-fab) { scroll-padding-bottom: 5.5rem; }
 /* Staff follow-through: "Week 5 of 12" stays on one line. */
 .sq-now { white-space: nowrap; }
 /* == end v1.10.10 roadmap points == */
+/* == v1.10.11 new chat == */
+/* "New chat" sits beside Close in the chat header; the pair wraps under the title on the narrowest phones. */
+.chat__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-xs); flex: none; }
+.chat__actions [hidden] { display: none; }
+/* When the title and both buttons do not fit one row (phones), the buttons move under the title, right-aligned,
+   so the title keeps the full width instead of a narrow column. */
+.chat__head { flex-wrap: wrap; row-gap: var(--space-sm); }
+.chat__head > div:first-child { flex: 1 1 10rem; min-width: 0; }
+.chat__actions { margin-left: auto; }
+/* == end v1.10.11 new chat == */

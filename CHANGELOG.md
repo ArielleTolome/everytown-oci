@@ -2,6 +2,12 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.11 — Start a new chat
+
+- **New chat:** the chat about the report has a "New chat" button beside Close (it shows once there is a conversation). It clears the conversation on screen, says "New chat started. Earlier questions are cleared from this chat.", brings back the starter questions and puts the cursor in the question box. On a phone the two buttons sit under the chat title.
+- A new chat is a real new session: earlier questions and answers are no longer sent to the AI (`POST /api/assessments/<id>/ask/new` marks them `cleared`; new column `coach_messages.cleared`). They are kept, not deleted, and still count toward the 15 questions per report, so starting over never lifts the spending limit. Only the person who submitted the assessment, or Everytown staff, can start one.
+- Checked for real on a temporary copy of a report: after one real question, New chat left an empty conversation, the AI received no earlier turns, 14 questions remained and the stored row was kept; another sign-in got 403. New unit test (`tests/test_coach.py`) and e2e test (`qa/tests/mobile/report-coach-answer.e2e.ts`, desktop and phone). Full e2e suite: 115 passed, 5 phone-only skipped; axe 0 on the chat at 320, 390 and 1280.
+
 ## v1.10.10 — Points at the top of the roadmap, and roadmap progress for staff
 
 - **Roadmap page:** the points and level now sit in a box at the top right of the page title (on a computer and on a phone), so a leader sees their progress first. They match the points chip below and update after every tick.

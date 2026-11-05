@@ -49,7 +49,10 @@ export function coachChat(sub: Assessment): string {
         <h2 id="chat-title" tabindex="-1">Chat about your report</h2>
         <p class="source-tag source-tag--ai">${icon("pencil")}<span>Written by AI from your report. Check answers with your team.</span></p>
       </div>
-      <button type="button" class="btn btn-secondary btn-sm chat__close" data-chat-close>${icon("x")}<span>Close</span></button>
+      <div class="chat__actions">
+        <button type="button" class="btn btn-secondary btn-sm" data-chat-new hidden>${icon("refresh")}<span>New chat</span></button>
+        <button type="button" class="btn btn-secondary btn-sm chat__close" data-chat-close>${icon("x")}<span>Close</span></button>
+      </div>
     </div>
     <div class="chat__scroll" id="chat-scroll">
       <div class="coach-turn__a chat__hello"><p>Hi. I can answer questions about ${SCOPE}. Asking never changes your scores.</p></div>
@@ -101,6 +104,11 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
   let loaded = false;
   let loading: Promise<void> = Promise.resolve();
   let busy = false;
+  const newBtn = dialog.querySelector<HTMLButtonElement>("[data-chat-new]")!;
+  // "New chat" shows once there is a conversation to start over from, and only while questions can still be asked.
+  const syncNew = () => { newBtn.hidden = !form.isConnected || !log.querySelector(".coach-turn:not([data-pending])"); };
+  // On touch screens land on the heading, so the on-screen keyboard does not cover the starters at once.
+  const focusStart = () => (!matchMedia("(pointer: coarse)").matches && form.isConnected ? input : dialog.querySelector<HTMLElement>("#chat-title")!).focus();
 
   const showError = (msg: string) => {
     err.innerHTML = `${icon("alert")}<span>${esc(msg)}</span>`;
@@ -116,6 +124,7 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
     dialog.querySelector("#coach-starters-label")?.remove();
     form.outerHTML = `<p class="notice chat__closed" id="coach-closed" tabindex="-1">${icon("info")}<span>${esc(msg)}</span></p>`;
     if (hadFocus) dialog.querySelector<HTMLElement>("#coach-closed")?.focus();
+    syncNew();
   };
   const LIMIT = "You have used all your questions for this report. Talk the rest through with your team, or ask the Community Safety Fund for support.";
 
@@ -127,6 +136,7 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
     loading = api.get<{ messages: Turn[]; remaining: number }>(url).then((res) => {
       log.innerHTML = res.messages.map((t) => turnHtml(t, sub)).join("");
       scroller.scrollTop = scroller.scrollHeight;
+      syncNew();
       if (res.remaining <= 0) closed(LIMIT);
     }).catch((ex) => {
       if (ex instanceof ApiError && ex.status === 403) closed("Only the person who submitted this assessment, or Everytown staff, can ask about it.");
@@ -139,12 +149,33 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
     if (!btn) return;
     opener = btn;
     dialog.showModal();
-    // Touch screens: land on the heading, so the on-screen keyboard does not cover the starters at once.
-    const field = dialog.querySelector<HTMLTextAreaElement>("#coach-question");
-    (field && !matchMedia("(pointer: coarse)").matches ? field : dialog.querySelector<HTMLElement>("#chat-title")!).focus();
+    focusStart();
     load();
   });
   dialog.querySelector("[data-chat-close]")!.addEventListener("click", () => dialog.close());
+  // A new chat: earlier turns leave the screen and the AI's memory (they still count toward the question limit).
+  newBtn.addEventListener("click", async () => {
+    if (busy) return;
+    busy = true;
+    newBtn.setAttribute("aria-disabled", "true");
+    try {
+      await loading;
+      const res = await api.post<{ messages: Turn[]; remaining: number }>(`${url}/new`, {});
+      log.innerHTML = "";
+      input.value = "";
+      showError("");
+      scroller.scrollTop = 0;
+      status.textContent = "New chat started. Earlier questions are cleared from this chat.";
+      if (res.remaining <= 0) closed(LIMIT); else focusStart();
+    } catch (ex) {
+      status.textContent = "";
+      showError(errorText(ex, "We could not start a new chat. Please try again."));
+    } finally {
+      busy = false;
+      newBtn.removeAttribute("aria-disabled");
+      syncNew();
+    }
+  });
   dialog.addEventListener("close", () => opener?.focus());
   dialog.addEventListener("click", (e) => {
     // A click on the backdrop (the dialog box itself, outside its content) closes it, like Escape.
@@ -183,6 +214,7 @@ export function wireCoach(sub: Assessment, root: ParentNode) {
       status.textContent = "";
       // Bring the start of the new turn into view, so a long answer is read from its first line.
       log.lastElementChild!.scrollIntoView({ block: "start" });
+      syncNew();
       if (res.remaining <= 0) closed(LIMIT);
     } catch (ex) {
       pending.remove();

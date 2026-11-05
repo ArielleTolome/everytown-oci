@@ -105,16 +105,18 @@ def _can_ask(sid):
 
 
 def _history(sid, limit):
-    """The last `limit` questions and answers, oldest first."""
+    """The last `limit` questions and answers of the current chat (since the last "New chat"), oldest first."""
     import db
     rows = db.query("SELECT question, answer::text AS answer, to_char(created_at, 'YYYY-MM-DD HH24:MI') AS asked "
-                    "FROM coach_messages WHERE assessment_id = :assessment_id ORDER BY created_at DESC LIMIT :n",
+                    "FROM coach_messages WHERE assessment_id = :assessment_id AND NOT cleared "
+                    "ORDER BY created_at DESC LIMIT :n",
                     assessment_id=sid, n=limit)
     return [dict(json.loads(r["answer"]), question=r["question"], asked=r["asked"]) for r in reversed(rows)]
 
 
 def _count(sid):
-    """Questions that count against MAX_QUESTIONS: crisis questions never do, so nobody in distress is cut off."""
+    """Questions that count against MAX_QUESTIONS: crisis questions never do, so nobody in distress is cut off.
+    Questions from before a "New chat" still count, so starting over never lifts the limit."""
     import db
     return db.query("SELECT count(*) AS n FROM coach_messages WHERE assessment_id = :assessment_id "
                     "AND answer->>'crisis' IS NULL", assessment_id=sid)[0]["n"]
@@ -247,3 +249,19 @@ def validate_answer(raw, gap_ids):
     rids = [r for r in dict.fromkeys(_strings(raw.get("resource_ids"))) if r in pipeline.CATALOG][:2]
     return {"answer": text, "gap_ids": ids,
             "resources": [{"title": pipeline.CATALOG[r]["title"], "url": pipeline.CATALOG[r]["url"]} for r in rids]}
+
+
+@bp.route("/api/assessments/<sid>/ask/new", methods=["POST"])
+def new_chat(sid):
+    """Start a new chat: earlier turns are hidden and no longer sent to the model. They are kept (never deleted) and
+    still count toward MAX_QUESTIONS. Same people as /ask: the submitting sign-in session, or Everytown staff."""
+    from app import error, load
+    import db
+    sub = load(sid)
+    if not sub:
+        return error("Report not found.", 404)
+    if not _can_ask(sub["id"]):
+        return error("Only the person who submitted this assessment, or Everytown staff, can ask about it.", 403)
+    db.query("UPDATE coach_messages SET cleared = true WHERE assessment_id = :assessment_id AND NOT cleared",
+             assessment_id=sub["id"])
+    return jsonify(messages=[], remaining=max(0, MAX_QUESTIONS - _count(sub["id"])))

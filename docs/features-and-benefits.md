@@ -49,7 +49,7 @@ We kept Everytown's 143 statements, its stage names and its scoring exactly as t
 | Explore any area | Every assessed area, its stage and what the plan says about it. | A deep dive when they want one. |
 | What we learned about you | What the AI found on their website, social media and the news, with sources, at the end. | A plan that reflects who they are, with nothing hidden. |
 | Listen | Any part read aloud (Amazon Polly), in English or Spanish. | Reports work for people who prefer to listen. |
-| Chat about your report | A button at the bottom right: ask in their own words; answers know the whole report and roadmap and show the answers they used. Someone in crisis gets 988 and 911 from fixed rules, never the AI. | A coach to ask "how do I start?" at any hour. |
+| Chat about your report | A button at the bottom right: ask in their own words; answers know the whole report and roadmap and show the answers they used. Someone in crisis gets 988 and 911 from fixed rules, never the AI. A "New chat" button starts over with a clean slate. | A coach to ask "how do I start?" at any hour. |
 | A PDF letter | A 2 to 3 page letter, then the detailed results; an Everytown watermark and a confidentiality note. | Something to print and take to the board, safely marked. |
 
 ### Following through

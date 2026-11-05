@@ -181,7 +181,7 @@ All data is synthetic. `assessments.doc` holds the full rendered document as `js
 | `latest_assessments` (view) | `schema.sql` | Each organization's most recent assessment: the unit for network analytics. |
 | `domain_benchmarks` (view) | `schema.sql` | Peer percentile per organization and area (staff only). |
 | `support_requests` | `schema.sql` | Areas an organization asked CSF for training or coaching in. |
-| `coach_messages` | `features/coach.sql` | "Chat about your report" questions and validated answers. |
+| `coach_messages` | `features/coach.sql` | "Chat about your report" questions and validated answers; `cleared` marks turns from before a "New chat". |
 | `drafts`, `draft_shares` | `features/drafts.sql` | Server-side questionnaire drafts and per-area teammate links (with the teammate's role). |
 | `roadmap_tasks` | `features/milestones.sql` | Ticked roadmap steps with time; points, streaks and badges are computed from it. |
 | `peer_requests` | `features/peers_request.sql` | "Connect me with similar groups" requests. |
@@ -205,7 +205,7 @@ Flask JSON API under `/api`. Sign-in is mocked: `demo` / `demo` (organization) a
 | `GET /api/assessments/<id>`, `/status` | signed in | The document; the job's step-by-step status. |
 | `POST /api/assessments/<id>/retry` | signed in | Rerun only the AI steps of a failed report (scores are kept). |
 | `GET /api/assessments/<id>/report.pdf` | signed in | The PDF report. |
-| `GET, POST /api/assessments/<id>/ask` | owner or staff | Chat about your report (section 8). |
+| `GET, POST /api/assessments/<id>/ask`, `POST …/ask/new` | owner or staff | Chat about your report; start a new chat (section 8). |
 | `GET /api/assessments/<id>/audio/<section>` | signed in | Read-aloud MP3 for one section. |
 | `POST /api/assessments/<id>/support` | owner | Ask CSF for training or coaching in chosen areas. |
 | `POST /api/assessments/<id>/peer-request` | owner | Ask to be connected with similar groups. |
@@ -255,6 +255,7 @@ Every feature route lists its rules in [`features/README.md`](../features/README
 - On the report, a button at the bottom right opens a chat dialog with code-written starter questions, the earlier conversation, a typing indicator and Enter to send.
 - One fixed Claude Haiku call per question, with the organization's facts, its report, its 12-week roadmap (built by code) and the last 6 turns. The answer goes through a tool schema and validation: gap ids must be real, resources must be in the catalog, answers are cut at 200 words.
 - Limits: 15 questions per report, 500 characters per question. The chat no longer shows a count of questions left.
+- **New chat** (v1.10.11): a "New chat" button beside Close (shown once there is a conversation) calls `POST /api/assessments/<id>/ask/new`. Earlier turns get `cleared = true`: they leave the screen and are no longer sent to the model, but are kept and still count toward the 15 questions, so starting over never lifts the limit. Same people as asking: the submitting sign-in session or staff.
 - **Crisis safety:** questions matching a fixed crisis pattern (English and Spanish) never reach the model. They get a fixed caring answer with 911 and 988 (the Suicide and Crisis Lifeline) and never count against the 15 questions (v1.5.3).
 - Questions asking to change a score get a fixed, kind refusal if the guardrail blocks them.
 
@@ -482,6 +483,7 @@ axe-core 4.10.2 (WCAG 2.0, 2.1, 2.2 A and AA) on every page and staff tab at 320
 | v1.10.8 | The answer-style choice shows each style's estimated time and the time it saves. |
 | v1.10.9 | Desktop fix: a report still being written uses the full reading width, not the hidden side list's column. |
 | v1.10.10 | Points at the top right of the roadmap; staff see each organization's week, points and level. |
+| v1.10.11 | "New chat" in the report chat: a clean session for the AI; earlier questions kept and still counted. |
 
 The full notes for each are in [`CHANGELOG.md`](../CHANGELOG.md) and on the GitHub Releases page.
 
@@ -525,7 +527,7 @@ The e2e agent needs AWS keys in the environment; on an EC2 instance role run `ev
 | Staff pages load slowly or throttle | Lambda reserved concurrency (10); a report job and page requests share it. |
 | e2e agent: "AWS SigV4 authentication requires AWS credentials" | Export the instance role's keys (see above). |
 | The machine slows to a crawl during parallel work | Memory, not CPU (7.8 GB, no swap): limit parallel browsers; check `free -m`. |
-| Coach question box closed on the demo report | Its 15 questions were used by testers; reset that report's `coach_messages`. |
+| Coach question box closed on the demo report | Its 15 questions were used by testers; delete that report's `coach_messages` rows ("New chat" hides turns but never resets the count). |
 
 ---
 

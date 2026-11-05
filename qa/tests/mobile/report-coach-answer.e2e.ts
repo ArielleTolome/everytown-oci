@@ -64,3 +64,36 @@ test('a question asked while the conversation is still loading still gets its an
   await expect(screen.getByText('QA stub slow history.')).toBeVisible();
   expect(await browser.evaluate(() => [document.querySelectorAll('#coach-log .coach-turn').length, document.querySelector('#coach-error')!.hasAttribute('hidden')])).toEqual([2, true]);
 });
+
+// Nov 5 request: "New chat" in the chat header starts over. It shows once there is a conversation; it clears the
+// conversation on screen (the server hides earlier turns from the AI and keeps them in the question count), says so,
+// keeps the starter questions, and comes back after the next answer. Requests are stubbed in the page.
+test('New chat clears the conversation and starts a new session', { session: 'staff' }, async ({ app, screen, browser }) => {
+  await browser.addInitScript(() => {
+    const real = window.fetch;
+    const json = (body: unknown) => Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } }));
+    (window as unknown as { newChats: number }).newChats = 0;
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+      const u = String(input);
+      if (u.endsWith('/ask/new')) { (window as unknown as { newChats: number }).newChats++; return json({ messages: [], remaining: 9 }); }
+      if (!u.endsWith('/ask')) return real(input, init);
+      return init?.method === 'POST' ? json({ answer: 'QA stub answer after the new chat.', gap_ids: [], resources: [], remaining: 8 })
+        : json({ messages: [{ question: 'QA earlier question?', answer: 'QA stub earlier answer.', gap_ids: [], resources: [] }], remaining: 9 });
+    };
+  });
+  await app.open(`/results/?id=${ID}`);
+  await expect(screen.getByRole('link', 'Open my roadmap')).toBeVisible({ timeout: 15_000 });
+  await screen.getByRole('button', 'Chat about your report').tap();
+  await expect(screen.getByText('QA stub earlier answer.')).toBeVisible();
+  await screen.getByRole('button', 'New chat').tap();
+  await expect(screen.getByText('New chat started. Earlier questions are cleared from this chat.')).toBeVisible();
+  expect(await browser.evaluate(() => ({
+    turns: document.querySelectorAll('#coach-log .coach-turn').length,
+    calls: (window as unknown as { newChats: number }).newChats,
+    starters: document.querySelectorAll('.coach-starter').length > 0,
+    newHidden: document.querySelector<HTMLElement>('[data-chat-new]')!.hidden,
+  }))).toEqual({ turns: 0, calls: 1, starters: true, newHidden: true });
+  await screen.getByRole('button', 'What is the first step this week?').tap();
+  await expect(screen.getByText('QA stub answer after the new chat.')).toBeVisible();
+  await expect(screen.getByRole('button', 'New chat')).toBeVisible();
+});

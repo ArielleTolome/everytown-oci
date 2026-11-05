@@ -9,3 +9,7 @@ CREATE TABLE IF NOT EXISTS coach_messages (
 );
 
 CREATE INDEX IF NOT EXISTS coach_messages_assessment ON coach_messages (assessment_id, created_at);
+
+-- "New chat" (v1.10.11): earlier turns are hidden and no longer sent to the model, but kept and still counted toward
+-- the per-report question limit, so starting over never lifts the spend guard.
+ALTER TABLE coach_messages ADD COLUMN IF NOT EXISTS cleared boolean NOT NULL DEFAULT false;
