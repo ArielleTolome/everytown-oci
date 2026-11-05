@@ -27,7 +27,7 @@ A learning tool, not an evaluation. Code computes every score and stage; AI only
 
 - Leaders take the assessment alone or with a teammate, one area at a time, often over several sittings (save and resume, "send this area to a teammate"). Reports come back in about 40 seconds; a re-assessment shows what changed.
 - CSF staff use the dashboard to plan cohort trainings, write training briefs, and connect similar grantees.
-- Hackathon build (AWS Breaking Barriers 2026): mocked logins (demo / demo, staff / staff), synthetic organizations only, a temporary public URL torn down after judging.
+- Hackathon build (AWS Breaking Barriers 2026): mocked logins (demo / demo, showcase / showcase with the start page filled in for presentations, staff / staff), synthetic organizations only, a temporary public URL torn down after judging.
 
 ## Capabilities and Constraints
 

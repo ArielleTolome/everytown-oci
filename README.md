@@ -50,6 +50,7 @@ The tool is designed to sit inside the [Everytown Community Safety Fund](https:/
 |---|---|
 | **Web app** | **https://d2mi2h3eu8y69s.cloudfront.net** |
 | Sign in as an organization leader | `demo` / `demo` |
+| Sign in for a presentation (start page already filled in) | `showcase` / `showcase` |
 | Sign in as Everytown staff | `staff` / `staff` |
 
 1. Sign in as `demo`, open **Try a made-up sample organization** and pick one: the answers are filled in, the stages appear at once and the AI report is ready in about 40 seconds. Or answer the questionnaire yourself (choose fewer areas to go faster).
@@ -75,7 +76,7 @@ python3 app.py                                            # JSON API on :8000
 cd frontend && npm ci && npm run dev                      # Astro on :4321, proxies /api to :8000
 ```
 
-Open http://127.0.0.1:4321 and sign in with `demo` / `demo` (organization leader) or `staff` / `staff` (Everytown staff dashboard). Locally the AI steps run in a background thread. Without `OCI_KB_ID`, the whole field-guide library is injected into the prompt.
+Open http://127.0.0.1:4321 and sign in with `demo` / `demo` (organization leader), `showcase` / `showcase` (the same, with the start page filled in) or `staff` / `staff` (Everytown staff dashboard). Locally the AI steps run in a background thread. Without `OCI_KB_ID`, the whole field-guide library is injected into the prompt.
 
 ### Container (GitHub Packages)
 
@@ -338,7 +339,7 @@ The first bug bash (v1.3.0) ran 8 charters on the production build in the contai
 
 ### Security notes
 
-- Login is mocked (`demo` / `demo` for organizations, `staff` / `staff` for the Everytown dashboard), as the vision doc specifies, and the public URL is temporary: it is torn down after judging. Anyone signed in can open a report by its id, so this build is for synthetic data only. Re-assessment progress compares only within one sign-in session. Session cookies are signed, `HttpOnly`, `SameSite=Lax`, and `Secure` on AWS. POSTs must be JSON, which blocks cross-site form posts.
+- Login is mocked (`demo` / `demo` for organizations, `showcase` / `showcase` for presentations with the start page filled in, `staff` / `staff` for the Everytown dashboard), as the vision doc specifies, and the public URL is temporary: it is torn down after judging. Anyone signed in can open a report by its id, so this build is for synthetic data only. Re-assessment progress compares only within one sign-in session. Session cookies are signed, `HttpOnly`, `SameSite=Lax`, and `Secure` on AWS. POSTs must be JSON, which blocks cross-site form posts.
 - The API can only be reached through CloudFront: the Lambda Function URL uses `AWS_IAM` auth with origin access control, so direct calls get 403. The browser sends `x-amz-content-sha256` for request bodies, as Lambda OAC requires.
 - Spend guards: Lambda reserved concurrency of 10, at most `OCI_MAX_REPORTS_PER_HOUR` new reports per hour, and an optional monthly AWS Budget.
 - Model output is checked for truncation and refusal (`stopReason`) before parsing; website text and the website profile are passed to the model as untrusted data.

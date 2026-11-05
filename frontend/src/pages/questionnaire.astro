@@ -668,6 +668,8 @@ import Icon from "../components/Icon.astro";
       if (asked) localStorage.setItem(DEMO_KEY, "1");
       demo = user.name === "demo" && (asked || localStorage.getItem(DEMO_KEY) === "1");
     } catch { demo = user.name === "demo" && asked; }
+    // The showcase sign-in is for presentations: "fill this area with sample answers" is always there.
+    if (user.name === "showcase") demo = true;
     const meta = await getMeta();
     const d = await loadDraft();
     if (!d || !d.org_name || !d.domain_ids.length) { location.replace("/"); return; }

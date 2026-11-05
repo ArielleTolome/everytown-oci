@@ -194,7 +194,7 @@ Migrations are idempotent (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXIS
 
 ## 6. The API
 
-Flask JSON API under `/api`. Sign-in is mocked: `demo` / `demo` (organization) and `staff` / `staff` (CSF staff). Every POST must be JSON (blocks cross-site form posts). "Owner" means the sign-in session that submitted the assessment.
+Flask JSON API under `/api`. Sign-in is mocked: `demo` / `demo` (organization), `showcase` / `showcase` (organization; `GET /api/meta` adds a `preset`, sample A's details with a made-up name, so the start page arrives filled in for presentations; a draft on the device is used only if it is the same organization) and `staff` / `staff` (CSF staff). Every POST must be JSON (blocks cross-site form posts). "Owner" means the sign-in session that submitted the assessment.
 
 | Route | Who | Purpose |
 |---|---|---|

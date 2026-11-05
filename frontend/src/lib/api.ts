@@ -5,7 +5,11 @@ export interface Question { id: string; text: string; stage: number; stage_name:
 export interface Domain { id: string; name: string; weight: number; about: string; connects: string; priority: boolean; questions: Question[] }
 export interface Stage { n: number; name: string; description: string }
 export interface Sample { id: string; name: string; summary: string }
-export interface Meta { domains: Domain[]; stages: Stage[]; samples: Sample[]; languages: string[]; default_domains: string[] }
+export interface Meta {
+  domains: Domain[]; stages: Stage[]; samples: Sample[]; languages: string[]; default_domains: string[];
+  /** The showcase sign-in only: page 1 filled in with a made-up organization (app._showcase_preset). */
+  preset?: import("./draft").Draft | null;
+}
 
 export interface Step { key: string; label: string; state: "pending" | "running" | "done" | "error" }
 export interface DomainResult {

@@ -79,6 +79,20 @@ class Validation(unittest.TestCase):
         self.assertEqual(org["org_meta"]["states"], ["IL", "IN"])
         self.assertEqual(org["answered_by"], {"PL": "Executive director"})  # no draft token: the leader answered all
 
+    def test_showcase_start_page_is_filled_in_and_passes_validation(self):
+        # Presentations sign in as showcase: page 1 must arrive complete, so Start questionnaire works at once.
+        demo = client()
+        self.assertIsNone(demo.get("/api/meta").get_json()["preset"])
+        c = oci.app.test_client()
+        self.assertEqual(c.post("/api/login", json={"username": "showcase", "password": "showcase"}).status_code, 200)
+        preset = c.get("/api/meta").get_json()["preset"]
+        self.assertEqual((preset["org_name"], preset["domain_ids"]), (oci.SAMPLES["A"]["name"], oci.PRIORITY_DOMAINS))
+        body = {k: preset[k] for k in ("org_name", "org_url", "language", "domain_ids", "org_meta", "respondent")}
+        with mock.patch("db.recent_reports", return_value=0), mock.patch.object(oci, "submit", return_value="id") as sub:
+            res = c.post("/api/assessments", json=dict(body, answers=complete(preset["domain_ids"])))
+        self.assertEqual(res.status_code, 201, res.get_json())
+        self.assertEqual(sub.call_args.args[0]["respondent"]["name"], oci.SHOWCASE_NAME)
+
     def test_samples_have_a_role_and_budget(self):
         for s in oci.SAMPLES.values():
             self.assertIn(s["respondent"]["role"], RESPONDENT_ROLES)

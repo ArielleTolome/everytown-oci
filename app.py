@@ -23,7 +23,9 @@ from utils.data_loader import get_domains, get_stage_names, get_stage_weights
 
 observability.setup()  # no-op unless OCI_TRACES=xray or OCI_PHOENIX_ENDPOINT is set
 
-USERS = {"demo": ("demo", "org"), "staff": ("staff", "staff")}  # mocked login, per the vision doc
+USERS = {"demo": ("demo", "org"), "showcase": ("showcase", "org"), "staff": ("staff", "staff")}  # mocked login (vision doc)
+# "showcase" is an organization sign-in for presentations: its start page arrives filled in with sample A (made up).
+SHOWCASE_USER, SHOWCASE_SAMPLE, SHOWCASE_NAME = "showcase", "A", "Jordan Rivera"
 PRIORITY_DOMAINS = ["PL", "FR", "FM", "ML"]
 DEFAULT_DOMAINS = os.environ.get("OCI_DOMAINS", ",".join(PRIORITY_DOMAINS)).split(",")
 LANGUAGES = ("en", "es")
@@ -100,8 +102,8 @@ def login():
     b = body()
     user = USERS.get(b.get("username", ""))
     if not user or b.get("password") != user[0]:
-        return error("That username and password did not match. Use demo / demo, or staff / staff for the "
-                     "Everytown staff view.", 401)
+        return error("That username and password did not match. Use demo / demo, showcase / showcase (start page "
+                     "already filled in), or staff / staff for the Everytown staff view.", 401)
     # A fresh owner per sign-in: re-assessment progress only compares within it (stand-in for real accounts).
     session["user"] = {"name": b["username"], "role": user[1]}
     session["owner"] = str(uuid.uuid4())
@@ -133,7 +135,16 @@ def meta():
         stages=[{"n": i, "name": names[str(i)], "description": INFO["stage_descriptions"][names[str(i)]]}
                 for i in range(1, 6)],
         samples=[{"id": k, "name": s["name"], "summary": s["summary"]} for k, s in SAMPLES.items()],
-        languages=list(LANGUAGES), default_domains=DEFAULT_DOMAINS)
+        languages=list(LANGUAGES), default_domains=DEFAULT_DOMAINS, preset=_showcase_preset())
+
+
+def _showcase_preset():
+    """Page 1 filled in for the showcase sign-in (a made-up organization, sample A); None for everyone else."""
+    if session["user"]["name"] != SHOWCASE_USER:
+        return None
+    s = SAMPLES[SHOWCASE_SAMPLE]
+    return {"org_name": s["name"], "org_url": "", "language": "en", "domain_ids": list(PRIORITY_DOMAINS), "answers": {},
+            "org_meta": s["org_meta"], "respondent": dict(s["respondent"], name=SHOWCASE_NAME), "org_links": None}
 
 
 # ---------- assessments ----------

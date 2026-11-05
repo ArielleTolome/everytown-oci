@@ -414,20 +414,26 @@ import Icon from "../components/Icon.astro";
 
   async function init() {
     await requireUser();
-    const [meta, options, draft] = await Promise.all([getMeta(), api.get<MetaOptions>("/org-meta"), loadDraft()]);
-    nameEl.value = draft?.org_name ?? "";
-    urlEl.value = draft?.org_url ?? "";
-    titleEl.value = draft?.respondent?.title ?? "";
-    personEl.value = draft?.respondent?.name ?? "";
-    if (draft?.language === "es") $<HTMLInputElement>("input[name=language][value=es]")!.checked = true;
-    renderSocial(draft?.org_links?.social.length ? draft.org_links.social.slice(0, MAX_SOCIAL) : [""]);
+    const [meta, options, saved] = await Promise.all([getMeta(), api.get<MetaOptions>("/org-meta"), loadDraft()]);
+    // Showcase sign-in (presentations): page 1 arrives filled in with a made-up organization. A draft on this device
+    // is used only if it is that same organization (the presenter went back from the questions); an older one from
+    // a rehearsal is ignored, so its answers never carry over.
+    const preset = meta.preset ?? null;
+    const draft = preset && saved?.org_name !== preset.org_name ? null : saved;
+    const fill = draft ?? preset;
+    nameEl.value = fill?.org_name ?? "";
+    urlEl.value = fill?.org_url ?? "";
+    titleEl.value = fill?.respondent?.title ?? "";
+    personEl.value = fill?.respondent?.name ?? "";
+    if (fill?.language === "es") $<HTMLInputElement>("input[name=language][value=es]")!.checked = true;
+    renderSocial(fill?.org_links?.social.length ? fill.org_links.social.slice(0, MAX_SOCIAL) : [""]);
     const known = new Set(meta.domains.map((d) => d.id));
-    const selected = draft?.domain_ids.filter((id) => known.has(id)).length ? draft.domain_ids : meta.default_domains;
-    renderRoles(options.respondent_roles, draft?.respondent?.role);
+    const selected = fill?.domain_ids.filter((id) => known.has(id)).length ? fill.domain_ids : meta.default_domains;
+    renderRoles(options.respondent_roles, fill?.respondent?.role);
     renderDomains(meta.domains, selected);
-    renderOrgMeta(options, draft?.org_meta);
+    renderOrgMeta(options, fill?.org_meta);
     // Saved values never sit in a folded group.
-    const unfold: [string, unknown][] = [["more-links", urlEl.value || draft?.org_links?.social.length], ["more-org", draft?.org_meta]];
+    const unfold: [string, unknown][] = [["more-links", urlEl.value || fill?.org_links?.social.length], ["more-org", fill?.org_meta]];
     for (const [id, has] of unfold) if (has) $<HTMLDetailsElement>(`#${id}`)!.open = true;
     // Sent back from the questionnaire because the server rejected these details (for example a draft saved before the
     // job title and name were required): show what to fix right away. Answers stay saved.

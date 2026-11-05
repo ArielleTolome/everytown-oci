@@ -2,7 +2,7 @@
 
 Deck: [`OCI-Capacity-Coach-pitch.pdf`](OCI-Capacity-Coach-pitch.pdf) (6 slides), or present [`index.html`](index.html) in a browser: arrows or space to move, `N` for speaker notes. Rebuild the PDF after editing the deck: `python3 scripts/build_pitch_pdf.py`.
 
-Live app: https://d2mi2h3eu8y69s.cloudfront.net. Sign in as `demo` / `demo` (a group's leader) or `staff` / `staff` (Everytown staff).
+Live app: https://d2mi2h3eu8y69s.cloudfront.net. Sign in as `showcase` / `showcase` (a group's leader, with the start page already filled in for presenting), `demo` / `demo` (a group's leader, empty start page) or `staff` / `staff` (Everytown staff).
 
 ## What the judges asked for, and where it is
 
@@ -129,8 +129,8 @@ Both must pass. `test:demo` makes one report (about 45 seconds) and asks its cha
 ### 10 minutes before: open the tabs
 
 1. Open https://d2mi2h3eu8y69s.cloudfront.net/api/healthz and confirm `ok`.
-2. **Tab B (prepared plan).** Sign in as `demo` / `demo`. Open **Try a made-up sample organization** and click **Riverbend Violence Interruption Network (synthetic sample)**. Wait for **Your report is ready**. Keep this tab at the top of the report. Do not sign out: the roadmap and the chat belong to this sign-in. Do not practice the chat in this tab (each report allows 15 questions, and the conversation is kept).
-3. **Tab A (live run).** In the same window, a new tab on the start page.
+2. **Tab B (prepared plan).** Sign in as `showcase` / `showcase`. Open **Try a made-up sample organization** and click **Riverbend Violence Interruption Network (synthetic sample)**. Wait for **Your report is ready**. Keep this tab at the top of the report. Do not sign out: the roadmap and the chat belong to this sign-in. Do not practice the chat in this tab (each report allows 15 questions, and the conversation is kept).
+3. **Tab A (live run).** In the same window, a new tab on the start page: it is already filled in for a made-up group (Southside Youth Peace Collective, Jordan Rivera, founder and executive director, the four main areas). If asked to show the questions, press **Start questionnaire**: it goes straight to "How would you like to answer?", and **Demo: fill this area with sample answers** fills an area in one click.
 4. **Tab C (staff).** A private window, sign in as `staff` / `staff`, stay on **Training needs**.
 5. **Tab D (AWS console, optional).** In the private window, sign in to the AWS console in us-west-2 and open the CloudWatch dashboard `everytown-oci`, so the record link opens without a sign-in.
 6. Open `OCI-Capacity-Coach-pitch.pdf` and `sample-report.pdf` on the laptop as the offline backup. Browser zoom 125%. Notifications off. Phones silent.
