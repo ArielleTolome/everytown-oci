@@ -2,6 +2,12 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.4 — A 6-slide deck with a before-and-now comparison
+
+- The deck ([`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf), attached) is now 6 slides and still covers every required part: 1 title and team introduction (Johanna, Bo, Ariel, Atman and what each presents); 2 solution overview (the need and what we built, in three steps); 3 **before and now**; 4 architecture ("Rules score. AI writes. Rules check."); 5 live demo; 6 proposed industry impact with our ask. The backup slides are gone; `sample-report.pdf` stays the offline backup.
+- **New slide 3, before and now**, from Everytown's own OCI package (vision and technical documents, 2025 findings, July 2025 handoff slides, the sample report for Riverbend): reports written by hand by 2 staff for 45 groups, now every group in about a minute; scoring code on a basic screen with scores only, now a full website; a long record with 57 areas to improve and 19 marked high priority, now the two things to start with and a 12-week plan; a long English document, now plain words, read aloud, Spanish, on a phone; no follow-through, now weekly steps, badges and a week-12 retake; one hand analysis of the network, now a live staff view. Same 143 statements and scoring in both.
+- Script and Word document follow the 6 slides: new timings (talk 7:00, questions 3:00), a before-and-now line for Bo, slide numbers in the questions table, and before-and-now facts with sources under "Numbers to have ready". Speaker notes match the script. Accessibility check: 0 problems on all 6 slides.
+
 ## v1.10.3 — The presentation script as a Word document
 
 - [`docs/pitch/OCI-Capacity-Coach-script.docx`](docs/pitch/OCI-Capacity-Coach-script.docx), also attached to this release: the full 10-minute script (who says what, word for word, the live demo click by click, judges' questions, preparation and numbers) in Word, in the app's navy and pale-blue colours, with every table and link.

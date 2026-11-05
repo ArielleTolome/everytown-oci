@@ -132,6 +132,31 @@ figure figcaption p { font-size: 27px; }
 .demo-steps li { display: flex; gap: 20px; align-items: center; }
 .demo-steps p { font-size: 32px; }
 .small-list li { font-size: 27px; }
+/* Title + team: the four presenters in one row under the title */
+.team { list-style: none; display: grid; grid-template-columns: repeat(4, max-content); gap: 64px; margin-top: 18px; max-width: none !important; }
+.team li { display: flex; align-items: center; gap: 16px; font-size: 26px; }
+.team li > span:last-child { display: flex; flex-direction: column; }
+.team strong { font-size: 32px; color: var(--white); }
+.team li > span:last-child > span { color: var(--light); font-size: 22px; }
+.team .initial { width: 64px; height: 64px; font-size: 34px; background: var(--white); color: var(--navy); }
+/* Overview: the need as a compact number row */
+.needs .card { display: flex; align-items: center; gap: 24px; padding: 18px 28px; }
+.num { font-family: var(--serif); font-size: 84px; line-height: 1; flex: none; }
+/* Before and now: one table, "now" column on the royal-edged side */
+.cmp { border-collapse: collapse; width: 100%; font-size: 27px; }
+.cmp th, .cmp td { text-align: left; padding: 14px 20px; border-bottom: 2px solid var(--light); vertical-align: top; line-height: 1.3; }
+.cmp thead th { font-size: 22px; letter-spacing: .1em; text-transform: uppercase; color: var(--mid); border-bottom: 3px solid var(--navy); }
+.cmp thead th.now { color: var(--white); background: var(--navy); border-radius: 12px 12px 0 0; }
+.cmp tbody th { font-weight: 700; width: 290px; }
+.cmp td { color: var(--mid); width: 600px; }
+.cmp td.now { color: var(--navy); font-weight: 700; background: var(--pale); border-left: 4px solid var(--royal); }
+/* Impact slide: the ask as a navy panel */
+.ask { background: var(--navy); color: var(--white); border-radius: 14px; padding: 26px 34px; display: grid; grid-template-columns: auto 1fr auto; gap: 30px; align-items: center; }
+.ask__label { font-size: 21px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--light); }
+.ask__text { font-size: 28px; }
+.ask__thanks { font-family: var(--serif); font-size: 44px; white-space: nowrap; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
 
 /* Deck controls (outside the stage) */
 .controls { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 8px; align-items: center; z-index: 10; opacity: 0; transition: opacity .2s; }
@@ -163,76 +188,71 @@ figure figcaption p { font-size: 27px; }
 </svg>
 <main class="stage" id="stage" aria-roledescription="slide deck" aria-label="OCI Capacity Coach pitch deck">
 
-<!-- 1. Title (Team introduction) -->
-<section class="slide dark" aria-label="Slide 1: OCI Capacity Coach">
-  <div class="hero">
-    <svg class="bars deco" width="380" height="407" aria-hidden="true" focusable="false"><use href="#bars"/></svg>
+<!-- 1. Title + Team introduction -->
+<section class="slide dark" aria-label="Slide 1: OCI Capacity Coach, team introduction">
+  <div class="hero" style="gap:24px;">
+    <svg class="bars deco" width="300" height="321" aria-hidden="true" focusable="false"><use href="#bars"/></svg>
     <div class="lockup">
-      <svg class="bars big-bars" width="84" height="90" aria-hidden="true" focusable="false"><use href="#bars"/></svg>
+      <svg class="bars big-bars" width="70" height="75" aria-hidden="true" focusable="false"><use href="#bars"/></svg>
       <span><span class="org" style="font-size:22px;">Everytown Community Safety Fund</span><span class="name" style="font-size:28px;">Organizational Capacity Index</span></span>
     </div>
-    <h1>OCI Capacity Coach</h1>
+    <h1 style="font-size:116px;">OCI Capacity Coach</h1>
     <p class="lead">Helping the groups who stop shootings in their neighborhoods grow stronger, with a clear plan they can start on Monday.</p>
-    <p class="url">d2mi2h3eu8y69s.cloudfront.net <span class="muted" style="font-weight:400;">· sign in: demo / demo · staff / staff</span></p>
+    <ul class="team" aria-label="Our team and who presents what">
+      <li><span class="initial" aria-hidden="true">J</span><span><strong>Johanna</strong><span>Team and the need</span></span></li>
+      <li><span class="initial" aria-hidden="true">B</span><span><strong>Bo</strong><span>What we built, how it works</span></span></li>
+      <li><span class="initial" aria-hidden="true">A</span><span><strong>Ariel</strong><span>Live demo</span></span></li>
+      <li><span class="initial" aria-hidden="true">A</span><span><strong>Atman</strong><span>Impact and our ask</span></span></li>
+    </ul>
   </div>
-  <div class="foot"><span>Ariel · Johanna · Bo · Atman</span><span>AWS Breaking Barriers 2026 · every organization shown is made up</span></div>
-  <aside class="notes">Johanna, 0:00 to 0:15. "Good morning. We built the OCI Capacity Coach for Everytown's Community Safety Fund. It helps the groups who stop shootings in their neighborhoods grow stronger, with a plan they can start on Monday."</aside>
+  <div class="foot"><span>Team introduction · AWS Breaking Barriers 2026</span><span>d2mi2h3eu8y69s.cloudfront.net · every organization shown is made up</span></div>
+  <aside class="notes">Johanna, 0:00 to 0:40. "Good morning. We built the OCI Capacity Coach for Everytown's Community Safety Fund. It helps the groups who stop shootings in their neighborhoods grow stronger, with a plan they can start on Monday." Each person says one sentence: their name and what they worked on. Then Johanna: "We spent three days with Everytown's team. We listened, we built, then we watched a first-time user try it and fixed everywhere she got stuck. Bo will show you what we built."</aside>
 </section>
 
-<!-- 2. Team introduction -->
-<section class="slide" aria-label="Slide 2: Team introduction">
-  <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Team introduction</span></div>
-  <div class="band"><p class="kicker">Team introduction</p><h2>Who we are</h2></div>
-  <div class="body">
-    <div class="grid4">
-      <div class="card mark person"><span class="initial" aria-hidden="true">A</span><h3>Ariel</h3><p class="small muted">Shows you the live demo</p></div>
-      <div class="card mark person"><span class="initial" aria-hidden="true">J</span><h3>Johanna</h3><p class="small muted">Introduces the team and the need</p></div>
-      <div class="card mark person"><span class="initial" aria-hidden="true">B</span><h3>Bo</h3><p class="small muted">Walks you through what we built and how it works</p></div>
-      <div class="card mark person"><span class="initial" aria-hidden="true">A</span><h3>Atman</h3><p class="small muted">Shares what it changes, and our ask</p></div>
-    </div>
-    <div class="card pale"><p>We spent three days with Everytown's Community Safety Fund team. We listened first, built second, and then watched a first-time user try it with no help, and fixed every place she got stuck.</p></div>
-  </div>
-  <div class="foot"><span>Built at AWS Breaking Barriers 2026 with the Everytown Community Safety Fund team</span><span>2</span></div>
-  <aside class="notes">Johanna, 0:15 to 0:40. Each person says one sentence: their name and what they worked on. Then Johanna: "We spent three days with Everytown's team. We listened, we built, then we watched a first-time user try it and fixed everywhere she got stuck. Bo will show you what we built."</aside>
-</section>
-
-<!-- 3. Solution overview: the need -->
-<section class="slide" aria-label="Slide 3: Solution overview, the need">
+<!-- 2. Solution overview: the need and what we built -->
+<section class="slide" aria-label="Slide 2: Solution overview">
   <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Solution overview</span></div>
-  <div class="band"><p class="kicker">Solution overview · the need</p><h2>The people who stop shootings need strong organizations, too</h2></div>
-  <div class="body">
-    <div class="grid3">
-      <div class="card mark"><p class="stat">45</p><p>local groups took Everytown's capacity check-up last year</p></div>
-      <div class="card mark"><p class="stat">2</p><p>Everytown staff wrote every one of their reports by hand</p></div>
-      <div class="card mark"><p class="stat">140+</p><p>groups in Everytown's network who need the same help</p></div>
+  <div class="band"><p class="kicker">Solution overview</p><h2>Groups that stop shootings need strong organizations. We built them a coach.</h2></div>
+  <div class="body" style="gap:26px;">
+    <div class="grid3 needs">
+      <div class="card pale"><p class="num">45</p><p class="small">local groups took Everytown's check-up last year</p></div>
+      <div class="card pale"><p class="num">2</p><p class="small">Everytown staff wrote every one of their reports by hand</p></div>
+      <div class="card pale"><p class="num">140+</p><p class="small">groups in the network who need the same help</p></div>
     </div>
-    <div class="grid2" style="grid-template-columns: 1.1fr 1fr;">
-      <div class="card pale"><h3>Who they are</h3><p>Community violence intervention groups: neighbors who step in before violence happens. Most are small, 5 to 20 people, and many leaders have lived through violence or prison themselves.</p></div>
-      <div class="card pale quote"><blockquote><p>Out of the 10 things you could fix, here's one or two priorities that you should do first.</p></blockquote><p class="small muted">Everytown Community Safety Fund team, in our interview</p></div>
+    <div class="grid3">
+      <div class="card mark"><p class="stepline"><span class="step" aria-hidden="true">1</span><span class="h3">Answer</span></p><p class="small">Yes or No questions about how the group runs. About 15 minutes, in English or Spanish, on a phone.</p></div>
+      <div class="card mark"><p class="stepline"><span class="step" aria-hidden="true">2</span><span class="h3">Get a plan</span></p><p class="small">In about a minute: a letter in plain words, the two things to start with, and a chat for questions.</p></div>
+      <div class="card mark"><p class="stepline"><span class="step" aria-hidden="true">3</span><span class="h3">Follow through</span></p><p class="small">12 weeks, one week at a time, with badges. In week 12, take it again and see what changed.</p></div>
     </div>
   </div>
-  <div class="foot"><span>Sources: Everytown 2025 check-up findings; interview with the Community Safety Fund team</span><span>3</span></div>
-  <aside class="notes">Bo, 0:40 to 1:15. "Community violence intervention groups are neighbors who step in before violence happens. Most are small, five to twenty people. Everytown helps them grow stronger as organizations: money, planning, keeping track of what works. Last year 45 groups took Everytown's check-up, and two staff wrote every single report by hand. There are more than 140 groups in the network. And Everytown told us what those leaders need: not a list of ten problems, but one or two things to do first."</aside>
+  <div class="foot"><span>And Everytown staff see the whole network: who needs which training, and which groups could learn from each other</span><span>2</span></div>
+  <aside class="notes">Bo, 0:40 to 1:30. "Community violence intervention groups are neighbors who step in before violence happens. Most are small, five to twenty people. Last year 45 of them took Everytown's check-up, and two staff wrote every report by hand. More than 140 groups need the same help. So we built them a coach, in three steps. One: answer yes-or-no questions about how the group runs, about fifteen minutes, on a phone, in English or Spanish. Two: in about a minute, a plan in plain words, with the two things to start with, and a chat for questions. Three: twelve weeks, one week at a time, with badges, and a retake in week 12 to see what changed."</aside>
 </section>
 
-<!-- 4. Solution overview: what we built -->
-<section class="slide" aria-label="Slide 4: Solution overview, what we built">
+<!-- 3. Before vs now -->
+<section class="slide" aria-label="Slide 3: What Everytown had before, and what we built">
   <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Solution overview</span></div>
-  <div class="band"><p class="kicker">Solution overview · what we built</p><h2>A coach for every group, in three steps</h2></div>
-  <div class="body">
-    <div class="grid3">
-      <div class="card mark"><p class="stepline"><span class="step" aria-hidden="true">1</span><span class="h3">Answer</span></p><p>Yes or No questions about how the group runs. About 15 minutes, in English or Spanish, on a phone or a computer.</p></div>
-      <div class="card mark"><p class="stepline"><span class="step" aria-hidden="true">2</span><span class="h3">Get a plan</span></p><p>In about a minute: a letter in plain words, the two things to start with, and a chat to ask questions.</p></div>
-      <div class="card mark"><p class="stepline"><span class="step" aria-hidden="true">3</span><span class="h3">Follow through</span></p><p>A 12-week plan, one week at a time, with badges along the way. In week 12, take it again and see what changed.</p></div>
-    </div>
-    <div class="card pale"><h3>And for Everytown staff</h3><p>One view of the whole network: which groups need which training, who asked for help, and which groups could learn from each other.</p></div>
+  <div class="band"><p class="kicker">Solution overview · before and now</p><h2>Same questions, same scoring. A very different experience.</h2></div>
+  <div class="body" style="gap:0;">
+    <table class="cmp">
+      <caption class="visually-hidden">What Everytown had before compared with what we built</caption>
+      <thead><tr><th scope="col"><span class="visually-hidden">Topic</span></th><th scope="col">Before: Everytown's pilot and prototype</th><th scope="col" class="now">Now: live today</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Writing the report</th><td>2 staff, by hand, for each of 45 groups</td><td class="now">Every group, in about a minute</td></tr>
+        <tr><th scope="row">The tool</th><td>Scoring code on a basic screen: scores only</td><td class="now">A full website: answer, plan, chat, roadmap, PDF</td></tr>
+        <tr><th scope="row">What a group gets</th><td>A long record: 57 areas to improve, 19 marked high priority</td><td class="now">The two things to start with, then a 12-week plan</td></tr>
+        <tr><th scope="row">Reading it</th><td>A long document, in English</td><td class="now">Plain words, read aloud, Spanish, on a phone</td></tr>
+        <tr><th scope="row">After the report</th><td>Nothing to track follow-through</td><td class="now">Weekly steps, badges, a retake in week 12</td></tr>
+        <tr><th scope="row">Everytown's view</th><td>One analysis by hand, July 2025</td><td class="now">Live: training needs, plain questions, similar groups</td></tr>
+      </tbody>
+    </table>
   </div>
-  <div class="foot"><span>Everytown's own questions and scoring, unchanged · the AI only helps explain the results</span><span>4</span></div>
-  <aside class="notes">Bo, 1:15 to 1:50. "We built a coach in three steps. One: the leader answers yes-or-no questions about how their group runs, in fifteen minutes, on a phone, in English or Spanish. Two: in about a minute they get a plan, written like a letter from a coach, with the two things to start with, and a chat for questions. Three: a 12-week plan, one week at a time, with badges. In week 12 they take it again and see what changed. And Everytown's staff see the whole network in one place."</aside>
+  <div class="foot"><span>Before: Everytown's OCI package (vision document, 2025 findings, handoff slides, sample report for Riverbend)</span><span>3</span></div>
+  <aside class="notes">Bo, 1:30 to 2:05. "Here is what changed. Everytown kept its own questions and scoring; we did not touch them. Before, two staff wrote every report by hand, and the tool showed scores only. A sample report listed 57 things to improve, 19 of them marked high priority, all at once. Now every group gets its plan in about a minute, with just the two things to start with, in plain words, read aloud or in Spanish. And Everytown's view of the network is live, instead of one analysis by hand."</aside>
 </section>
 
-<!-- 5. Architecture -->
-<section class="slide" aria-label="Slide 5: Architecture">
+<!-- 4. Architecture -->
+<section class="slide" aria-label="Slide 4: Architecture">
   <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Architecture</span></div>
   <div class="band"><p class="kicker">Architecture · how it works behind the scenes</p><h2>Rules score. AI writes. Rules check.</h2></div>
   <div class="body" style="gap:26px;">
@@ -249,18 +269,18 @@ figure figcaption p { font-size: 27px; }
       <div class="card pale tightp"><h3>Ready to hand over</h3><p class="small">One script sets it all up in Everytown's own Amazon account.</p><p class="aws">AWS CloudFormation</p></div>
     </div>
   </div>
-  <div class="foot"><span>Free and open source: github.com/ArielleTolome/everytown-oci</span><span>5</span></div>
-  <aside class="notes">Bo, 1:50 to 2:30. "Behind the scenes, one simple rule: rules score, AI writes, rules check. Everytown's own scoring rules decide where a group stands. No AI touches the score. Then the AI writes the plan, using nine trusted field guides on this work. Then our rules check every line: if the AI writes anything that is not tied to the group's own answers, it is removed before anyone sees it. It runs on Amazon, so there is nothing for Everytown to look after; every AI step is recorded for staff to check. Ariel will show you."</aside>
+  <div class="foot"><span>Free and open source: github.com/ArielleTolome/everytown-oci</span><span>4</span></div>
+  <aside class="notes">Bo, 2:05 to 2:40. "Behind the scenes, one simple rule: rules score, AI writes, rules check. Everytown's scoring rules decide where a group stands; no AI touches the score. The AI writes the plan from nine trusted field guides. Then our rules check every line, and anything not tied to the group's own answers is removed before anyone sees it. Amazon runs it all, so there is nothing for Everytown to look after. Ariel will show you."</aside>
 </section>
 
-<!-- 6. Live demo -->
-<section class="slide" aria-label="Slide 6: Live demo">
+<!-- 5. Live demo -->
+<section class="slide" aria-label="Slide 5: Live demo">
   <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Live demo</span></div>
   <div class="band"><p class="kicker">Live demo</p><h2>Let's see it with a made-up group</h2></div>
   <div class="body">
     <div style="display:grid;grid-template-columns:1fr 760px;gap:56px;align-items:center;">
       <ol class="demo-steps" aria-label="What you will see">
-        <li><span class="step" aria-hidden="true">1</span><p><strong>A group's answers, in one click.</strong> Their report starts writing while we keep going.</p></li>
+        <li><span class="step" aria-hidden="true">1</span><p><strong>A group's answers, in one click.</strong> Their plan starts writing while we keep going.</p></li>
         <li><span class="step" aria-hidden="true">2</span><p><strong>Their plan, in plain words.</strong> Each part says where it came from: their answers, or written by AI.</p></li>
         <li><span class="step" aria-hidden="true">3</span><p><strong>Asking the chat a question.</strong></p></li>
         <li><span class="step" aria-hidden="true">4</span><p><strong>Their 12-week roadmap</strong>, with badges for each week done.</p></li>
@@ -269,189 +289,28 @@ figure figcaption p { font-size: 27px; }
       <img class="shot" style="height:600px;" src="img/report-start.jpg" alt="Start here: weeks 1 to 4 of your roadmap, labelled Picked from your answers, steps written by AI. Two priorities side by side: Map your funding for the next 12 months and Help all staff collect data the same way, each with why it comes first and the answer it is based on.">
     </div>
   </div>
-  <div class="foot"><span>Made-up sample organizations only · if the internet fails, the backup slides at the end show the same screens</span><span>6</span></div>
-  <aside class="notes">Ariel, 2:30 to 5:00. "Let me show you, with a made-up group." Switch to the browser and follow "The live demo, click by click" in docs/pitch/demo-script.md. If the internet fails, use backup slides B1 and B2 and say the same lines.</aside>
+  <div class="foot"><span>Made-up sample organizations only · if the internet fails, open sample-report.pdf</span><span>5</span></div>
+  <aside class="notes">Ariel, 2:40 to 5:10. "Let me show you, with a made-up group." Switch to the browser and follow "The live demo, click by click" in docs/pitch/demo-script.md. If the internet fails, stay on this slide, say the same lines and open sample-report.pdf.</aside>
 </section>
 
-<!-- 7. Proposed industry impact -->
-<section class="slide" aria-label="Slide 7: Proposed industry impact">
+<!-- 6. Proposed industry impact + our ask -->
+<section class="slide" aria-label="Slide 6: Proposed industry impact and our ask">
   <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Proposed industry impact</span></div>
   <div class="band"><p class="kicker">Proposed industry impact</p><h2>What changes, for groups, for Everytown, and for the nonprofit field</h2></div>
-  <div class="body">
+  <div class="body" style="gap:26px;">
     <div class="grid3">
-      <div class="card mark"><h3>For local groups</h3><ul class="ticks small-list"><li>A plan in about a minute, not a wait for staff to write one by hand</li><li>Written for them: plain words, read aloud, Spanish, on a phone</li><li>Small steps a team of five can really do</li></ul></div>
-      <div class="card mark"><h3>For Everytown</h3><ul class="ticks small-list"><li>Staff time moves from writing reports to coaching</li><li>Training planned around what the network really needs</li><li>A retake in week 12 shows whether support helped</li></ul></div>
-      <div class="card mark"><h3>For the nonprofit field</h3><ul class="ticks small-list"><li>Free and open: any funder that supports small nonprofits can use it</li><li>About 11 cents per report; under $50 a year for 140 groups</li><li>Grows from 45 groups to the whole network with no rebuild</li></ul></div>
+      <div class="card mark"><h3>For local groups</h3><ul class="ticks small-list"><li>A plan in about a minute, not a wait</li><li>Plain words, read aloud, Spanish, on a phone</li><li>Small steps a team of five can do</li></ul></div>
+      <div class="card mark"><h3>For Everytown</h3><ul class="ticks small-list"><li>Staff time moves from writing to coaching</li><li>Training planned around real needs</li><li>A week-12 retake shows if support helped</li></ul></div>
+      <div class="card mark"><h3>For the nonprofit field</h3><ul class="ticks small-list"><li>Free and open for any funder to use</li><li>About 11 cents per report; under $50 a year for 140 groups</li><li>Grows to the whole network, no rebuild</li></ul></div>
+    </div>
+    <div class="ask">
+      <p class="ask__label">Our ask</p>
+      <p class="ask__text">Try it with 3 to 4 grantees this quarter. Everytown invites them, staff go through each plan with the group, and Everytown's tech team sets it up in Everytown's own account.</p>
+      <p class="ask__thanks">Thank you. Questions?</p>
     </div>
   </div>
-  <div class="foot"><span>AI cost measured on live reports; hosting a few dollars a month</span><span>7</span></div>
-  <aside class="notes">Atman, 5:00 to 6:15. "What does this change? For local groups: a plan in about a minute, instead of waiting for staff to write one by hand. Written for them: plain words, read aloud, in Spanish, on the phone they already carry, with steps a team of five can really do. For Everytown: the two people who wrote reports by hand get that time back for coaching. Training is planned around what the network really needs. And the retake in week 12 shows whether their support helped. And for the nonprofit field: it is free and open, so any funder that supports small nonprofits can use it. It costs about 11 cents per report, under 50 dollars a year for all 140 groups, and it can grow from 45 groups to the whole network without being rebuilt."</aside>
-</section>
-
-<!-- 8. Our ask -->
-<section class="slide dark" aria-label="Slide 8: Our ask">
-  <div class="hero" style="gap:26px;">
-    <svg class="bars deco" width="340" height="364" aria-hidden="true" focusable="false"><use href="#bars"/></svg>
-    <div class="lockup"><svg class="bars" width="56" height="60" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org" style="font-size:20px;">Our ask</span></span></div>
-    <h1 style="font-size:100px;">Try it with 3 to 4 grantees this quarter</h1>
-    <ul class="ticks">
-      <li style="font-size:32px;">Everytown invites 3 to 4 groups to take it, about 15 minutes each.</li>
-      <li style="font-size:32px;">Staff go through each plan with the group and tell us what helped.</li>
-      <li style="font-size:32px;">Everytown's tech team sets it up in Everytown's own account, with real sign-in.</li>
-    </ul>
-    <p class="url" style="margin-top:14px;">Thank you. Questions? <span class="muted" style="font-weight:400;">· d2mi2h3eu8y69s.cloudfront.net</span></p>
-  </div>
-  <div class="foot"><span>Thank you to the Everytown Community Safety Fund team</span><span>github.com/ArielleTolome/everytown-oci</span></div>
-  <aside class="notes">Atman, 6:15 to 7:00. "Our ask is simple: try it with three or four grantees this quarter. Everytown invites them, staff go through each plan with the group and tell us what helped, and Everytown's tech team sets it up in Everytown's own account. Thank you to the Community Safety Fund team for three days of honest answers. We would love your questions." Leave slide 8 up. Then 3 minutes of judges' questions (see the question table in the script).</aside>
-</section>
-
-<!-- B1. Backup: what a leader sees -->
-<section class="slide" aria-label="Backup 1: What a group's leader sees">
-  <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Backup · live demo</span></div>
-  <div class="band"><p class="kicker">Backup · if the internet fails</p><h2>What a group's leader sees</h2></div>
-  <div class="body">
-    <div class="grid3" style="align-items:start;">
-      <figure>
-        <img class="shot" style="height:560px;" src="img/questionnaire.jpg" alt="Questionnaire, Planning area, question 1 of 9: We primarily focus on short-term planning and activities, with large Yes and No buttons, Previous and Next, and an English or Español switch at the top right.">
-        <figcaption><span class="step" aria-hidden="true">1</span><p><strong>Answer.</strong> Yes or No, one question at a time, in English or Spanish.</p></figcaption>
-      </figure>
-      <figure>
-        <img class="shot" style="height:560px;" src="img/report-start.jpg" alt="Start here: weeks 1 to 4 of your roadmap, labelled Picked from your answers, steps written by AI. Two priorities side by side, each with why it comes first and the answer it is based on.">
-        <figcaption><span class="step" aria-hidden="true">2</span><p><strong>Start here.</strong> The two things to do first, and the answers behind them.</p></figcaption>
-      </figure>
-      <figure>
-        <img class="shot" style="height:560px;" src="img/roadmap-weeks.jpg" alt="12-week roadmap: level, points, badges earned and the next badge, then a timeline of all 12 weeks: weeks 1 to 4 done, week 5 this week, weeks 6 to 12 with the date each opens.">
-        <figcaption><span class="step" aria-hidden="true">3</span><p><strong>Follow through.</strong> 12 weeks, one at a time, with badges.</p></figcaption>
-      </figure>
-    </div>
-  </div>
-  <div class="foot"><span>Made-up sample organization: Riverbend Violence Interruption Network</span><span>B1</span></div>
-  <aside class="notes">Use only if the live demo cannot run. Say the demo lines over these screens and open sample-report.pdf.</aside>
-</section>
-
-<!-- B2. Backup: what Everytown staff see -->
-<section class="slide" aria-label="Backup 2: What Everytown staff see">
-  <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Backup · live demo</span></div>
-  <div class="band"><p class="kicker">Backup · if the internet fails</p><h2>What Everytown staff see</h2></div>
-  <div class="body">
-    <div class="grid3" style="align-items:start;">
-      <figure>
-        <img class="shot" style="height:560px;" src="img/staff-training.jpg" alt="Staff dashboard, Which organizations need which training: cards per area with the number of organizations that need it and how many asked for help.">
-        <figcaption><p><strong>Training needs.</strong> Who needs which training, and who asked for help.</p></figcaption>
-      </figure>
-      <figure>
-        <img class="shot" style="height:560px;" src="img/staff-ask.jpg" alt="Ask the data: the question Which organizations need fundraising training, a short summary, a bar chart and a table of organizations.">
-        <figcaption><p><strong>Ask the data.</strong> A plain question; the numbers come straight from the data.</p></figcaption>
-      </figure>
-      <figure>
-        <img class="shot" style="height:560px;" src="img/staff-peers.jpg" alt="Peer groups and requests to connect: organizations that asked to be connected, each with suggested similar groups.">
-        <figcaption><p><strong>Peers.</strong> Groups facing the same challenges, to connect.</p></figcaption>
-      </figure>
-    </div>
-  </div>
-  <div class="foot"><span>Made-up organizations only</span><span>B2</span></div>
-  <aside class="notes">Use only if the live demo cannot run.</aside>
-</section>
-
-<!-- B3. Keeping the AI honest -->
-<section class="slide" aria-label="Backup 3: Keeping the AI honest">
-  <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">For questions</span></div>
-  <div class="band"><p class="kicker">For questions · safety</p><h2>Keeping the AI honest</h2></div>
-  <div class="body">
-    <div class="grid2" style="gap:40px;">
-      <div class="card"><h3 style="margin-bottom:14px;">Rules decide</h3>
-        <ul class="ticks">
-          <li>Every score and stage, using Everytown's own method</li>
-          <li>Which one or two things come first</li>
-          <li>Which links appear: only 19 trusted guides</li>
-          <li>Every number Everytown staff see</li>
-          <li>If someone writes about danger: 988 and 911, never the AI</li>
-        </ul>
-      </div>
-      <div class="card"><h3 style="margin-bottom:14px;">The AI writes, then gets checked</h3>
-        <ul class="ticks">
-          <li>The plan, in plain words, and short chat answers</li>
-          <li>Anything not tied to the group's answers is removed</li>
-          <li>A safety filter screens what comes in</li>
-          <li>Tested on 52 practice cases before every release</li>
-          <li>Every step recorded, so staff can check it</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <div class="foot"><span>Our practice cases caught 3 real problems before any group saw them; all fixed</span><span>B3</span></div>
-  <aside class="notes">If asked "can the AI make things up?" or "is it safe?". The AI never scores anyone and never picks the priorities. It only writes, and its writing is checked against the group's own answers before anyone sees it. Crisis questions get a fixed 988 / 911 answer from our rules and never reach the AI.</aside>
-</section>
-
-<!-- B4. Built for every reader -->
-<section class="slide" aria-label="Backup 4: Built for every reader">
-  <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">For questions</span></div>
-  <div class="band"><p class="kicker">For questions · access</p><h2>Written for the reader, not the funder</h2></div>
-  <div class="body">
-    <div style="display:grid;grid-template-columns:1fr 820px;gap:48px;align-items:center;">
-      <div class="grid2 tight" style="gap:18px;">
-        <div class="card"><h3>Easy to read</h3><p class="small">Every plan is checked to read at about an 8th grade level or plainer.</p></div>
-        <div class="card"><h3>Strengths first</h3><p class="small">A letter from a coach, never a grade.</p></div>
-        <div class="card"><h3>Read aloud</h3><p class="small">Any part can be played out loud.</p></div>
-        <div class="card"><h3>English and Spanish</h3><p class="small">Questions, plan and PDF.</p></div>
-        <div class="card"><h3>Phone first</h3><p class="small">Every screen tested on a phone and a computer.</p></div>
-        <div class="card"><h3>For every ability</h3><p class="small">Larger text, high contrast, screen readers; meets the WCAG 2.2 AA standard.</p></div>
-      </div>
-      <img class="shot" style="height:516px;" src="img/report-true.jpg" alt="Report section Summary about your organization, labelled Written by AI from your answers: a coach's letter to Riverbend with strengths, growth priorities and where to start.">
-    </div>
-  </div>
-  <div class="foot"><span>Typeface: Atkinson Hyperlegible, designed for readers with low vision</span><span>B4</span></div>
-  <aside class="notes">If asked about accessibility or literacy. Everytown told us: "I can read this even though I'm at an 8th grade reading level and I've been to prison." That became our rule.</aside>
-</section>
-
-<!-- B5. Cost -->
-<section class="slide" aria-label="Backup 5: What it costs">
-  <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">For questions</span></div>
-  <div class="band"><p class="kicker">For questions · cost</p><h2>Cheap enough to run for years</h2></div>
-  <div class="body">
-    <div class="grid4">
-      <div class="card mark"><p class="metric">$0.11</p><p class="small">of AI per report, measured on live reports</p></div>
-      <div class="card mark"><p class="metric">&lt; $50</p><p class="small">a year of AI for 140 groups, twice a year each</p></div>
-      <div class="card mark"><p class="metric">$1<small> to 3 / mo</small></p><p class="small">to host when the database sleeps between uses</p></div>
-      <div class="card mark"><p class="metric">0</p><p class="small">servers to look after: Amazon runs them</p></div>
-    </div>
-    <div class="card pale"><p class="small">Today it is kept always on for judging, about $45 a month. Spending limits are built in: how many reports run at once, a cap per hour, and an optional monthly budget alert.</p></div>
-  </div>
-  <div class="foot"><span>Costs from the live site, us-west-2</span><span>B5</span></div>
-  <aside class="notes">If asked about cost or who pays to keep it running. The AI is the smallest line; the main fixed cost is the database, which can sleep between uses.</aside>
-</section>
-
-<!-- B6. Privacy -->
-<section class="slide" aria-label="Backup 6: Privacy and safety">
-  <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">For questions</span></div>
-  <div class="band"><p class="kicker">For questions · privacy</p><h2>Built with real-world care, tested with made-up data</h2></div>
-  <div class="body">
-    <div class="grid3">
-      <div class="card mark"><h3>Data</h3><p class="small">Only made-up organizations today. Stored encrypted. People's names are never sent to the AI.</p></div>
-      <div class="card mark"><h3>Groups stay separate</h3><p class="small">No group ever sees another group's answers. Everytown connects groups only when they ask.</p></div>
-      <div class="card mark"><h3>Confidential PDFs</h3><p class="small">Every PDF carries an Everytown watermark and a note not to share it.</p></div>
-    </div>
-    <div class="card pale"><h3>Before real groups use it</h3><p class="small">Real sign-in inside Everytown's Grantee Portal replaces today's practice logins, and Everytown sets how long records are kept.</p></div>
-  </div>
-  <div class="foot"><span>This demo site is taken down after judging</span><span>B6</span></div>
-  <aside class="notes">If asked about privacy or real data. Be honest: today's logins are practice logins and every organization is made up. Real sign-in is the first step of the pilot.</aside>
-</section>
-
-<!-- B7. Ready to grow -->
-<section class="slide" aria-label="Backup 7: Ready to grow">
-  <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">For questions</span></div>
-  <div class="band"><p class="kicker">For questions · growth</p><h2>From 45 groups to the whole network, with no rebuild</h2></div>
-  <div class="body">
-    <div class="grid4">
-      <div class="card mark"><p class="metric">100+</p><p class="small">reports a minute that Amazon's AI service allows us today</p></div>
-      <div class="card mark"><p class="metric">1,000</p><p class="small">requests at once that AWS allows; the demo is capped at 10 to control cost</p></div>
-      <div class="card mark"><p class="metric">Auto</p><p class="small">the database grows and shrinks with use</p></div>
-      <div class="card mark"><p class="metric">2</p><p class="small">languages today, English and Spanish</p></div>
-    </div>
-    <div class="card pale"><p class="small">It gets more useful as it grows: every new check-up sharpens the training picture and the matches between similar groups.</p></div>
-  </div>
-  <div class="foot"><span>Amazon Bedrock limits in this account, us-west-2</span><span>B7</span></div>
-  <aside class="notes">If asked "what if every grantee uses it at once?". Growing is a setting, not a rebuild; cost grows only with use.</aside>
+  <div class="foot"><span>Thank you to the Everytown Community Safety Fund team</span><span>6</span></div>
+  <aside class="notes">Atman, 5:10 to 6:20. "What does this change? For local groups: a plan in about a minute, instead of waiting for staff to write one by hand. Written for them: plain words, read aloud, in Spanish, on the phone they already carry, with steps a team of five can really do. For Everytown: the two people who wrote reports by hand get that time back for coaching. Training is planned around what the network really needs. And the retake in week 12 shows whether their support helped. And for the nonprofit field: it is free and open, so any funder that supports small nonprofits can use it. It costs about 11 cents per report, under 50 dollars a year for all 140 groups, and it can grow from 45 groups to the whole network without being rebuilt." "Our ask is simple: try it with three or four grantees this quarter. Everytown invites them, staff go through each plan with the group and tell us what helped, and Everytown's tech team sets it up in Everytown's own account. Thank you to the Community Safety Fund team for three days of honest answers. We would love your questions." Leave slide 6 up. Then 3 minutes of judges' questions (see the question table in the script).</aside>
 </section>
 
 </main>
@@ -460,7 +319,7 @@ figure figcaption p { font-size: 27px; }
 <div class="panel" id="panel" hidden aria-live="polite"><h2>Speaker notes</h2><p id="panel-text"></p></div>
 <nav class="controls" aria-label="Slide controls">
   <button type="button" id="prev" aria-label="Previous slide"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
-  <span class="counter" id="counter" aria-live="polite">1 / 15</span>
+  <span class="counter" id="counter" aria-live="polite">1 / 6</span>
   <button type="button" id="next" aria-label="Next slide"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
   <button type="button" id="notes" aria-pressed="false">Notes (N)</button>
 </nav>

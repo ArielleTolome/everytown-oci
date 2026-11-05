@@ -477,6 +477,7 @@ axe-core 4.10.2 (WCAG 2.0, 2.1, 2.2 A and AA) on every page and staff tab at 320
 | v1.10.1 | Final pitch deck and demo script; chat fix (a question asked while the conversation loaded lost its answer). |
 | v1.10.2 | Presentation rebuilt to the judges' required order (team, overview and architecture, demo, impact) in plain English, with a speaker-split script. |
 | v1.10.3 | The presentation script as a Word document (`scripts/build_script_docx.py`). |
+| v1.10.4 | A 6-slide deck with a before-and-now slide built from Everytown's OCI package. |
 
 The full notes for each are in [`CHANGELOG.md`](../CHANGELOG.md) and on the GitHub Releases page.
 
