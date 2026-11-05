@@ -484,6 +484,7 @@ axe-core 4.10.2 (WCAG 2.0, 2.1, 2.2 A and AA) on every page and staff tab at 320
 | v1.10.9 | Desktop fix: a report still being written uses the full reading width, not the hidden side list's column. |
 | v1.10.10 | Points at the top right of the roadmap; staff see each organization's week, points and level. |
 | v1.10.11 | "New chat" in the report chat: a clean session for the AI; earlier questions kept and still counted. |
+| v1.10.13 | `showcase` / `showcase`: a sign-in whose start page arrives filled in, for presentations. |
 
 The full notes for each are in [`CHANGELOG.md`](../CHANGELOG.md) and on the GitHub Releases page.
 

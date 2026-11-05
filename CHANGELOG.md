@@ -2,6 +2,13 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.13 — A showcase sign-in with the start page filled in
+
+- New practice sign-in **`showcase` / `showcase`** for presentations: an organization leader whose start page ("Tell us about your organization") arrives filled in with a made-up group, so a presenter can show it and press **Start questionnaire** straight away. It uses the Southside sample's details (Southside Youth Peace Collective (synthetic sample); Executive director, "Founder and executive director", Jordan Rivera; street outreach and youth mentoring; 1 to 5 staff; $250K to $1M; Illinois; the four main areas). Nothing is submitted until the presenter presses Start.
+- A draft left on the laptop from a rehearsal is ignored unless it is the same organization, so old answers never carry over; going back from the questions to the start page keeps the presenter's place. The questionnaire's "Demo: fill this area with sample answers" button is always there for this sign-in. `demo` / `demo` is unchanged (empty start page).
+- How: `GET /api/meta` adds `preset` for the showcase sign-in only (`app._showcase_preset`, built from `data/samples.json` sample A); the start page fills its fields from it. The login page and the sign-in error list the new sign-in. The demo script now signs in as `showcase` for the leader tabs.
+- Tests: a unit test checks the preset is complete enough to pass the server's start-page validation, and that other sign-ins get no preset. A browser check confirmed every field filled, a stale draft ignored, Start going straight to "How would you like to answer?", and axe 0 at 390 and 1280. Full e2e suite: 115 passed, 5 phone-only skipped.
+
 ## v1.10.12 — A GitHub wiki
 
 - New [wiki](https://github.com/ArielleTolome/everytown-oci/wiki) with 33 pages: Home (banner, demo, live logins, every page), the technical guide with one page per section (architecture, scoring engine, data model, API, AI pipeline, features, staff dashboard, frontend, infrastructure, security, observability, quality, how we built it, release history, operating the system, limits, glossary), every file by folder, evals, end-to-end tests, features and benefits, the live demo and presentation script, vision, tech brief, next steps, the QuickSight assessment and the changelog. A sidebar on every page.
