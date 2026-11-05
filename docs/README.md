@@ -10,6 +10,7 @@ Project documents: the hackathon vision and technical write-ups, the pitch deck 
 | `tech.md` | Technical document: stack, which AWS service runs what, and the planned multi-step Bedrock pipeline. |
 | `technical-guide.md` | The technical guide to the whole system: architecture, scoring, data model, API, AI pipeline, features, staff dashboard, frontend, infrastructure, security, observability, testing, how it was built, release history, operations and glossary. |
 | `OCI-Capacity-Coach-technical-guide.pdf` | The same guide as a PDF, built by `python3 scripts/build_guide_pdf.py`. Rebuild it after editing `technical-guide.md`. |
+| `features-and-benefits.md` | Every feature we added for Everytown and what it gives organization leaders, Everytown staff and Everytown itself, checked on the live site (Nov 5) and compared with Everytown's OCI package. |
 | `next-steps.md` | What the CSF director raised in the 2026-11-04 walkthrough, what v1.7 built for each point, and the remaining tasks (L1 to L10), each sized for one person or agent. |
 | `quicksight-assessment.md` | Whether staff BI should move to Amazon QuickSight: not now, with costs, data-access limits, revisit triggers and the low-risk path if it is ever needed. |
 | `pitch/index.html` | The pitch deck as one HTML page. Open it in a browser: arrows or space to move, `N` for speaker notes (the script's words, per speaker). |

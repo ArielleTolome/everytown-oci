@@ -11,7 +11,7 @@ The presentation must not go over **10 minutes, including 2 to 3 minutes of judg
 | Required | Who | When | Slides |
 |---|---|---|---|
 | Team introduction | Johanna | 0:00 to 0:40 | 1 |
-| Solution overview + architecture | Bo | 0:40 to 2:40 | 2 (the need, what we built), 3 (before and now), 4 (how it works) |
+| Solution overview + architecture | Bo | 0:40 to 2:40 | 2 (before and now), 3 (new features and what each gives), 4 (how it works) |
 | Live demo | Ariel | 2:40 to 5:10 | 5, then the browser |
 | Proposed industry impact | Atman | 5:10 to 6:20 | 6 |
 | Our ask, thank you | Atman | 6:20 to 7:00 | 6 |
@@ -54,8 +54,8 @@ The room is nonprofit people, not engineers. Talk the way you would explain it t
 
 | Time | Slide | Say |
 |---|---|---|
-| 0:40 to 1:30 | 2 The need and what we built | "Community violence intervention groups are neighbors who step in before violence happens. Most are small, five to twenty people. Last year 45 of them took Everytown's check-up, and two staff wrote every report by hand. More than 140 groups need the same help. So we built them a coach, in three steps. One: answer yes-or-no questions about how the group runs, about fifteen minutes, on a phone, in English or Spanish. Two: in about a minute, a plan in plain words, with the two things to start with, and a chat for questions. Three: twelve weeks, one week at a time, with badges, and a retake in week 12 to see what changed." |
-| 1:30 to 2:05 | 3 Before and now | "Here is what changed. Everytown kept its own questions and scoring; we did not touch them. Before, two staff wrote every report by hand, and the tool showed scores only. A sample report listed 57 things to improve, 19 of them marked high priority, all at once. Now every group gets its plan in about a minute, with just the two things to start with, in plain words, read aloud or in Spanish. And Everytown's view of the network is live, instead of one analysis by hand." |
+| 0:40 to 1:20 | 2 Before and now | "Community violence intervention groups are neighbors who step in before violence happens, usually five to twenty people. Here is where Everytown started. Two staff wrote every report by hand, for 45 groups, and more than 140 groups are in the network. The tool showed scores only, and a sample report listed 57 things to improve, all at once. Everytown's questions and scoring were good, so we kept them exactly as they are. What changed is everything around them." |
+| 1:20 to 2:05 | 3 New features | "Here is what we added. For a group's leader: they pick how to answer, in English or Spanish, on a phone, and can share an area with a teammate. In about a minute they get a plan, with just the two things to start with, read aloud if they like, and a chat to ask questions. Then twelve weeks of small steps with badges, and a direct line to ask Everytown for help. For Everytown's staff: a live view of who needs which training, a first draft of each training, plain questions answered from the data, peer matches, and one place to check quality and follow up." |
 | 2:05 to 2:40 | 4 How it works | "Behind the scenes, one simple rule: rules score, AI writes, rules check. Everytown's scoring rules decide where a group stands; no AI touches the score. The AI writes the plan from nine trusted field guides. Then our rules check every line, and anything not tied to the group's own answers is removed before anyone sees it. Amazon runs it all, so there is nothing for Everytown to look after. Ariel will show you." |
 
 ### Live demo (Ariel, 2:40 to 5:10)
@@ -82,11 +82,12 @@ Answer in two or three sentences, then stop. Go back to a slide only if it helps
 |---|---|---|
 | Can the AI make things up? | "It can try, but it cannot get through. The AI never scores anyone and never picks the priorities: Everytown's rules do. Every line it writes must point to the group's own answers, or our rules remove it before anyone sees it." | 4 |
 | What if someone writes about danger or a crisis? | "That never goes to the AI. Our rules answer straight away with 988 and 911." | 4 |
-| Can people with low literacy or on a phone use it? | "That was Everytown's first request. Every plan is checked to read at about an 8th grade level or plainer, any part can be read aloud, it works in Spanish, and every screen is tested on a phone." | 2 |
+| Can people with low literacy or on a phone use it? | "That was Everytown's first request. Every plan is checked to read at about an 8th grade level or plainer, any part can be read aloud, it works in Spanish, and every screen is tested on a phone." | 3 |
 | What does it cost, and who keeps it running? | "About 11 cents of AI per report, under 50 dollars a year for the whole network, and a few dollars a month to host. Amazon runs the computers, so there is nothing to patch, and it is Everytown's to keep." | 6 |
 | What about privacy? | "Today every group is made up. People's names are never sent to the AI, no group sees another group's answers, and every PDF is watermarked and marked confidential. Real sign-in is the first step of the pilot." | none |
 | What if all 140 groups use it at once? | "Amazon already allows more than 100 reports a minute for us. Growing is a setting, not a rebuild." | 6 |
-| How do you know it works? | "We tested it on 52 practice cases before every release, and they caught three real problems before any group saw them. And yesterday a first-time user tried it with no help; we fixed all 12 places she got stuck the same day." | 3 |
+| How do you know it works? | "We tested it on 52 practice cases before every release, and they caught three real problems before any group saw them. And yesterday a first-time user tried it with no help; we fixed all 12 places she got stuck the same day." | none |
+| What can leaders and staff actually do in it? | "For leaders: answer on a phone, get a plan in a minute, listen, chat, follow 12 weeks of steps and ask Everytown for help. For staff: see training needs, ask the data, match peers and follow up. The full list is in docs/features-and-benefits.md." | 3 |
 | Could another organization use it? | "Yes. It is free and open source. The questions and scoring are Everytown's, but the same approach works for any funder that supports small nonprofits." | 6 |
 | (For a technical judge) Which AWS services? | Point at slide 4: CloudFront and S3 for the website, Lambda, Claude on Amazon Bedrock with Knowledge Bases and Guardrails, Aurora, Polly, CloudWatch, CloudFormation. | 4 |
 
@@ -137,7 +138,7 @@ Both must pass. `test:demo` makes one report (about 45 seconds) and asks its cha
 
 ### Rehearse once with a timer
 
-Run the whole talk once, out loud, with a phone timer. If it runs over 7 minutes, cut words, not slides: the demo's staff part can drop **Peers**, and Bo can shorten slide 3 to its first and last rows.
+Run the whole talk once, out loud, with a phone timer. If it runs over 7 minutes, cut words, not slides: the demo's staff part can drop **Peers**, and Bo can shorten slide 2 to its first and last rows.
 
 ## Numbers to have ready
 
@@ -145,6 +146,7 @@ Run the whole talk once, out loud, with a phone timer. If it runs over 7 minutes
 - **The check-up:** 8 areas, 143 yes-or-no statements, Everytown's own scoring, unchanged and checked against all 3 of Everytown's answer keys.
 - **Speed and cost:** about 1 minute and about 11 cents of AI per plan; under $50 a year of AI for 140 groups twice a year; $1 to $3 a month to host when the database sleeps (about $45 a month kept always on, as for judging).
 - **Testing:** 52 practice cases for the AI (16 plans, 21 chat questions, 15 staff questions), every safety check passed in the Nov 4 run; they caught 3 real problems before any group saw them. 35 screen-by-screen tests, each run on a computer and a phone. An accessibility check finds 0 problems on every page.
+- **Every feature and its benefit:** [`docs/features-and-benefits.md`](../features-and-benefits.md) lists each feature for leaders, staff and Everytown, checked on the live site on Nov 5.
 - **Before and now (from Everytown's OCI package):** the 2025 pilot covered 45 groups, with 2 staff writing each report by hand; the prototype was scoring code with a basic screen and scores only (vision and technical documents); its sample report for Riverbend runs about 5,500 words and lists 57 areas to improve, 19 marked high priority; the network analysis was done by hand once (handoff slides, July 2025). The 143 statements and the scoring are unchanged in what we built.
 - **The user test (Nov 4):** a first-time user tried it with no help; 12 places she got stuck; all 12 fixed and live the same day. The on-stage test then caught one more (the chat could show an error while still loading), also fixed.
 - **Growth:** Amazon allows this account more than 100 plans a minute; the demo is capped at 10 at once to control cost.

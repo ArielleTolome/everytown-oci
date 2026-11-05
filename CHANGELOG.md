@@ -2,6 +2,11 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.6 — What we added, and what leaders and staff get
+
+- New [`docs/features-and-benefits.md`](docs/features-and-benefits.md): every feature we added for Everytown, each with the benefit, for organization leaders (getting started, answering, the report, following through, staying connected, access for every reader), for Everytown staff (the seven dashboard tabs, the per-group drawer, exports) and for Everytown as an organization (its method unchanged, checked AI, testing, records, cost, ownership). Built from a walk through the live site as a leader and as staff on Nov 5, checked against the code and the project history, and compared with Everytown's OCI package.
+- The deck stays at 6 slides, with a new slide 3, **"What we added for Everytown, and what each one gives"**: seven features for a group's leader and six for Everytown staff, each with its benefit in one line. Before and now is now slide 2 and carries the need (45 groups, 2 staff writing by hand, scores only). Script, speaker notes and the Word document follow: a new line for Bo on the features, a judges' question "What can leaders and staff actually do in it?", and a pointer to the full list. Accessibility check: 0 problems on all 6 slides.
+
 ## v1.10.5 — Deploys recorded as GitHub Deployments
 
 - `scripts/deploy.sh` now records every successful deploy on the repository's [Deployments](https://github.com/ArielleTolome/everytown-oci/deployments) page (environment `everytown-oci`, the stack name): the deployed commit, its tag and the live URL, so anyone can see what is live and from which commit. It needs the GitHub CLI signed in and the commit pushed; if recording fails, the deploy still succeeds and the script prints a warning.

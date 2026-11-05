@@ -155,6 +155,13 @@ figure figcaption p { font-size: 27px; }
 .ask__label { font-size: 21px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--light); }
 .ask__text { font-size: 28px; }
 .ask__thanks { font-family: var(--serif); font-size: 44px; white-space: nowrap; }
+/* New features: two columns of feature + benefit */
+.flist { list-style: none; display: grid; gap: 12px; margin-top: 10px; }
+.flist li { display: flex; flex-direction: column; padding-left: 30px; position: relative; }
+.flist li::before { content: ""; position: absolute; left: 0; top: .55em; width: 14px; height: 7px; border-left: 4px solid var(--royal); border-bottom: 4px solid var(--royal); transform: translateY(-50%) rotate(-45deg); }
+.flist strong { font-size: 26px; line-height: 1.25; }
+.flist span { font-size: 23px; color: var(--mid); line-height: 1.25; }
+.feat .card { padding: 24px 32px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 
@@ -209,28 +216,8 @@ figure figcaption p { font-size: 27px; }
   <aside class="notes">Johanna, 0:00 to 0:40. "Good morning. We built the OCI Capacity Coach for Everytown's Community Safety Fund. It helps the groups who stop shootings in their neighborhoods grow stronger, with a plan they can start on Monday." Each person says one sentence: their name and what they worked on. Then Johanna: "We spent three days with Everytown's team. We listened, we built, then we watched a first-time user try it and fixed everywhere she got stuck. Bo will show you what we built."</aside>
 </section>
 
-<!-- 2. Solution overview: the need and what we built -->
-<section class="slide" aria-label="Slide 2: Solution overview">
-  <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Solution overview</span></div>
-  <div class="band"><p class="kicker">Solution overview</p><h2>Groups that stop shootings need strong organizations. We built them a coach.</h2></div>
-  <div class="body" style="gap:26px;">
-    <div class="grid3 needs">
-      <div class="card pale"><p class="num">45</p><p class="small">local groups took Everytown's check-up last year</p></div>
-      <div class="card pale"><p class="num">2</p><p class="small">Everytown staff wrote every one of their reports by hand</p></div>
-      <div class="card pale"><p class="num">140+</p><p class="small">groups in the network who need the same help</p></div>
-    </div>
-    <div class="grid3">
-      <div class="card mark"><p class="stepline"><span class="step" aria-hidden="true">1</span><span class="h3">Answer</span></p><p class="small">Yes or No questions about how the group runs. About 15 minutes, in English or Spanish, on a phone.</p></div>
-      <div class="card mark"><p class="stepline"><span class="step" aria-hidden="true">2</span><span class="h3">Get a plan</span></p><p class="small">In about a minute: a letter in plain words, the two things to start with, and a chat for questions.</p></div>
-      <div class="card mark"><p class="stepline"><span class="step" aria-hidden="true">3</span><span class="h3">Follow through</span></p><p class="small">12 weeks, one week at a time, with badges. In week 12, take it again and see what changed.</p></div>
-    </div>
-  </div>
-  <div class="foot"><span>And Everytown staff see the whole network: who needs which training, and which groups could learn from each other</span><span>2</span></div>
-  <aside class="notes">Bo, 0:40 to 1:30. "Community violence intervention groups are neighbors who step in before violence happens. Most are small, five to twenty people. Last year 45 of them took Everytown's check-up, and two staff wrote every report by hand. More than 140 groups need the same help. So we built them a coach, in three steps. One: answer yes-or-no questions about how the group runs, about fifteen minutes, on a phone, in English or Spanish. Two: in about a minute, a plan in plain words, with the two things to start with, and a chat for questions. Three: twelve weeks, one week at a time, with badges, and a retake in week 12 to see what changed."</aside>
-</section>
-
-<!-- 3. Before vs now -->
-<section class="slide" aria-label="Slide 3: What Everytown had before, and what we built">
+<!-- 2. Before vs now -->
+<section class="slide" aria-label="Slide 2: What Everytown had before, and what we built">
   <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Solution overview</span></div>
   <div class="band"><p class="kicker">Solution overview · before and now</p><h2>Same questions, same scoring. A very different experience.</h2></div>
   <div class="body" style="gap:0;">
@@ -247,8 +234,41 @@ figure figcaption p { font-size: 27px; }
       </tbody>
     </table>
   </div>
-  <div class="foot"><span>Before: Everytown's OCI package (vision document, 2025 findings, handoff slides, sample report for Riverbend)</span><span>3</span></div>
-  <aside class="notes">Bo, 1:30 to 2:05. "Here is what changed. Everytown kept its own questions and scoring; we did not touch them. Before, two staff wrote every report by hand, and the tool showed scores only. A sample report listed 57 things to improve, 19 of them marked high priority, all at once. Now every group gets its plan in about a minute, with just the two things to start with, in plain words, read aloud or in Spanish. And Everytown's view of the network is live, instead of one analysis by hand."</aside>
+  <div class="foot"><span>Before: Everytown's OCI package (vision document, 2025 findings, handoff slides, sample report for Riverbend)</span><span>2</span></div>
+  <aside class="notes">Bo, 0:40 to 1:20. "Community violence intervention groups are neighbors who step in before violence happens, usually five to twenty people. Here is where Everytown started. Two staff wrote every report by hand, for 45 groups, and more than 140 groups are in the network. The tool showed scores only, and a sample report listed 57 things to improve, all at once. Everytown's questions and scoring were good, so we kept them exactly as they are. What changed is everything around them."</aside>
+</section>
+
+<!-- 3. New features we added for Everytown -->
+<section class="slide" aria-label="Slide 3: New features we added for Everytown">
+  <div class="top"><div class="lockup"><svg class="bars" width="28" height="30" aria-hidden="true" focusable="false"><use href="#bars"/></svg><span><span class="org">Everytown Community Safety Fund</span><span class="name">OCI Capacity Coach</span></span></div><span class="tag">Solution overview</span></div>
+  <div class="band"><p class="kicker">Solution overview · new features</p><h2>What we added for Everytown, and what each one gives</h2></div>
+  <div class="body" style="gap:0;">
+    <div class="grid2 feat" style="gap:36px;">
+      <div class="card mark"><h3>For a group's leader</h3>
+        <ul class="flist">
+          <li><strong>Pick how to answer, English or Spanish, on a phone</strong><span>Easy for anyone to finish</span></li>
+          <li><strong>Save, resume, or send an area to a teammate</strong><span>The work is shared</span></li>
+          <li><strong>A plan in about a minute, labelled by source</strong><span>No waiting, nothing hidden</span></li>
+          <li><strong>Start here: the two things to do first</strong><span>Not 57 problems at once</span></li>
+          <li><strong>Listen, and chat about the report</strong><span>Help in their own words, anytime</span></li>
+          <li><strong>12 weeks of steps, badges, a week-12 retake</strong><span>Small steps, visible progress</span></li>
+          <li><strong>Ask for support, meet similar groups</strong><span>A direct line to Everytown</span></li>
+        </ul>
+      </div>
+      <div class="card mark"><h3>For Everytown staff</h3>
+        <ul class="flist">
+          <li><strong>Training needs, with a draft training brief</strong><span>Training planned around real needs</span></li>
+          <li><strong>Gaps by area, common gaps, change over time</strong><span>The network picture, always current</span></li>
+          <li><strong>Ask the data, in plain words</strong><span>Answers without a data analyst</span></li>
+          <li><strong>Peer groups and requests to connect</strong><span>Peer learning made easy</span></li>
+          <li><strong>Quality and follow-through</strong><span>Review reports, spot stalled groups, send a check-in</span></li>
+          <li><strong>One drawer per group, spreadsheet and PDF exports</strong><span>Ready for any coaching call</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Everytown's own 143 questions and scoring, unchanged · full list: docs/features-and-benefits.md</span><span>3</span></div>
+  <aside class="notes">Bo, 1:20 to 2:05. "Here is what we added. For a group's leader: they pick how to answer, in English or Spanish, on a phone, and can share an area with a teammate. In about a minute they get a plan, with just the two things to start with, read aloud if they like, and a chat to ask questions. Then twelve weeks of small steps with badges, and a direct line to ask Everytown for help. For Everytown's staff: a live view of who needs which training, a first draft of each training, plain questions answered from the data, peer matches, and one place to check quality and follow up."</aside>
 </section>
 
 <!-- 4. Architecture -->
