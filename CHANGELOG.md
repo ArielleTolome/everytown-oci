@@ -2,6 +2,12 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.8 — Time saved, shown when a leader picks how to answer
+
+- On "How would you like to answer?", each of the three cards now shows its estimated time and the time it saves against answering Yes / No for each statement. For the four main areas (72 statements): One at a time "About 11 minutes · saves under a minute", Yes / No for each "About 11 minutes", Checklist "About 10 minutes · saves about 1 minute"; with all 8 areas the checklist saves about 2 minutes. A line under the cards says how it is estimated. In Spanish too; a teammate sees the time for their area only; on "Change how I answer" the times cover what is left.
+- The estimate is a model, not a measurement: about 5 seconds to read a statement and 3 to answer it (the 8 seconds per statement the start page already uses, from the brief's 72 statements in about 10 minutes). A checklist needs a tap only for true statements (about 6 in 10: Everytown's three sample answer sets say Yes to 26%, 59% and 89%) plus Done; One at a time answers each of its 5 multiple-choice questions (22 statements) with a pick and "Looks right". Totals are summed and rounded up per area, so the Yes / No time matches the start page. "Minutes left" in the questionnaire now follows the chosen style (`draft.answerSeconds`).
+- Verified: type check, axe 0 at 320, 390 and 1280, no sideways scroll, the full e2e suite on desktop and phone (105 passed, 5 phone-only skipped); `answer-style-chooser.e2e.ts` now checks the three times.
+
 ## v1.10.7 — README with a banner and a demo video
 
 - The README follows a product-page layout: a banner, links to the live app, demo video, technical guide, deck and releases, status badges, then "What is OCI Capacity Coach?" with the demo, a contents list, and the existing sections grouped as Try it live, Quick Start, Core Concepts, Product Tour, Running in Production and Resources (with a new documentation table). No content was dropped; old section links still work.
