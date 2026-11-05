@@ -2,6 +2,12 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.15 — An AWS-style architecture diagram
+
+- New architecture diagram ([`docs/img/architecture.png`](docs/img/architecture.png)) in the style of AWS reference architectures: the official AWS Architecture Icons (release 07312026), an AWS Cloud boundary, numbered steps that follow one report (1 CloudFront, 2 S3, 3 Lambda, 4 Aurora, 5 to 8 the report pipeline on Amazon Bedrock with Claude Haiku, Knowledge Bases on S3 Vectors, Claude Sonnet and Guardrails, 9 Polly, 10 CloudWatch), labelled arrows, an optional Arize Phoenix group and a "Set up and security" group (CloudFormation, IAM, Secrets Manager).
+- It replaces the text diagram in the technical guide (section 2, with a numbered legend), the README's Architecture section and so the wiki's [Architecture](https://github.com/ArielleTolome/everytown-oci/wiki/Architecture) page, which is rebuilt from the guide. Source `docs/img/architecture.html`, rendered at 2x by the new `scripts/build_architecture.py`.
+- The technical guide PDF now fits images to the page (it was cut short by the wide diagram); 22 pages, every section present.
+
 ## v1.10.14 — Signing in as showcase starts fresh
 
 - Every sign-in as `showcase` now clears the answers saved on that browser, so the start page is the filled-in made-up group again and **Start questionnaire** shows "How would you like to answer?" with all three ways (One at a time, Yes / No for each, Checklist). To reset during a rehearsal: Sign out, then sign in as `showcase` again. Within one sign-in, going back to the start page still keeps the presenter's place and their pick. `demo` / `demo` keeps its saved answers as before.

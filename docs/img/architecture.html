@@ -1,0 +1,122 @@
+<!doctype html>
+<!-- OCI Capacity Coach architecture, AWS style. Rendered to architecture.png by scripts/build_architecture.py.
+     Icons: official AWS Architecture Icons (aws-icons/, release 07312026), used as AWS allows for architecture diagrams.
+     Numbers follow one report from sign-in to the plan; the legend under the image in docs/technical-guide.md matches. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OCI Capacity Coach architecture</title>
+<style>
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("../../frontend/public/fonts/AtkinsonHyperlegible-Regular.ttf"); font-weight: 400; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("../../frontend/public/fonts/AtkinsonHyperlegible-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("../../frontend/public/fonts/AtkinsonHyperlegible-Italic.ttf"); font-style: italic; }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1700px; height: 980px; background: #fff; font-family: "Atkinson Hyperlegible", Arial, sans-serif; color: #232F3E; position: relative; }
+.abs { position: absolute; }
+/* AWS group styles: AWS Cloud (solid, logo tab), generic groups (dashed gray), pipeline (solid, Bedrock teal) */
+.cloud { left: 190px; top: 70px; width: 1340px; height: 890px; border: 2px solid #232F3E; }
+.cloud__tab { left: 190px; top: 70px; display: flex; align-items: center; gap: 12px; font-size: 21px; }
+.cloud__tab img { width: 44px; height: 44px; }
+.group { border: 2px dashed #7D8998; border-radius: 4px; }
+.group__title { font-size: 19px; font-weight: 700; color: #232F3E; }
+.pipeline { border: 2px solid #01A88D; border-radius: 6px; background: #F2FBF9; }
+.pipeline .group__title { color: #016E5C; }
+/* A service: icon, name, a short plain line under it */
+.svc { width: 190px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.svc img { width: 64px; height: 64px; }
+.svc b { margin-top: 8px; font-size: 18px; line-height: 1.2; }
+.svc span { margin-top: 3px; font-size: 15.5px; line-height: 1.25; color: #545B64; }
+.num { position: absolute; width: 34px; height: 34px; border-radius: 50%; background: #001C60; color: #fff; font-weight: 700; font-size: 18px;
+  display: flex; align-items: center; justify-content: center; }
+.lbl { position: absolute; font-style: italic; font-size: 15.5px; color: #232F3E; background: #fff; padding: 0 4px; white-space: nowrap; }
+.pipeline .lbl, .lbl.on-teal { background: #F2FBF9; }
+.title { left: 30px; top: 18px; font-size: 24px; font-weight: 700; color: #001C60; }
+.title span { font-weight: 400; color: #545B64; font-size: 19px; margin-left: 10px; }
+svg.wires { position: absolute; inset: 0; }
+</style>
+</head>
+<body>
+<p class="abs title">OCI Capacity Coach on AWS <span>How one report is made, from sign-in to the plan</span></p>
+
+<!-- outside the cloud -->
+<div class="abs svc" style="left:5px; top:430px; width:170px;"><img src="aws-icons/users.svg" alt=""><b>Leaders and Everytown staff</b><span>phone or computer</span></div>
+<div class="abs svc" style="left:1540px; top:150px; width:160px;"><img src="aws-icons/internet.svg" alt=""><b>Public web</b><span>the group's website, social media, news</span></div>
+
+<!-- AWS Cloud -->
+<div class="abs cloud"></div>
+<div class="abs cloud__tab"><img src="aws-icons/aws-cloud.svg" alt=""><span>AWS Cloud · us-west-2</span></div>
+
+<!-- web tier -->
+<div class="abs svc" style="left:215px; top:420px;"><img src="aws-icons/cloudfront.svg" alt=""><b>Amazon CloudFront</b><span>one web address</span></div>
+<div class="abs svc" style="left:430px; top:150px;"><img src="aws-icons/s3.svg" alt=""><b>Amazon S3</b><span>the website's pages (Astro)</span></div>
+<div class="abs svc" style="left:430px; top:420px;"><img src="aws-icons/lambda.svg" alt=""><b>AWS Lambda</b><span>Flask API: scoring with Everytown's rules</span></div>
+<div class="abs svc" style="left:430px; top:720px;"><img src="aws-icons/aurora.svg" alt=""><b>Amazon Aurora</b><span>PostgreSQL Serverless v2: answers, plans, roadmaps</span></div>
+
+<!-- AI pipeline -->
+<div class="abs pipeline" style="left:670px; top:120px; width:540px; height:520px;"></div>
+<p class="abs group__title" style="left:690px; top:132px; color:#016E5C;">Report pipeline: fixed AI steps, then code checks</p>
+<div class="abs svc" style="left:700px; top:185px;"><img src="aws-icons/bedrock.svg" alt=""><b>Amazon Bedrock</b><span>Claude Haiku reads the public web</span></div>
+<div class="abs svc" style="left:945px; top:185px; width:260px;"><img src="aws-icons/s3-vectors.svg" alt=""><b>Bedrock Knowledge Bases</b><span>9 CVI field guides on Amazon S3 Vectors</span></div>
+<div class="abs svc" style="left:700px; top:430px;"><img src="aws-icons/bedrock.svg" alt=""><b>Amazon Bedrock</b><span>Claude Sonnet writes the plan</span></div>
+<div class="abs svc" style="left:980px; top:430px;"><img src="aws-icons/bedrock.svg" alt=""><b>Bedrock Guardrails</b><span>safety filter; code keeps only what ties to the answers</span></div>
+
+<!-- right column -->
+<div class="abs svc" style="left:1290px; top:150px;"><img src="aws-icons/polly.svg" alt=""><b>Amazon Polly</b><span>reads any part aloud, English or Spanish</span></div>
+<div class="abs svc" style="left:1290px; top:390px;"><img src="aws-icons/cloudwatch.svg" alt=""><b>Amazon CloudWatch</b><span>a record of every AI step, alarms, dashboard</span></div>
+<div class="abs group" style="left:1270px; top:560px; width:230px; height:165px;"></div>
+<p class="abs" style="left:1284px; top:568px; font-size:15px; color:#545B64;">optional</p>
+<div class="abs svc" style="left:1290px; top:585px;"><img src="aws-icons/ec2.svg" alt=""><b>Arize Phoenix on EC2</b><span>the same traces, for AI tests</span></div>
+
+<!-- set up and security -->
+<div class="abs group" style="left:670px; top:765px; width:830px; height:170px;"></div>
+<p class="abs group__title" style="left:690px; top:776px;">Set up and security</p>
+<div class="abs svc" style="left:690px; top:800px; width:230px;"><img src="aws-icons/cloudformation.svg" alt=""><b>AWS CloudFormation</b><span>3 stacks, one script</span></div>
+<div class="abs svc" style="left:970px; top:800px; width:230px;"><img src="aws-icons/iam.svg" alt=""><b>AWS IAM</b><span>signed requests, least privilege</span></div>
+<div class="abs svc" style="left:1250px; top:800px; width:230px;"><img src="aws-icons/secrets-manager.svg" alt=""><b>AWS Secrets Manager</b><span>the database password</span></div>
+
+<!-- wires -->
+<svg class="wires" width="1700" height="980" aria-hidden="true">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#232F3E"/></marker></defs>
+  <g fill="none" stroke="#232F3E" stroke-width="2" marker-end="url(#a)">
+    <path d="M150 460 H268"/>                                 <!-- users to CloudFront -->
+    <path d="M310 420 V182 H488"/>                            <!-- CloudFront to S3 -->
+    <path d="M342 452 H488"/>                                 <!-- CloudFront to Lambda -->
+    <path d="M525 545 V718"/>                                 <!-- Lambda to Aurora -->
+    <path d="M572 452 H668"/>                                 <!-- Lambda to pipeline -->
+    <path d="M840 217 H1010"/>                                <!-- research to knowledge base -->
+    <path d="M1075 350 V385 H795 V428"/>                      <!-- knowledge base to writing -->
+    <path d="M842 462 H1008"/>                                <!-- writing to guardrails -->
+    <path d="M1075 590 V690 H548 V716"/>                      <!-- checked plan to Aurora -->
+    <path d="M1620 285 V305 H1214"/>                         <!-- public web into the research step -->
+    <path d="M575 430 H640 V95 H1385 V146"/>                 <!-- Lambda to Polly, around the pipeline -->
+    <path d="M1210 422 H1318"/>                               <!-- pipeline to CloudWatch -->
+  </g>
+</svg>
+
+<!-- numbers: one report, in order -->
+<div class="num" style="left:220px; top:405px;">1</div>
+<div class="num" style="left:435px; top:135px;">2</div>
+<div class="num" style="left:435px; top:405px;">3</div>
+<div class="num" style="left:435px; top:705px;">4</div>
+<div class="num" style="left:705px; top:178px;">5</div>
+<div class="num" style="left:985px; top:178px;">6</div>
+<div class="num" style="left:705px; top:423px;">7</div>
+<div class="num" style="left:985px; top:423px;">8</div>
+<div class="num" style="left:1295px; top:135px;">9</div>
+<div class="num" style="left:1295px; top:375px;">10</div>
+
+<!-- wire labels -->
+<span class="lbl" style="left:165px; top:430px;">sign in</span>
+<span class="lbl" style="left:330px; top:300px;">pages</span>
+<span class="lbl" style="left:352px; top:462px;">/api, signed</span>
+<span class="lbl" style="left:540px; top:640px;">RDS Data API</span>
+<span class="lbl" style="left:584px; top:462px;">async run</span>
+<span class="lbl on-teal" style="left:868px; top:190px;">profile</span>
+<span class="lbl on-teal" style="left:858px; top:435px;">draft plan</span>
+<span class="lbl" style="left:760px; top:665px;">only grounded actions are saved</span>
+<span class="lbl" style="left:1420px; top:312px;">research</span>
+<span class="lbl" style="left:890px; top:372px; background:#F2FBF9;">field guides</span>
+<span class="lbl" style="left:1150px; top:84px;">read aloud</span>
+<span class="lbl" style="left:1222px; top:398px;">traces</span>
+</body>
+</html>

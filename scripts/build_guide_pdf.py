@@ -26,6 +26,7 @@ h2 { font-size: 17pt; margin: 24pt 0 8pt; break-after: avoid; border-bottom: 2px
 h3 { break-after: avoid; }
 h3 { font-size: 12.5pt; margin: 14pt 0 6pt; }
 a { color: #0D3DD9; text-decoration: none; }
+img { max-width: 100%%; height: auto; display: block; margin: 8pt 0 10pt; }
 table { border-collapse: collapse; width: 100%%; margin: 8pt 0 12pt; font-size: 9pt; break-inside: auto; }
 th, td { border: 1px solid #c9d2ea; padding: 4pt 6pt; text-align: left; vertical-align: top; }
 th { background: #eef2fb; color: #001C60; }

@@ -67,25 +67,20 @@ Where a section only summarizes, it links to the file or folder guide that holds
 
 ## 2. Architecture
 
-```mermaid
-flowchart LR
-  U[Browser: phone or laptop] --> CF[Amazon CloudFront]
-  CF -->|default| S3S[(Amazon S3: Astro static site)]
-  CF -->|/api/*, IAM-signed| FU[Lambda Function URL]
-  FU --> L["AWS Lambda: Flask JSON API (Python 3.12)"]
-  L -->|RDS Data API| DB[(Aurora PostgreSQL Serverless v2)]
-  L -.->|async self-invoke| W["Same Lambda: AI pipeline"]
-  W --> R[Website, social, news research]
-  W --> H[Claude Haiku on Bedrock]
-  W --> KB[Bedrock Knowledge Base on S3 Vectors]
-  W --> S[Claude Sonnet on Bedrock]
-  W --> G[Bedrock Guardrails]
-  W --> DB
-  L --> P[Amazon Polly]
-  L --> OT[OpenTelemetry spans]
-  OT --> CW[Amazon CloudWatch and X-Ray]
-  OT --> PX[Arize Phoenix, optional]
-```
+![OCI Capacity Coach on AWS: leaders and Everytown staff reach Amazon CloudFront (1), which serves the website from Amazon S3 (2) and sends API calls, signed, to AWS Lambda (3). Lambda scores with Everytown's rules and stores everything in Amazon Aurora PostgreSQL Serverless v2 through the RDS Data API (4). An async run of the same Lambda performs the report pipeline: Claude Haiku on Amazon Bedrock reads the public web (5), Bedrock Knowledge Bases on Amazon S3 Vectors retrieves the 9 CVI field guides (6), Claude Sonnet writes the plan (7), and Bedrock Guardrails plus code checks keep only grounded actions (8), which are saved to Aurora. Amazon Polly reads any part aloud (9); Amazon CloudWatch records every AI step, with alarms and a dashboard (10); Arize Phoenix on EC2 is optional. AWS CloudFormation, AWS IAM and AWS Secrets Manager set it up and secure it.](img/architecture.png)
+
+1. **Amazon CloudFront** is the one web address for leaders and staff.
+2. **Amazon S3** holds the website's pages (Astro static site, private bucket, origin access control).
+3. **AWS Lambda** runs the Flask API (Python 3.12) behind an IAM-signed Function URL: sign-in, scoring with Everytown's own rules, drafts, roadmap, chat, staff dashboard.
+4. **Amazon Aurora** PostgreSQL Serverless v2 stores answers, scores, reports, roadmaps and chats, reached over the RDS Data API (HTTPS and IAM, no VPC).
+5. The report pipeline is an async run of the same Lambda. **Claude Haiku on Amazon Bedrock** first reads the group's public web pages (website, social media, news).
+6. **Bedrock Knowledge Bases** on **Amazon S3 Vectors** retrieves passages from the 9 CVI field guides.
+7. **Claude Sonnet on Amazon Bedrock** writes the plan through a fixed JSON schema.
+8. **Bedrock Guardrails** screens what comes in and goes out; code then keeps only actions tied to the group's own answers and catalog links, and saves the checked report to Aurora.
+9. **Amazon Polly** reads any part of the report aloud, in English or Spanish.
+10. **Amazon CloudWatch** (with AWS X-Ray traces) records every AI step, with alarms and a dashboard; **Arize Phoenix** on Amazon EC2 is an optional second view of the same traces.
+
+Set up and security: **AWS CloudFormation** (3 stacks, one script), **AWS IAM** (signed requests, least privilege) and **AWS Secrets Manager** (the database credentials). The diagram is `docs/img/architecture.html`, drawn with the official AWS Architecture Icons and rendered by `python3 scripts/build_architecture.py`.
 
 **How a report is made, end to end.**
 
@@ -486,6 +481,7 @@ axe-core 4.10.2 (WCAG 2.0, 2.1, 2.2 A and AA) on every page and staff tab at 320
 | v1.10.11 | "New chat" in the report chat: a clean session for the AI; earlier questions kept and still counted. |
 | v1.10.13 | `showcase` / `showcase`: a sign-in whose start page arrives filled in, for presentations. |
 | v1.10.14 | Each `showcase` sign-in starts fresh (the answer-style choice shows again). |
+| v1.10.15 | AWS-style architecture diagram (`scripts/build_architecture.py`). |
 
 The full notes for each are in [`CHANGELOG.md`](../CHANGELOG.md) and on the GitHub Releases page.
 

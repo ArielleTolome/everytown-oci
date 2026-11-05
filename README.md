@@ -31,7 +31,7 @@ AWS Breaking Barriers 2026 hackathon build. Full brief: [`docs/vision.md`](docs/
 
 The tool is designed to sit inside the [Everytown Community Safety Fund](https://everytownsupportfund.org/everytown-community-safety-fund/) Grantee Portal: CSF says new grantees "complete a self-assessment that shapes their participation in cohort-based and customized training through our Community Training Institute", and the portal is where grantees "sign up for future training opportunities and complete surveys". The look follows that site (navy and royal blue, serif headlines, pill buttons, pale-blue title bands).
 
-> **Current release:** v1.10.14 (signing in as `showcase` starts fresh, so the three ways to answer show again; v1.10.13: a `showcase` sign-in with the start page filled in for presentations; v1.10.12: a [GitHub wiki](https://github.com/ArielleTolome/everytown-oci/wiki) built from these docs; v1.10.11: a New chat button in the report chat; v1.10.10: points at the top of the roadmap, and each organization's week, points and level for staff; v1.10.9: the report fits a computer screen while it is being written; v1.10.8: the answer-style choice shows each style's estimated time and the time it saves; v1.10.7: this README in a new layout with a banner and a demo video; before that, fixes from the Nov 4 user test; a 6-slide presentation in plain English with a before-and-now slide; the script also as a Word document; deploys recorded as GitHub Deployments; every feature and its benefit in [`docs/features-and-benefits.md`](docs/features-and-benefits.md)). The full technical guide to the whole system is [`docs/technical-guide.md`](docs/technical-guide.md) (also attached to the release as a PDF). See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)); what is live and from which commit is on [GitHub Deployments](https://github.com/ArielleTolome/everytown-oci/deployments) (see [Deploying to AWS](#deploying-to-aws)). AI observability runs on Amazon CloudWatch and Arize Phoenix (see [Observability and evals](#observability-and-evals-amazon-cloudwatch-and-arize-phoenix)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 10-minute presentation script (7 minutes plus judges' questions): [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md). Next steps from the CSF director walkthrough: [`docs/next-steps.md`](docs/next-steps.md).
+> **Current release:** v1.10.15 (an AWS-style architecture diagram; v1.10.14: signing in as `showcase` starts fresh, so the three ways to answer show again; v1.10.13: a `showcase` sign-in with the start page filled in for presentations; v1.10.12: a [GitHub wiki](https://github.com/ArielleTolome/everytown-oci/wiki) built from these docs; v1.10.11: a New chat button in the report chat; v1.10.10: points at the top of the roadmap, and each organization's week, points and level for staff; v1.10.9: the report fits a computer screen while it is being written; v1.10.8: the answer-style choice shows each style's estimated time and the time it saves; v1.10.7: this README in a new layout with a banner and a demo video; before that, fixes from the Nov 4 user test; a 6-slide presentation in plain English with a before-and-now slide; the script also as a Word document; deploys recorded as GitHub Deployments; every feature and its benefit in [`docs/features-and-benefits.md`](docs/features-and-benefits.md)). The full technical guide to the whole system is [`docs/technical-guide.md`](docs/technical-guide.md) (also attached to the release as a PDF). See [CHANGELOG.md](CHANGELOG.md) and the GitHub Releases page. The container image is on [GitHub Packages](https://github.com/ArielleTolome/everytown-oci/pkgs/container/everytown-oci) (see [Container](#container-github-packages)); what is live and from which commit is on [GitHub Deployments](https://github.com/ArielleTolome/everytown-oci/deployments) (see [Deploying to AWS](#deploying-to-aws)). AI observability runs on Amazon CloudWatch and Arize Phoenix (see [Observability and evals](#observability-and-evals-amazon-cloudwatch-and-arize-phoenix)). The pitch deck PDF is built from [`docs/pitch/index.html`](docs/pitch/index.html) with `python3 scripts/build_pitch_pdf.py`; 10-minute presentation script (7 minutes plus judges' questions): [`docs/pitch/demo-script.md`](docs/pitch/demo-script.md). Next steps from the CSF director walkthrough: [`docs/next-steps.md`](docs/next-steps.md).
 
 **Contents**
 
@@ -140,20 +140,9 @@ priority_score    = stage_weight * domain_weight * gap_density_bonus
 
 ### Architecture
 
-```mermaid
-flowchart LR
-  U[Browser] --> CF[CloudFront]
-  CF -->|default| S3S[(S3: Astro static site)]
-  CF -->|/api/*| FU[Lambda Function URL]
-  FU --> L["Lambda (Flask JSON API via apig-wsgi)"]
-  L -->|RDS Data API| DB[(Aurora PostgreSQL<br/>Serverless v2)]
-  L -.->|async self-invoke| W["Same Lambda: AI pipeline"]
-  W --> R[Fetch org website<br/>SSRF-guarded]
-  W --> H["Claude Haiku: org profile"]
-  W --> KB["Bedrock Knowledge Base<br/>S3 Vectors + Titan v2"]
-  W --> S["Claude Sonnet: structured report<br/>(tool use, validated)"]
-  W --> DB
-```
+![OCI Capacity Coach on AWS: Amazon CloudFront serves the Astro site from Amazon S3 and sends signed API calls to AWS Lambda, which scores with Everytown's rules and stores everything in Amazon Aurora through the RDS Data API. An async Lambda run performs the report pipeline on Amazon Bedrock: Claude Haiku reads the public web, Bedrock Knowledge Bases on Amazon S3 Vectors retrieves the CVI field guides, Claude Sonnet writes the plan, Bedrock Guardrails and code checks keep only grounded actions. Amazon Polly reads aloud; Amazon CloudWatch records every AI step; Arize Phoenix on EC2 is optional; CloudFormation, IAM and Secrets Manager set it up and secure it.](docs/img/architecture.png)
+
+The numbers follow one report; the [technical guide](docs/technical-guide.md#2-architecture) explains each step. Source: `docs/img/architecture.html` (official AWS Architecture Icons), rendered by `python3 scripts/build_architecture.py`.
 
 The pipeline is hardcoded, not agentic, as the tech doc prefers:
 
