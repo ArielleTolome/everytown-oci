@@ -2,6 +2,13 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.7 — README with a banner and a demo video
+
+- The README follows a product-page layout: a banner, links to the live app, demo video, technical guide, deck and releases, status badges, then "What is OCI Capacity Coach?" with the demo, a contents list, and the existing sections grouped as Try it live, Quick Start, Core Concepts, Product Tour, Running in Production and Resources (with a new documentation table). No content was dropped; old section links still work.
+- New banner (`docs/img/banner.png`, built from `docs/img/banner.html`) in the app's navy, royal blue and CSF orange.
+- New demo video (`docs/demo/oci-capacity-coach-demo.mp4`, about 1:45, attached to this release), recorded on the live site with captions: a leader signs in, answers a few questions one at a time, opens a sample organization, gets the plan, asks the chat and ticks a roadmap step; then staff see training needs, ask the data and find peers. The README shows it as a GIF that links to the MP4.
+- `scripts/build_readme_media.py` rebuilds both (`banner` or `demo`).
+
 ## v1.10.6 — What we added, and what leaders and staff get
 
 - New [`docs/features-and-benefits.md`](docs/features-and-benefits.md): every feature we added for Everytown, each with the benefit, for organization leaders (getting started, answering, the report, following through, staying connected, access for every reader), for Everytown staff (the seven dashboard tabs, the per-group drawer, exports) and for Everytown as an organization (its method unchanged, checked AI, testing, records, cost, ownership). Built from a walk through the live site as a leader and as staff on Nov 5, checked against the code and the project history, and compared with Everytown's OCI package.

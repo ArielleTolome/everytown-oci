@@ -20,6 +20,8 @@ Project documents: the hackathon vision and technical write-ups, the pitch deck 
 | `pitch/sample-report.pdf` | A sample generated report, the offline backup if the live demo fails. |
 | `pitch/img/report-start.jpg` | The screenshot on the deck's live demo slide (Start here, two priorities side by side). |
 | `screenshots/*.jpg` | Numbered app screenshots (1 to 10) in demo order, from the start page to the CloudWatch trace and dashboard. |
+| `img/banner.html`, `img/banner.png` | The README banner: the HTML source (app fonts and colours, the deck's Start here screenshot) and its 2560x800 render, built by `python3 scripts/build_readme_media.py banner`. |
+| `demo/oci-capacity-coach-demo.mp4`, `.gif` | The README demo video (about 1:45, 1280x720) recorded on the live site, and the 2x-speed GIF the README shows (GitHub plays only videos uploaded through its web editor inline). Built by `python3 scripts/build_readme_media.py demo`. |
 
 ## Changing it safely
 
