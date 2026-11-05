@@ -480,6 +480,7 @@ axe-core 4.10.2 (WCAG 2.0, 2.1, 2.2 A and AA) on every page and staff tab at 320
 | v1.10.4 | A 6-slide deck with a before-and-now slide built from Everytown's OCI package. |
 | v1.10.6 | Every feature and its benefit ([`features-and-benefits.md`](features-and-benefits.md)); a features slide in the deck. |
 | v1.10.8 | The answer-style choice shows each style's estimated time and the time it saves. |
+| v1.10.9 | Desktop fix: a report still being written uses the full reading width, not the hidden side list's column. |
 
 The full notes for each are in [`CHANGELOG.md`](../CHANGELOG.md) and on the GitHub Releases page.
 

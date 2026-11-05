@@ -2,6 +2,11 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.9 — The report fits a computer screen while it is being written
+
+- On a computer (1100px and wider), a report still being written showed "Building your recommendations" squeezed into a 208px column at the left, with the page title spanning the screen. While the report is written, "On this page" has fewer than 2 sections and is hidden, but the layout kept its 13rem column, so the content dropped into it. Phones and tablets use one column and were fine. Now, with no "On this page" list, the report uses one 860px column, the same reading width as next to the list (`global.css`, `.report-layout:has(> .toc[hidden])`). A finished report keeps the list beside it. The same fix covers a sample record with no AI report.
+- Regression test `qa/tests/regressions/report-processing-desktop-width.e2e.ts` (shows the report as running by changing the API answer in the page only): failed on the live v1.10.8 build on desktop (208px), passes now. Full e2e suite on the fixed build: 109 passed, 5 phone-only skipped; type check 0 errors. Checked the finished report at 1024, 1100, 1280, 1440 and 1920px: no sideways scroll.
+
 ## v1.10.8 — Time saved, shown when a leader picks how to answer
 
 - On "How would you like to answer?", each of the three cards now shows its estimated time and the time it saves against answering Yes / No for each statement. For the four main areas (72 statements): One at a time "About 11 minutes · saves under a minute", Yes / No for each "About 11 minutes", Checklist "About 10 minutes · saves about 1 minute"; with all 8 areas the checklist saves about 2 minutes. A line under the cards says how it is estimated. In Spanish too; a teammate sees the time for their area only; on "Change how I answer" the times cover what is left.

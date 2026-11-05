@@ -615,6 +615,10 @@ main h2[id] { scroll-margin-top: var(--space-lg); }
 @media (min-width: 1100px) {
   .wrap--report { max-width: calc(860px + 13rem + var(--space-2xl) + 2 * var(--space-md)); }
   .report-layout { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: var(--space-2xl); align-items: start; }
+  /* No "On this page" list (a report still being written has fewer than 2 sections): the content takes the row at the
+     reading width it has next to the list, instead of dropping into the list's 13rem column. */
+  .report-layout:has(> .toc[hidden]) { display: block; }
+  .report-layout:has(> .toc[hidden]) > .report-main { max-width: 860px; }
   .toc { position: sticky; top: var(--space-lg); margin: 0; }
   .toc__details { border: 0; background: transparent; }
   .toc__details > summary { display: none; }
