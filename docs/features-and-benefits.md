@@ -58,6 +58,7 @@ We kept Everytown's 143 statements, its stage names and its scoring exactly as t
 |---|---|---|
 | A 12-week roadmap | All 12 weeks at a glance; one week opens at a time (when the last is done, or after 7 days); a person in charge of each step; each week as a one-page PDF. | A pace a small team can keep. |
 | Points, levels and badges | 7 badges and a pop-up when a week is finished; points for steps, never for answers or scores. | Encouragement to keep going. |
+| Points at the top right | The roadmap page shows the group's points and level in a box at the top right of the page title. | Progress they can see at a glance. |
 | Ticks in one place | Ticking a step in Start here or on the roadmap updates both. | No double work. |
 | A retake in week 12 | Week 12 is "Retake the OCI"; a second assessment shows what moved. A calendar reminder is one click. | Proof of their progress, for themselves and funders. |
 
@@ -84,7 +85,7 @@ Larger text and high-contrast colors in a Display menu, a typeface designed for 
 | Change over time | Groups assessed more than once: what moved, and an early "Did support help?". | A way to see whether their support works. |
 | Ask the data | A question in plain words ("Which organizations need fundraising training?"). The AI only picks one of eight fixed analyses; every number comes from the data, with a short summary. | Answers without a data analyst or a spreadsheet. |
 | Peers | Groups with the same program model and size, and requests to connect. | Peer learning that is easy to set up. |
-| Quality and follow-through | What groups said about their reports, a review queue (Mark reviewed, Flag with a reason), who is on track or stalled with a ready-made check-in note, who signed up for trainings, and where people stop the assessment. | Quality control and follow-up in one place. |
+| Quality and follow-through | What groups said about their reports, a review queue (Mark reviewed, Flag with a reason), where each group is on its roadmap (the week it is on, its points and level, the same numbers the group sees), who is on track or stalled with a ready-made check-in note, who signed up for trainings, and where people stop the assessment. | Quality control and follow-up in one place. |
 | A drawer for each group | Details, stages, top priorities, support requests, roadmap progress, similar groups, the full report, and the record of every AI step. | Everything about one group, ready for a coaching call. |
 | Exports | Any table as a spreadsheet (CSV); a network report as a PDF. | Easy to share with leadership and funders. |
 

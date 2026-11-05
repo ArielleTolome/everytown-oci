@@ -4,7 +4,7 @@
 import { api, ApiError } from "./api";
 import { $, announce, esc, focusEl, plural } from "./dom";
 import { icon } from "./icons";
-import { downloadCsv, expired, failHtml, markScroll, type Bi, type Roadmap } from "./staff-bi";
+import { downloadCsv, expired, failHtml, markScroll, weekText, type Bi, type Roadmap } from "./staff-bi";
 
 interface Quality {
   summary: { reports: number; with_feedback: number; helpful_pct: number | null; flagged: number; reviewed: number };
@@ -146,13 +146,16 @@ export function mountQuality(panel: HTMLElement, ctx: Ctx) {
       <p class="hint">This tool does not send email. Copy a short note and send it yourself, so a person stays in the loop.</p>
       ${stalled.length ? `<ul class="plain-list sq-checkins">${stalled.map((f) => `<li>
           <p><button type="button" class="link-btn" data-open-org="${esc(f.id)}">${esc(f.name)}</button><br>
-          <span class="meta">${f.r!.weeks_done} of ${f.r!.weeks_total} weeks done · last step ${esc(f.r!.last_activity)} (${plural(f.days ?? 0, "day", "days")} ago)</span></p>
+          <span class="meta">${weekText(f.r!)} · ${plural(f.r!.points, "point", "points")} · ${f.r!.weeks_done} of ${f.r!.weeks_total} weeks done · last step ${esc(f.r!.last_activity)} (${plural(f.days ?? 0, "day", "days")} ago)</span></p>
           <button type="button" class="btn btn-secondary btn-sm" data-q-note="${esc(f.id)}">${icon("clipboard")}<span>Copy check-in note<span class="visually-hidden"> for ${esc(f.name)}</span></span></button>
           <div class="sq-note-slot" id="sq-note-${esc(f.id)}"></div></li>`).join("")}</ul>` : empty("No stalled roadmaps. Nobody needs a check-in right now.")}
       <p class="sq-csv"><button type="button" class="btn btn-secondary btn-sm" data-q-csv="follow">${icon("download")}<span>Download as CSV</span></button></p>
-      ${table("sq-follow-table", "Roadmap follow-through by organization, stalled first", th(["Organization", "Status", "#Weeks done", "#Steps done", "Last step"]),
+      ${table("sq-follow-table", "Roadmap follow-through by organization, stalled first", th(["Organization", "Status", "Now on", "#Points", "Level", "#Weeks done", "#Steps done", "Last step"]),
         rows.map((f) => `<tr><th scope="row"><button type="button" class="link-btn" data-open-org="${esc(f.id)}">${esc(f.name)}</button></th><td>${f.status}</td>
-          <td class="num">${f.r ? `${f.r.weeks_done} of ${f.r.weeks_total}` : '<span class="meta">No roadmap</span>'}</td>
+          <td class="sq-now">${f.r?.total ? weekText(f.r) : '<span class="meta">No roadmap</span>'}</td>
+          <td class="num">${f.r?.total ? f.r.points : ""}</td>
+          <td>${f.r?.total ? esc(f.r.level) : ""}</td>
+          <td class="num">${f.r ? `${f.r.weeks_done} of ${f.r.weeks_total}` : ""}</td>
           <td class="num">${f.r?.total ? `${f.r.tasks_done} of ${f.r.total} (${f.r.pct}%)` : ""}</td>
           <td>${f.r?.last_activity ? `${esc(f.r.last_activity)} <span class="meta">(${plural(f.days ?? 0, "day", "days")} ago)</span>` : '<span class="meta">None yet</span>'}</td></tr>`).join(""))}`;
   }
@@ -293,8 +296,9 @@ export function mountQuality(panel: HTMLElement, ctx: Ctx) {
     if (n) { copyNote(n.dataset.qNote!, n); return; }
     const csv = t.closest<HTMLElement>("[data-q-csv]");
     if (csv?.dataset.qCsv === "follow") {
-      downloadCsv("oci-follow-through", [["Organization", "Status", "Weeks done", "Weeks total", "Steps done", "Steps total", "Percent of steps", "Last step", "Days since last step"],
-        ...follows().map((f) => [f.name, f.status, f.r?.weeks_done ?? "", f.r?.weeks_total ?? "", f.r?.tasks_done ?? "", f.r?.total ?? "", f.r ? f.r.pct : "", f.r?.last_activity ?? "", f.days ?? ""])]);
+      downloadCsv("oci-follow-through", [["Organization", "Status", "Current week", "Points", "Level", "Weeks in a row", "Weeks done", "Weeks total", "Steps done", "Steps total", "Percent of steps", "Last step", "Days since last step"],
+        ...follows().map((f) => [f.name, f.status, f.r?.total ? (f.r.current_week ?? "All done") : "", f.r?.points ?? "", f.r?.level ?? "", f.r?.streak ?? "",
+          f.r?.weeks_done ?? "", f.r?.weeks_total ?? "", f.r?.tasks_done ?? "", f.r?.total ?? "", f.r ? f.r.pct : "", f.r?.last_activity ?? "", f.days ?? ""])]);
       announce("Follow-through downloaded as CSV.");
     } else if (csv?.dataset.qCsv === "optins") {
       downloadCsv("oci-opt-ins", [["Organization", "Program model", "State", "Trainings", "Updates", "Name", "Email", "Date"],

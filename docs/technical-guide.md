@@ -214,7 +214,7 @@ Flask JSON API under `/api`. Sign-in is mocked: `demo` / `demo` (organization) a
 | `GET, POST /api/assessments/<id>/optin` | GET owner or staff; POST owner only | Stay connected with CSF. |
 | `POST /api/drafts`, `GET, POST /api/drafts/<token>`, `POST /api/drafts/<token>/share` | signed in | Save and resume, teammate area links. |
 | `GET /api/staff/bi`, `POST /api/staff/ask`, `GET /api/staff/network-report.pdf` | staff | Network analytics, Ask the data, network PDF. |
-| `GET /api/staff/peers/<org>`, `GET /api/staff/roadmaps` | staff | Similar organizations; roadmap progress per organization. |
+| `GET /api/staff/peers/<org>`, `GET /api/staff/roadmaps` | staff | Similar organizations; roadmap progress (current week, points, level, weeks in a row, steps) per organization. |
 | `POST /api/staff/briefs` | staff | AI training brief for one network-wide growth priority. |
 | `GET /api/staff/quality`, `POST /api/staff/reviews/<id>`, `GET /api/staff/optins`, `GET /api/staff/funnel` | staff | Report quality and review queue, opt-ins, where people stop. |
 | `GET /api/healthz` | anyone | Health check. |
@@ -267,7 +267,7 @@ Amazon Polly generative voices (Ruth for English, Lupe for Spanish, neural as fa
 - Built in code from the report, no model call, rebuilt identically each time: weeks 1 to 2 and 3 to 4 are the Start here priorities, then the plan by horizon (30 days: weeks 5 to 6, 60 days: 7 to 9, 90 days: 10 to 12). Week 12 ends with "Retake the OCI".
 - A week opens when the one before is finished or 7 days after it opened; a finished step never relocks its week.
 - Points: 10 per step, 25 per finished week. Levels by share of steps done: Getting started, Building, Growing, Leading. Seven badges (First step, Week one done, Foundation builder, On a roll, Halfway there, Roadmap complete, Ready to retake). Weekly PDF per week.
-- `/plan/` (v1.10) opens on a points, level and badges card (with the next badge and what earns it), then a timeline of all 12 weeks (done, this week, or when it opens); picking a week shows its steps, and a locked week says when it opens. There is no "X of Y steps done" count, here or on the report's roadmap card, which names this week in one line.
+- `/plan/` (v1.10) opens on a points, level and badges card (with the next badge and what earns it), then a timeline of all 12 weeks (done, this week, or when it opens); picking a week shows its steps, and a locked week says when it opens. There is no "X of Y steps done" count, here or on the report's roadmap card, which names this week in one line. The title band shows the points and level at the top right (v1.10.10).
 - Finishing a week pops up a badge dialog (`roadmap.celebrateWeek`), once per week per browser (localStorage); Escape closes it and returns focus. Ticks from Start here on the report open the same pop-up.
 - Start here checkboxes on the report and the roadmap share one store (`roadmap_tasks`).
 
@@ -296,7 +296,7 @@ Before the first question the leader picks an answer style; it is kept in the dr
 | Change over time | Organizations assessed more than once: areas that moved, priorities closed, "Did support help?". |
 | Ask the data | A plain-English question; Claude only picks one of eight fixed analyses (`features/bi.py ANALYSES`: training needs, gaps by area, common gaps, compare program models, change over time, support requests, one organization, peers of one organization) and its filters; code runs it; a second call words a two to three sentence summary of the table. The model never writes SQL or computes a number. Unsafe questions (SQL text, "delete all data", off-topic) are rejected. |
 | Peers | Peer groups (same main program model and staff size) and connect requests. Similarity = 0.4 program-model overlap + 0.3 size match + 0.3 shared priorities. Percentiles only with 3 or more peers. |
-| Quality and follow-through (v1.7) | Report quality (what organizations said, a review queue, Mark reviewed / Flag with a reason such as "Too big for their size"), roadmap follow-through (on track, stalled 14+ days, not started, with a copyable check-in note), opted-in organizations, and where people stop the assessment (from saved drafts). |
+| Quality and follow-through (v1.7) | Report quality (what organizations said, a review queue, Mark reviewed / Flag with a reason such as "Too big for their size"), roadmap follow-through (the week each organization is on, its points and level, from the same `milestones.progress` as its own roadmap page; on track, stalled 14+ days, not started, with a copyable check-in note), opted-in organizations, and where people stop the assessment (from saved drafts). |
 
 Each organization opens a drawer: details, stages, top growth priorities, support request, roadmap progress, similar groups, the full report, and staff-only links to the report's AI trace in CloudWatch and Phoenix. Any table downloads as CSV; the network report is a PDF.
 
@@ -481,6 +481,7 @@ axe-core 4.10.2 (WCAG 2.0, 2.1, 2.2 A and AA) on every page and staff tab at 320
 | v1.10.6 | Every feature and its benefit ([`features-and-benefits.md`](features-and-benefits.md)); a features slide in the deck. |
 | v1.10.8 | The answer-style choice shows each style's estimated time and the time it saves. |
 | v1.10.9 | Desktop fix: a report still being written uses the full reading width, not the hidden side list's column. |
+| v1.10.10 | Points at the top right of the roadmap; staff see each organization's week, points and level. |
 
 The full notes for each are in [`CHANGELOG.md`](../CHANGELOG.md) and on the GitHub Releases page.
 

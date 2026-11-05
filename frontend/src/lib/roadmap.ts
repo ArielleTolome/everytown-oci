@@ -216,11 +216,12 @@ function page(r: Roadmap, sel: number, cheer: string): string {
   const report = `/results/?id=${encodeURIComponent(r.assessment_id)}`;
   const who = r.staff ? "the" : "your";
   const head = `
-    <div class="title-band">
+    <div class="title-band${r.weeks.length ? " rm-head" : ""}">
       <p class="rm-back">${r.staff ? `<a href="/staff/">${icon("arrow-left")} Back to staff dashboard</a> · ` : ""}<a href="${report}">${icon("arrow-left")} Back to ${who} full report</a></p>
       <span class="eyebrow">${r.staff ? "12-week roadmap (staff view)" : "Your 12-week roadmap"}</span>
       <h1 id="plan-title" tabindex="-1">${esc(r.org_name)}: ${who} roadmap</h1>
-      ${r.weeks.length ? `<p class="lead">One week at a time. A new week opens when you finish the one before, or 7 days after it opened.</p>` : ""}
+      ${r.weeks.length ? `<p class="lead">One week at a time. A new week opens when you finish the one before, or 7 days after it opened.</p>
+      <p class="rm-score"><span class="rm-score__num">${icon("star")}${r.points}</span><span class="rm-score__label">${r.points === 1 ? "point" : "points"}</span><span class="rm-score__level"><span class="visually-hidden">Level: </span>${esc(r.level)}</span></p>` : ""}
     </div>`;
   const back = `<p class="section-gap"><a href="${report}">${icon("arrow-left")} Back to ${who} full report</a></p>`;
   if (!r.weeks.length) {

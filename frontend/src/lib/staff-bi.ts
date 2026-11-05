@@ -273,7 +273,14 @@ export function peersPanel(d: Bi) {
 // ---------- organization drawer ----------
 
 /** One row of GET /api/staff/roadmaps (features/milestones.py): the org's newest assessment that has a roadmap. */
-export interface Roadmap { org_id: string; assessment_id: string; weeks_done: number; weeks_total: number; tasks_done: number; total: number; pct: number; points: number; last_activity: string | null }
+export interface Roadmap {
+  org_id: string; assessment_id: string; weeks_done: number; weeks_total: number; tasks_done: number; total: number; pct: number;
+  /** Same as on the organization's own roadmap page (milestones.progress): points, level, the open week, weeks in a row. */
+  points: number; level: string; current_week: number | null; streak: number; last_activity: string | null;
+}
+
+/** Where an organization is on its roadmap, in staff words: "Week 5 of 12", or every week done. */
+export const weekText = (r: Roadmap) => (r.current_week ? `Week ${r.current_week} of ${r.weeks_total}` : "All weeks done");
 
 export function drawerHtml(o: OrgDetail, stateName: (c: string) => string) {
   const model = o.program_models[0];
@@ -304,7 +311,8 @@ export const peersHtml = (peers: Peer[]) => (peers.length ? peerList(peers) : `<
 
 export function roadmapHtml(r: Roadmap | undefined) {
   if (!r || !r.total) return `<p class="meta">No roadmap opened yet.</p>`;
-  return `<p>${share(r.pct, `${r.tasks_done} of ${r.total} steps done (${r.pct}%)`)}</p>
-    <p class="meta">${r.weeks_done} of ${r.weeks_total} weeks complete · ${r.points} points${r.last_activity ? ` · last activity ${esc(r.last_activity)}` : ""}</p>
+  return `<p class="rm-staff-line"><strong>${weekText(r)}</strong> · <strong>${plural(r.points, "point", "points")}</strong> · ${esc(r.level)}${r.streak ? ` · ${plural(r.streak, "week", "weeks")} in a row` : ""}</p>
+    <p>${share(r.pct, `${r.tasks_done} of ${r.total} steps done (${r.pct}%)`)}</p>
+    <p class="meta">${r.weeks_done} of ${r.weeks_total} weeks complete${r.last_activity ? ` · last activity ${esc(r.last_activity)}` : ""}</p>
     <p><a href="/plan/?id=${encodeURIComponent(r.assessment_id)}">Open the roadmap</a></p>`;
 }

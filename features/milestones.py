@@ -366,25 +366,39 @@ def week_pdf(sid, n):
 
 @bp.route("/api/staff/roadmaps")
 def staff_roadmaps():
-    """Staff only: follow-through per organization (its newest assessment with a roadmap). Never shown to grantees."""
+    """Staff only: follow-through per organization (its newest assessment with a roadmap). Never shown to grantees.
+    Week, points and level come from the same `progress()` the organization's own roadmap page uses, rebuilt from the
+    stored task rows (task, week, when it was done) and the assessment's start, so staff see exactly what they see."""
     from app import error
     import db
     if not _staff():
         return error("This page is for Everytown staff.", 403)
     rows = db.query(
         "WITH per AS (SELECT assessment_id, count(*) AS total, count(done_at) AS tasks_done, max(done_at) AS last_at "
-        "FROM roadmap_tasks GROUP BY assessment_id), "
-        "wk AS (SELECT assessment_id, count(*) AS weeks_done FROM (SELECT assessment_id, week FROM roadmap_tasks "
-        "GROUP BY assessment_id, week HAVING count(*) = count(done_at)) w GROUP BY assessment_id) "
+        "FROM roadmap_tasks GROUP BY assessment_id) "
         "SELECT DISTINCT ON (a.org_id) o.id::text AS org_id, o.name AS org_name, a.id::text AS assessment_id, "
-        "a.source, to_char(a.created_at, 'YYYY-MM-DD') AS assessed, per.total, per.tasks_done, "
-        "COALESCE(wk.weeks_done, 0) AS weeks_done, to_char(per.last_at, 'YYYY-MM-DD') AS last_activity "
+        "a.source, to_char(a.created_at, 'YYYY-MM-DD') AS assessed, a.doc->>'created' AS created, per.total, "
+        "per.tasks_done, to_char(per.last_at, 'YYYY-MM-DD') AS last_activity "
         "FROM per JOIN assessments a ON a.id = per.assessment_id JOIN organizations o ON o.id = a.org_id "
-        "LEFT JOIN wk ON wk.assessment_id = per.assessment_id ORDER BY a.org_id, a.created_at DESC")
+        "ORDER BY a.org_id, a.created_at DESC")
+    ids = {r["assessment_id"] for r in rows}
+    tasks = {}
+    for t in db.query("SELECT assessment_id::text AS aid, task_id, week, to_char(done_at AT TIME ZONE 'UTC', "
+                      "'YYYY-MM-DD\"T\"HH24:MI:SS') AS done_at FROM roadmap_tasks ORDER BY week, task_id"):
+        if t["aid"] in ids:
+            tasks.setdefault(t["aid"], []).append(t)
+    now = datetime.now(UTC)
     for r in rows:
-        r["weeks_total"] = WEEKS
-        r["pct"] = round(100 * r["tasks_done"] / r["total"]) if r["total"] else 0
-        r["points"] = TASK_POINTS * r["tasks_done"] + WEEK_POINTS * r["weeks_done"]
+        mine = tasks.get(r["assessment_id"], [])
+        weeks = {}
+        for t in mine:
+            weeks.setdefault(t["week"], []).append({"id": t["task_id"]})
+        # Only unlocks, counts, points and level are read here; badges need the full roadmap, so staff do not get them.
+        roadmap = {"ai": True, "weeks": [{"n": n, "focus": False, "tasks": weeks[n]} for n in sorted(weeks)]}
+        done = {t["task_id"]: datetime.fromisoformat(t["done_at"]).replace(tzinfo=UTC) for t in mine if t["done_at"]}
+        p = progress(roadmap, done, _created({"created": r.pop("created") or ""}), now)
+        r.update(weeks_total=WEEKS, weeks_done=p["weeks_done"], pct=p["pct"], points=p["points"], level=p["level"],
+                 current_week=p["current_week"], streak=p["streak"])
     rows.sort(key=lambda r: (-r["pct"], r["org_name"]))
     return jsonify(roadmaps=rows)
 

@@ -2,6 +2,12 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.10 — Points at the top of the roadmap, and roadmap progress for staff
+
+- **Roadmap page:** the points and level now sit in a box at the top right of the page title (on a computer and on a phone), so a leader sees their progress first. They match the points chip below and update after every tick.
+- **Staff:** the Quality and follow-through tab now shows, for every organization, where it is on its roadmap: **Now on** ("Week 5 of 12", or "All weeks done"), **Points** and **Level**, next to weeks and steps done. The stalled check-in list and each organization's panel show the week and points too, and the CSV adds current week, points, level and weeks in a row. The numbers come from the same `milestones.progress()` the organization's own roadmap page uses, rebuilt from the stored steps and the assessment's start (`GET /api/staff/roadmaps`); a read-only check found the same week, points, level, weeks done and streak for all 29 organizations in the live database.
+- Regression test `qa/tests/regressions/roadmap-points-staff.e2e.ts` (read-only): failed on the live v1.10.9 build, passes now. Full e2e suite: 113 passed, 5 phone-only skipped; axe 0 on the roadmap at 320, 390 and 1280 and on the staff tab and panel; type check 0 errors.
+
 ## v1.10.9 — The report fits a computer screen while it is being written
 
 - On a computer (1100px and wider), a report still being written showed "Building your recommendations" squeezed into a 208px column at the left, with the page title spanning the screen. While the report is written, "On this page" has fewer than 2 sections and is hidden, but the layout kept its 13rem column, so the content dropped into it. Phones and tablets use one column and were fine. Now, with no "On this page" list, the report uses one 860px column, the same reading width as next to the list (`global.css`, `.report-layout:has(> .toc[hidden])`). A finished report keeps the list beside it. The same fix covers a sample record with no AI report.
