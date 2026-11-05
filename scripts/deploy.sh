@@ -134,4 +134,14 @@ aws bedrock-agent get-ingestion-job --knowledge-base-id "$KB" --data-source-id "
   --query 'ingestionJob.[status,statistics,failureReasons]' --output json
 [ "$STATUS" = COMPLETE ]
 
-echo "AppUrl: $(out "$STACK" AppUrl)"
+APP_URL=$(out "$STACK" AppUrl)
+echo "AppUrl: $APP_URL"
+
+# 7. GitHub Deployments: record this deploy (commit, environment = stack name, live URL) when gh is signed in.
+#   Needs HEAD pushed to GitHub; a failure here only warns, because the deploy itself already succeeded.
+if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+  GH_DEP=$(gh api repos/{owner}/{repo}/deployments -f ref="$(git rev-parse HEAD)" -f environment="$STACK" \
+    -f description="$(git describe --tags --always --dirty)" -F auto_merge=false -f 'required_contexts[]' --jq .id) &&
+  gh api "repos/{owner}/{repo}/deployments/$GH_DEP/statuses" -f state=success -f environment_url="$APP_URL" >/dev/null &&
+  echo "GitHub deployment: $GH_DEP" || echo "GitHub deployment not recorded (is HEAD pushed?)" >&2
+fi

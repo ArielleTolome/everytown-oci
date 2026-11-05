@@ -2,6 +2,11 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.5 — Deploys recorded as GitHub Deployments
+
+- `scripts/deploy.sh` now records every successful deploy on the repository's [Deployments](https://github.com/ArielleTolome/everytown-oci/deployments) page (environment `everytown-oci`, the stack name): the deployed commit, its tag and the live URL, so anyone can see what is live and from which commit. It needs the GitHub CLI signed in and the commit pushed; if recording fails, the deploy still succeeds and the script prints a warning.
+- The current live site is recorded: v1.10.1 (commit f27bfbc), the last release that changed the app; v1.10.2 to v1.10.5 changed only the presentation, docs and this script, so they need no redeploy.
+
 ## v1.10.4 — A 6-slide deck with a before-and-now comparison
 
 - The deck ([`docs/pitch/OCI-Capacity-Coach-pitch.pdf`](docs/pitch/OCI-Capacity-Coach-pitch.pdf), attached) is now 6 slides and still covers every required part: 1 title and team introduction (Johanna, Bo, Ariel, Atman and what each presents); 2 solution overview (the need and what we built, in three steps); 3 **before and now**; 4 architecture ("Rules score. AI writes. Rules check."); 5 live demo; 6 proposed industry impact with our ask. The backup slides are gone; `sample-report.pdf` stays the offline backup.
