@@ -2,6 +2,11 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.12 — A GitHub wiki
+
+- New [wiki](https://github.com/ArielleTolome/everytown-oci/wiki) with 33 pages: Home (banner, demo, live logins, every page), the technical guide with one page per section (architecture, scoring engine, data model, API, AI pipeline, features, staff dashboard, frontend, infrastructure, security, observability, quality, how we built it, release history, operating the system, limits, glossary), every file by folder, evals, end-to-end tests, features and benefits, the live demo and presentation script, vision, tech brief, next steps, the QuickSight assessment and the changelog. A sidebar on every page.
+- The wiki is built from the repository's own documents by `scripts/build_wiki.py`, so there is one source: each page names its source file, and links between documents become wiki links. Edit the source and rebuild; edits in the wiki are overwritten.
+
 ## v1.10.11 — Start a new chat
 
 - **New chat:** the chat about the report has a "New chat" button beside Close (it shows once there is a conversation). It clears the conversation on screen, says "New chat started. Earlier questions are cleared from this chat.", brings back the starter questions and puts the cursor in the question box. On a phone the two buttons sit under the chat title.
