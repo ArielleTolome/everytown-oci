@@ -15,6 +15,7 @@ Project documents: the hackathon vision and technical write-ups, the pitch deck 
 | `pitch/index.html` | The pitch deck as one HTML page. Open it in a browser: arrows or space to move, `N` for speaker notes (the script's words, per speaker). |
 | `pitch/OCI-Capacity-Coach-pitch.pdf` | PDF export of the deck, built by `python3 scripts/build_pitch_pdf.py`. Rebuild it after editing `index.html`. |
 | `pitch/demo-script.md` | The 10-minute presentation in the judges' required order (team, overview and architecture, live demo, industry impact, questions): who says what, word for word in plain English, the demo click by click, likely questions, preparation and offline backup. |
+| `pitch/OCI-Capacity-Coach-script.docx` | The same script as a Word document, built by `python3 scripts/build_script_docx.py`. Rebuild it after editing `demo-script.md`. |
 | `pitch/sample-report.pdf` | A sample generated report, the offline backup if the live demo fails. |
 | `pitch/img/*.jpg` | Screenshots used by the deck (questionnaire, report, roadmap, staff views). |
 | `screenshots/*.jpg` | Numbered app screenshots (1 to 10) in demo order, from the start page to the CloudWatch trace and dashboard. |

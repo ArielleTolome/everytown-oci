@@ -2,6 +2,11 @@
 
 Each section below is published verbatim as the GitHub release of the same tag.
 
+## v1.10.3 — The presentation script as a Word document
+
+- [`docs/pitch/OCI-Capacity-Coach-script.docx`](docs/pitch/OCI-Capacity-Coach-script.docx), also attached to this release: the full 10-minute script (who says what, word for word, the live demo click by click, judges' questions, preparation and numbers) in Word, in the app's navy and pale-blue colours, with every table and link.
+- `scripts/build_script_docx.py` rebuilds it from `docs/pitch/demo-script.md`, so the Markdown stays the one source.
+
 ## v1.10.2 — Presentation rebuilt to the judges' requirements, in plain English
 
 The judges' presentation requirements: no more than 10 minutes including 2 to 3 minutes of questions, covering Team Introduction, Solution Overview + Architecture, Live Demo and Proposed Industry Impact. The audience is nonprofit people, so the deck and script now speak plainly and lead with people, not technology.

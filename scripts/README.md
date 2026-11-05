@@ -13,6 +13,7 @@ Build, deploy and one-off content scripts. Run them from anywhere; each shell sc
 | `gen_content.py` | Offline content step: asks Claude (through `pipeline._converse`) for a plain-language glossary and a Spanish questionnaire, written to `frontend/public/content/glossary.json` and `questions_es.json`. Answers stay keyed by statement id, so scoring is untouched. Usage: `python3 scripts/gen_content.py` with AWS credentials. |
 | `build_pitch_pdf.py` | Renders `docs/pitch/index.html` to `docs/pitch/OCI-Capacity-Coach-pitch.pdf`, one 1920x1080 page per slide, with Playwright Chromium. Usage: `python3 scripts/build_pitch_pdf.py`. |
 | `build_guide_pdf.py` | Renders `docs/technical-guide.md` (Markdown and Mermaid, through marked and mermaid from the jsDelivr CDN) to `docs/OCI-Capacity-Coach-technical-guide.pdf`, A4 with the app's fonts and page numbers, with Playwright Chromium. Needs network. Usage: `python3 scripts/build_guide_pdf.py`. |
+| `build_script_docx.py` | Renders `docs/pitch/demo-script.md` to `docs/pitch/OCI-Capacity-Coach-script.docx` (Word) in the app's colours: headings, tables, lists, links. Needs python-docx. Rebuild it after editing the script. |
 
 ## Changing it safely
 
